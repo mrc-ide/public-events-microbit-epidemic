@@ -1,7 +1,6 @@
 # public-events-microbit-epidemic
 Proximity-driven epidemic over bluetooth
 
-
 ## Compiler Tools on Windows
 
 * The "simple" installer didn't work for me - `yt` and `yotta` didn't seem to exist, even though the `Run Yotta` shortcut seemed to be
@@ -34,4 +33,26 @@ in the install zip in `C:\Python27\Scripts`.
 * copy build\bbc-microbit-classic-gcc\source\microbit-samples-combined.hex E:
 * and watch the Microbit. Hopefully... 
 
+## To start new code
 
+* Create and move into the base folder for the project.
+* Answer a few questions about the module name, start version, whether it is an executable or a library, description, author and license.
+* Some init files are created, along with a `source` and `test` folder.
+* `yotta target bbc-microbit-classic-gcc` to set the compilation target.
+* `yotta install lancaster-university/microbit` will intsall the entire dependency library for the project. (Overkill?)
+* Create some code - eg `source/main.cpp` - and example code:
+```C
+#include "MicroBit.h"
+
+MicroBit uBit;
+
+int main() {
+  uBit.init();
+  uBit.display.scroll("Asparagus!");
+  release_fiber();
+}
+```
+
+* Build it with `yotta build` in the base folder of the project. 
+* Plug in Microbit
+* Send to the Micro:Bit with copy build\bbc-microbit-glassic-gcc\source\projectname-combined.hex E:
