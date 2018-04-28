@@ -56,3 +56,9 @@ int main() {
 * Build it with `yotta build` in the base folder of the project. 
 * Plug in Microbit
 * Send to the Micro:Bit with copy build\bbc-microbit-glassic-gcc\source\projectname-combined.hex E:
+
+## Enabling data collection by Serial.
+
+* Download Serial port driver on the receiving computer, from [Here](https://os.mbed.com/handbook/Windows-serial-configuration)
+* Install instructions are basically: plug in Microbit, close any explorer windows, then run the installer.
+* Look in Control Panel, Device Manager, Ports (COM & LPT), and note the COM number for "mBed Serial Port"
