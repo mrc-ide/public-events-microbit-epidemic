@@ -6,12 +6,14 @@ rem particular cpp file; it seems hard-wired to main.cpp
 rem
 rem It seems quicker for me to solve it in a simple switch way
 rem than to figure out yotta, so here it is.
+del build\bbc-microbit-classic-gcc\source\*.hex
 
 IF EXIST "projects\%1\main.cpp" (
   COPY "projects\%1\main.cpp" source >NUL
   yt build
 ) ELSE (
-  ECHO projects\%1\main.cpp not found
+  ECHO projects\%1\main.cpp not found. Try....
+  dir projects /b
 )
 
   
