@@ -17,6 +17,7 @@ del source\main.cpp >NUL
 IF EXIST "projects\%1\main.cpp" (
   COPY "projects\%1\*.cpp" source >NUL
   COPY "projects\%1\*.h" source >NUL
+  touch "source\main.cpp"
   yt build
 ) ELSE (
   ECHO projects\%1\main.cpp not found. Try....
