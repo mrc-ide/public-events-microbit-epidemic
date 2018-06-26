@@ -2,10 +2,10 @@
 #define MICROBIT_EPI_H
 
 // This is a header of shared constants between the master
-// and minion apps. It should consist only of pre-processor
-// defintions; anything that requires runtime memory should
-// be defined in the code for the app, because every byte is
-// important!
+// and minion apps. 
+
+#define MAX_MINIONS 100
+#define MAX_TRANSMIT_POWER 7
 
 // Save a bit of radio in the registration stage, by ignoring 
 // registration messages once micro:bit is registered
@@ -23,6 +23,12 @@
 
 #define MINION_STAGE_REGISTRY 10
 #define MINION_STAGE_EPIDEMIC 11
+
+// And different statuses of a minion
+
+#define STATE_SUSCEPTIBLE 1
+#define STATE_INFECTIOUS 2
+#define STATE_RECOVERED 3
 
 // The different messages and offsets of the contents.
 // All messages start with a byte for the message type (MSG_TYPE = 0)
@@ -90,7 +96,4 @@
 #define SIZE_CHAR 1
 #define INT_MAX 2147483647
 
-#define SUSCEPTIBLE 1
-#define INFECTED 2
-#define RECOVERED 3
 #endif
