@@ -25,9 +25,9 @@
 #define MINION_STAGE_EPIDEMIC 11
 
 // The different messages and offsets of the contents.
-// All messages start with a byte for the message type (MSG_TYPE_OFS = 0)
+// All messages start with a byte for the message type (MSG_TYPE = 0)
 
-#define MSG_TYPE_OFS 0
+#define MSG_TYPE 0
 
 // Messages to be handled over serial...
 
@@ -38,31 +38,59 @@
 // Messages over radio
 
 #define REG_MESSAGE 4
-  #define REG_SERIAL_OFS 1
+  #define REG_SERIAL 1
   #define REG_MSG_SIZE 5
 
 #define REG_ACK_MESSAGE 5
-  #define REG_ACK_SERIAL_OFS 1
-  #define REG_ACK_ID_OFS 5
-  #define REG_ACK_EPID 7
-  #define REG_ACK_R0 9
-  #define REG_ACK_RTYPE 13
-  #define REG_ACK_RPOWER 14
-  #define REG_ACK_EXPOSURE 15
-  #define REG_ACK_SIZE 17
+  #define REG_ACK_MINION_SERIAL 1
+  #define REG_ACK_ID 5
+  #define REG_ACK_MASTER_SERIAL 7
+  #define REG_ACK_MASTER_TIME 11
+  #define REG_ACK_EPID 19
+  #define REG_ACK_R0 21
+  #define REG_ACK_RTYPE 25
+  #define REG_ACK_RPOWER 26
+  #define REG_ACK_EXPOSURE 27
+  #define REG_ACK_SIZE 28
 
-#define SEED_MESSAGE_MINION 6
+#define SEED_MINION_MSG 6
   #define SEED_MASTER_SERIAL 1
   #define SEED_EPI_ID 5
   #define SEED_VICTIM_ID 7
-  #define SEED_MESSAGE_SIZE 9
+  #define SEED_N_CONS 9
+  #define SEED_MSG_SIZE 10
 
 #define REG_RESET_MESSAGE 7
 
+#define INF_BCAST_MSG 8
+  #define INF_BCAST_MASTER_SERIAL 1
+  #define INF_BCAST_EPI_ID 5
+  #define INF_BCAST_SOURCE_ID 7
+  #define INF_BCAST_MSG_SIZE 9
+
+#define INF_CAND_MSG 9
+  #define INF_CAND_MASTER_SERIAL 1
+  #define INF_CAND_EPI_ID 5
+  #define INF_CAND_SOURCE_ID 7
+  #define INF_CAND_VICTIM_ID 9
+  #define INF_CAND_MSG_SIZE 11
+
+#define INF_CONF_MSG 10
+  #define INF_CONF_MASTER_SERIAL 1
+  #define INF_CONF_EPI_ID 5
+  #define INF_CONF_SOURCE_ID 7
+  #define INF_CONF_VICTIM_ID 9
+  #define INF_CONF_MSG_SIZE 11
+
+
+#define SIZE_LONG 8
 #define SIZE_FLOAT 4
 #define SIZE_INT 4
 #define SIZE_SHORT 2
 #define SIZE_CHAR 1
+#define INT_MAX 2147483647
 
-
+#define SUSCEPTIBLE 1
+#define INFECTED 2
+#define RECOVERED 3
 #endif

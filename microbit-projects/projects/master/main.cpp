@@ -39,34 +39,38 @@ void onData(MicroBitEvent) {
       // We receive a "Register Me" sort of message. Format:
       // MSG_ID [char]   Serial_No [int]
 
-      if (msg[MSG_TYPE_OFS] == REG_MESSAGE) {
+      if (msg[MSG_TYPE] == REG_MESSAGE) {
 
         // Fetch serial number, and look-up a more friendly version.
         int incoming_serial;
-        memcpy(&incoming_serial, &mbuf[REG_SERIAL_OFS], SIZE_INT);
+        memcpy(&incoming_serial, &mbuf[REG_SERIAL], SIZE_INT);
         short friendly_id = get_id_from_serial(incoming_serial);
         ManagedString m_id(incoming_serial);
         ManagedString f_id(friendly_id);
 
         // Report to serial port
         sendSerial(REG + COLON + m_id + COLON + f_id + NEWLINE);
-
+  
         // Reply to minion by broadcasting friendly id and params:-
-        // MSG_ID [char]  Serial_No [int]   Friendly_Id [Short] 
+        // MSG_ID [char]  Minion_Serial_No [int]   Minion_Friendly_Id [Short] 
+        // Master_Serial_No [int]   Master_Time [long]
         // Epidemic_ID [short]   R0 [float]  Rtype [Char]  Rpower [Char]
         // Exposure [Short]
 
+        unsigned long the_time = uBit.systemTime();
+
         PacketBuffer reply(REG_ACK_SIZE);
         uint8_t *rbuf = reply.getBytes();
-        reply[MSG_TYPE_OFS] = REG_ACK_MESSAGE;
-        memcpy(&rbuf[REG_ACK_SERIAL_OFS], &mbuf[REG_SERIAL_OFS], SIZE_INT);
-        memcpy(&rbuf[REG_ACK_ID_OFS], &friendly_id, SIZE_SHORT);
+        reply[MSG_TYPE] = REG_ACK_MESSAGE;
+        memcpy(&rbuf[REG_ACK_MINION_SERIAL], &mbuf[REG_SERIAL], SIZE_INT);
+        memcpy(&rbuf[REG_ACK_ID], &friendly_id, SIZE_SHORT);
+        memcpy(&rbuf[REG_ACK_MASTER_SERIAL], &serial_no, SIZE_INT);
+        memcpy(&rbuf[REG_ACK_MASTER_TIME], &the_time, SIZE_LONG);
         memcpy(&rbuf[REG_ACK_EPID], &epi_id, SIZE_SHORT);
         memcpy(&rbuf[REG_ACK_R0], &param_R0, SIZE_FLOAT);
         memcpy(&rbuf[REG_ACK_RTYPE], &param_Rtype, SIZE_CHAR);
         memcpy(&rbuf[REG_ACK_RPOWER], &param_rpower, SIZE_SHORT);
         memcpy(&rbuf[REG_ACK_EXPOSURE], &param_exposure, SIZE_SHORT);
-        
         uBit.radio.datagram.send(reply);
       }
     }
@@ -106,9 +110,29 @@ void receiveSerial(MicroBitEvent) {
     }
   } else if (current_stage == MASTER_STAGE_RECRUITMENT) {
     if(msg.charAt(0) == SEED_MESSAGE_MASTER) {
-
+      int start = 1;
+      int param_no = 0;
+      short seed_id = -1;
+      char seed_contacts = -1;
+      for (int i = 1; i<msg.length(); i++) {
+        if (msg.charAt(i)=='\t') {
+          ManagedString bit = msg.substring(start, i-start);
+          const char* bitp = bit.toCharArray();
+          if (param_no==0) seed_id = (short) atoi(bitp);
+          else if (param_no==1) seed_contacts = (char) atoi(bitp);
+          start = i+1;
+          param_no++;
+        }
+      }
+      PacketBuffer buf(SEED_MSG_SIZE);
+      uint8_t *ibuf = buf.getBytes();
+      ibuf[MSG_TYPE] = SEED_MSG_MINION;
+      memcpy(&ibuf[SEED_MASTER_SERIAL], &serial_no, SIZE_INT);
+      memcpy(&ibuf[SEED_EPI_ID], &epi_id, SIZE_SHORT);
+      memcpy(&ibuf[SEED_VICTIM_ID], &seed_id, SIZE_SHORT);
+      memcpy(&ibuf[SEED_N_CONS], &seed_contacts, SIZE_CHAR);
+      uBit.radio.datagram.send(buf);
     }
-
   }
   uBit.serial.eventOn(NEWLINE);
 }
