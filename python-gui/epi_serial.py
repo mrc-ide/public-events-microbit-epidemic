@@ -17,6 +17,7 @@ class EpiSerial:
     
     MSG_IDENTIFY_YOURSELF = '1\r\n'
     MSG_OUT_PARAMS = '2'
+    MSG_SEED_EPI = '3'
     
     MICROBIT_PID = 516
     MICROBIT_VID = 3368
@@ -94,10 +95,12 @@ class EpiSerial:
     # Process incoming serial data    
         
     def handle_serial_data(self, data):
+        print data
         if (len(data)>4):
             if (data[0:4]==self.MSG_IN_VERSION):
                 self.gui_link.sv_software.set(data.split(":")[1])
                 self.gui_link.sv_serialno.set(data.split(":")[2])
+                self.gui_link.sv_mbitver.set(data.split(":")[3])
             
             elif (data[0:4]==self.MSG_IN_REGISTER):
                 self.gui_link.set_minion_status(data.split(":")[2], 'green')
@@ -108,10 +111,12 @@ class EpiSerial:
             else:
                 self.gui_link.sv_software.set("Unrecognised serial device")
                 self.gui_link.sv_serialno.set("")
+                self.gui_link.sv_mbitver.set("")
                 
         else:
             self.gui_link.sv_software.set("Unrecognised serial device")
             self.gui_link.sv_serialno.set("")
+            self.gui_link.sv_mbitver.set("")
             
     # Allow serial class to talk to gui
     
@@ -121,21 +126,24 @@ class EpiSerial:
     
     # Send the parameters to the micro:bit master.
     def send_params(self):
-        print (self.MSG_OUT_PARAMS+
-                               self.gui_link.sv_epidno.get()+"\t"+
-                               self.gui_link.sv_r0.get()+"\t"+
-                               str(self.gui_link.cb_rtype.current())+"\t"+
-                               self.gui_link.cb_rpower.get()+"\t"+
-                               self.gui_link.cb_exposure.get()+"\t\r\n")
-        
         self.serial_port.write(self.MSG_OUT_PARAMS+
-                               self.gui_link.sv_epidno.get()+"\t"+
-                               self.gui_link.sv_r0.get()+"\t"+
-                               str(self.gui_link.cb_rtype.current())+"\t"+
-                               self.gui_link.cb_rpower.get()+"\t"+
-                               self.gui_link.cb_exposure.get()+"\t\r\n")
+                               self.gui_link.sv_epidno.get() + "\t" +
+                               self.gui_link.sv_r0.get() + "\t" +
+                               str(self.gui_link.cb_rtype.current()) + "\t" +
+                               self.gui_link.cb_rpower.get() + "\t" +
+                               self.gui_link.cb_exposure.get() + "\t\r\n")
         
     
+    # Send seeding information to master, who forwards it by radio to minion.
+    def seed_epidemic(self):
+        forcer = 0
+        if (self.gui_link.iv_forcer.get()==1):
+            forcer = 1 + self.gui_link.cb_forcer.current()
+            
+        self.serial_port.write(self.MSG_SEED_EPI+
+                               self.gui_link.sv_seedid.get() +"\t" +
+                               str(forcer) + "\t\r\n")
+        
     # Initialise serial port listener thread
     
     def __init__(self):

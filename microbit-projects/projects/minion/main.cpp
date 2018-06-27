@@ -8,11 +8,11 @@ ManagedString VERSION_INFO("VER:Epi Minion 1.0:");
 ManagedString NEWLINE("\r\n");
 
 unsigned char current_stage = MINION_STAGE_REGISTRY;
-int serial_no;          // My internal serial number
-unsigned short my_id;   // My friendly serial number
-int master_serial;      // My master's serial number
-uint64_t master_time0;  // Master's time when params received
-uint64_t my_time0;      // My time when params received
+int serial_no;              // My internal serial number
+unsigned short my_id;       // My friendly serial number
+int master_serial;          // My master's serial number
+int delta_time;      // Master's time when params received
+uint64_t my_time0;          // My time when params received
 
 
 // Parameters for the current epidemic
@@ -51,13 +51,26 @@ float poi(double e) {
 
 // Become infected...
 
-void become_infected(bool set_contacts) {
+void become_infected(bool set_contacts, unsigned short infector_id) {
   if (current_state == STATE_SUSCEPTIBLE) {
     uBit.display.print('I');
     if (set_contacts) {
       if (param_Rtype == 0) n_contacts = (int) param_R0;
       else n_contacts = (int) poi(param_R0);
     }
+
+    int now = (int) ((uBit.systemTime() - my_time0) - delta_time);
+    PacketBuffer omsg(REP_INF_MSG_SIZE);
+    uint8_t *obuf = omsg.getBytes();
+    obuf[MSG_TYPE] = REP_INF_MSG;
+    memcpy(&obuf[REP_INF_MASTER_SERIAL], &master_serial, SIZE_INT);
+    memcpy(&obuf[REP_INF_EPI_ID], &epi_id, SIZE_SHORT);
+    memcpy(&obuf[REP_INF_INFECTOR_ID], &infector_id, SIZE_SHORT);
+    memcpy(&obuf[REP_INF_VICTIM_ID], &my_id, SIZE_SHORT);
+    memcpy(&obuf[REP_INF_TIME], &now, SIZE_LONG);
+    memcpy(&obuf[REP_INF_NCONS], &n_contacts, SIZE_SHORT);
+    uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
+    uBit.radio.datagram.send(omsg);
     current_state = STATE_INFECTIOUS;
   }
 }
@@ -91,7 +104,7 @@ void onData(MicroBitEvent) {
     // Epidemic_ID [short]   R0 [float]  Rtype [Char]  Rpower [Char]
     // Exposure [Short]
 
-    if (ibuf[MSG_TYPE] == REG_ACK_MESSAGE) {
+    if (ibuf[MSG_TYPE] == REG_ACK_MSG) {
       int incoming_serial;
       memcpy(&incoming_serial, &ibuf[REG_ACK_MINION_SERIAL], SIZE_INT);
 
@@ -104,7 +117,9 @@ void onData(MicroBitEvent) {
         my_time0 = uBit.systemTime();
 
         memcpy(&master_serial, &ibuf[REG_ACK_MASTER_SERIAL], SIZE_INT);
+        uint64_t master_time0;
         memcpy(&master_time0, &ibuf[REG_ACK_MASTER_TIME], SIZE_LONG);
+        delta_time = (int) (my_time0 - master_time0);
 
         // Fetch the parameters out of the message.
 
@@ -128,12 +143,17 @@ void onData(MicroBitEvent) {
 
     // I receive a RESET code:-
 
-    if (ibuf[MSG_TYPE] == REG_RESET_MESSAGE) {
+    if (ibuf[MSG_TYPE] == RESET_MSG) {
       current_stage = MINION_STAGE_REGISTRY;
       uBit.radio.setGroup(UNREGISTERED_GROUP);
       uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
       uBit.display.print('U');
       reset();
+
+    // I receive a POWER-OFF code:-
+
+    } else if (ibuf[MSG_TYPE] == POWER_OFF_MSG) {
+      current_stage = MINION_STAGE_POWER_OFF;
 
     // Here, a minion receives a message to seed an infection.
 
@@ -145,7 +165,7 @@ void onData(MicroBitEvent) {
         memcpy(&victim_id, &ibuf[SEED_VICTIM_ID], SIZE_SHORT);
         if (victim_id == my_id) {
           memcpy(&n_contacts, &ibuf[SEED_N_CONS], SIZE_CHAR);
-          become_infected(n_contacts==0);
+          become_infected(n_contacts==0, 32767);
         }
 
       END_CHECK_RIGHT_EPIDEMIC
@@ -214,6 +234,7 @@ void onData(MicroBitEvent) {
           memcpy(&obuf[INF_CONF_VICTIM_ID], &victim_id, SIZE_SHORT);
           uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
           uBit.radio.datagram.send(omsg);
+
           if (n_contacts>0) {
             n_contacts--;
             if (n_contacts == 0) {
@@ -236,7 +257,9 @@ void onData(MicroBitEvent) {
         unsigned short victim_id;
         memcpy(&victim_id, &ibuf[INF_CONF_VICTIM_ID], SIZE_SHORT);
         if (victim_id == my_id) {
-          become_infected(true);
+          unsigned short source_id;
+          memcpy(&source_id, &ibuf[INF_CONF_SOURCE_ID], SIZE_SHORT);
+          become_infected(true, source_id);
         }
 
       END_CHECK_RIGHT_EPIDEMIC
@@ -267,7 +290,7 @@ void broadcastInfection() {
 void broadcastRegister() {
   PacketBuffer omsg(REG_MSG_SIZE);
   uint8_t *obuf = omsg.getBytes();
-  obuf[MSG_TYPE] = REG_MESSAGE;
+  obuf[MSG_TYPE] = REG_MSG;
   serial_no = microbit_serial_number();
   memcpy(&obuf[REG_SERIAL], &serial_no, SIZE_INT);
   uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
@@ -291,9 +314,11 @@ void receiveSerial(MicroBitEvent) {
   ManagedString msg = uBit.serial.readUntil(NEWLINE);
   uBit.serial.clearRxBuffer();
 
-  if (msg.charAt(0) == VER_MESSAGE) {
+  if (msg.charAt(0) == SER_VER_MSG) {
     ManagedString SERIAL_NO(serial_no);
-    sendSerial(VERSION_INFO+SERIAL_NO);
+    ManagedString COLON(":");
+    ManagedString MB_VERSION(uBit.systemVersion());
+    sendSerial(VERSION_INFO+SERIAL_NO+COLON+MB_VERSION);
   }
 }
 
@@ -307,18 +332,20 @@ int main() {
   uBit.radio.enable();
 
   reset();
- 
-  while (current_stage == MINION_STAGE_REGISTRY) {
-    uBit.sleep(1000);
-    broadcastRegister();
+  while ((current_stage == MINION_STAGE_REGISTRY) || (current_stage==MINION_STAGE_EPIDEMIC)) {
+    while (current_stage == MINION_STAGE_REGISTRY) {
+      uBit.sleep(1000);
+      broadcastRegister();
+    }
+
+    while (current_stage == MINION_STAGE_EPIDEMIC) {
+      uBit.sleep(1000);
+      if (current_state == STATE_INFECTIOUS) broadcastInfection();
+    }
   }
 
-  while (current_stage == MINION_STAGE_EPIDEMIC) {
-    uBit.sleep(1000);
-    if (current_state == STATE_INFECTIOUS) broadcastInfection();
-  }
-
+  uBit.display.clear();
+  // Stop listening to radio and serial
   uBit.radio.disable();
-
   release_fiber();
 }

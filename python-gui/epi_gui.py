@@ -209,32 +209,66 @@ class EpiGui:
         if tkMessageBox.askokcancel("Exit", "Really exit?"):
             self.window.destroy()
             
-    # Generic button-clicker, to move from one stage of the epidemic
-    # to the next.
     
-    def click_button(self, button_id):
+    def click_set_master(self):
         proceed = False
-        
-        if (button_id==self.CHOOSE_MASTER):
-            if (self.sv_software.get() != 'Epi Master 1.0'):
-                tkMessageBox.showerror("Error", "Micro:Bit master is not on that serial port")
-            else:
-                self.set_task_text(self.lang.instructions_2)
-                proceed = True
-
-        elif (button_id==self.SET_PARAMS):
-            self.b_setMaster.grid_forget()
-            self.b_sendParams.grid_forget()
-            self.b_seedEpidemic.grid(column = 0, row = 18, columnspan = 5)
-            self.serial_link.send_params()
-            self.set_task_text(self.lang.instructions_3)
+        if (self.sv_software.get() != 'Epi Master 1.0'):
+            tkMessageBox.showerror("Error", "Micro:Bit master is not on that serial port, or needs restarting")
+        else:
+            self.set_task_text(self.lang.instructions_2)
             proceed = True
-                
+            
         if (proceed):
-            self.wipe_guipage(button_id)
-            self.show_guipage(1 + button_id)
-            self.button_list[button_id - 1]['state']='disabled'
-            self.button_list[button_id]['state']='active'
+            self.b_setMaster['state']='disabled'
+            self.b_sendParams['state']='active'
+            self.grid_forget_all([self.cb_masters, self.b_rescan, self.l_port,
+            self.l_software, self.l_software2,
+            self.l_serialno, self.l_serialno2,
+            self.l_mbitver, self.l_mbitver2])
+            self.l_epidno.grid(column = self.LEFT, row = self.TOP, sticky = "E")
+            self.e_epidno.grid(column = 1 + self.LEFT, row = self.TOP, sticky = "W")
+            self.l_paramset.grid(column = self.LEFT, row = 2 + self.TOP, sticky = "E")
+            self.cb_paramset.grid(column = 1 + self.LEFT, row = 2 + self.TOP, sticky = "W")
+            self.b_save_pset.grid(column = 2 + self.LEFT, row = 2 + self.TOP, sticky = "W")
+            self.b_del_pset.grid(column = 3 + self.LEFT, row = 2 + self.TOP, sticky = "W")
+            self.b_saveas_pset.grid(column = 4 + self.LEFT, row = 2 + self.TOP, sticky = "W")
+            
+            self.l_r0.grid(column = self.LEFT, row = 3 + self.TOP, sticky = "E")
+            self.e_r0.grid(column = 1 + self.LEFT, row = 3 + self.TOP, sticky = "W")
+            self.l_rtype.grid(column = self.LEFT, row = 4 + self.TOP, sticky = "E")
+            self.cb_rtype.grid(column = 1 + self.LEFT, row = 4 + self.TOP, sticky = "W")
+            self.l_rpower.grid(column = self.LEFT, row = 5 + self.TOP, sticky = "E")
+            self.cb_rpower.grid(column = 1 + self.LEFT, row = 5 + self.TOP, sticky = "W")
+            self.l_exposure.grid(column = self.LEFT, row = 6 + self.TOP, sticky = "E")
+            self.cb_exposure.grid(column = 1 + self.LEFT, row = 6 + self.TOP, sticky = "E")
+
+    def click_send_params(self):
+        self.save_defaults()
+        self.b_setMaster.grid_forget()
+        self.b_sendParams.grid_forget()
+        self.b_seedEpidemic.grid(column = 0, row = 18, columnspan = 5)
+        self.serial_link.send_params()
+        self.set_task_text(self.lang.instructions_3)
+        self.grid_forget_all([self.l_epidno, self.e_epidno, self.l_paramset, self.cb_paramset,
+                self.b_save_pset, self.b_del_pset, self.b_saveas_pset, self.l_r0,
+                self.e_r0, self.l_rtype, self.cb_rtype, self.l_rpower, self.cb_rpower,
+                self.l_exposure, self.cb_exposure])
+        self.l_seedid.grid(column = self.LEFT, row = self.TOP, sticky = "E")
+        self.l_seedid2.grid(column = 1 + self.LEFT, row = self.TOP, sticky = "W")
+        self.l_forcer.grid(column = self.LEFT, row = 1 + self.TOP, sticky = "E")
+        self.tb_forcer.grid(column = 1 + self.LEFT, row = 1 + self.TOP, sticky = "W")
+        self.l_ncons.grid(column = self.LEFT, row = 2 + self.TOP, sticky = "E")
+        self.cb_forcer.grid(column = 1 + self.LEFT, row = 2 + self.TOP, sticky = "W")
+        self.b_sendParams['state']='disabled'
+        self.b_seedEpidemic['state']='active'
+        
+
+            
+    def click_seed_epi(self):
+        # TODO: Checking here
+        
+        self.serial_link.seed_epidemic()
+        self.sv_seedid.set("")
     
     def click_minion(self, m_id):
         if (self.serial_link.serial_port != 0):
@@ -260,64 +294,6 @@ class EpiGui:
     def grid_forget_all(self, widgets):
         for widget in widgets:
             widget.grid_forget()
-
-    # Show a particular page of the GUI. Add the components to the grid layout.
-    
-    def show_guipage(self, gui_page):
-        if (gui_page == self.CHOOSE_MASTER):
-            self.l_port.grid(column = self.LEFT, row = self.TOP)
-            self.cb_masters.grid(column = 1 + self.LEFT, row = self.TOP)
-            self.b_rescan.grid(column = 2 + self.LEFT, row = self.TOP)
-            self.l_software.grid(column = self.LEFT, row = 1 + self.TOP, sticky = "E")
-            self.l_software2.grid(column = 1 + self.LEFT, row = 1 + self.TOP, sticky = "W")
-            self.l_serialno.grid(column = self.LEFT, row = 2 + self.TOP, sticky = "E")
-            self.l_serialno2.grid(column = 1 + self.LEFT, row = 2 + self.TOP, sticky = "W")
-        
-        elif (gui_page == self.SET_PARAMS):
-            self.l_epidno.grid(column = self.LEFT, row = self.TOP, sticky = "E")
-            self.e_epidno.grid(column = 1 + self.LEFT, row = self.TOP, sticky = "W")
-            self.l_paramset.grid(column = self.LEFT, row = 2 + self.TOP, sticky = "E")
-            self.cb_paramset.grid(column = 1 + self.LEFT, row = 2 + self.TOP, sticky = "W")
-            self.b_save_pset.grid(column = 2 + self.LEFT, row = 2 + self.TOP, sticky = "W")
-            self.b_del_pset.grid(column = 3 + self.LEFT, row = 2 + self.TOP, sticky = "W")
-            self.b_saveas_pset.grid(column = 4 + self.LEFT, row = 2 + self.TOP, sticky = "W")
-            
-            self.l_r0.grid(column = self.LEFT, row = 3 + self.TOP, sticky = "E")
-            self.e_r0.grid(column = 1 + self.LEFT, row = 3 + self.TOP, sticky = "W")
-            self.l_rtype.grid(column = self.LEFT, row = 4 + self.TOP, sticky = "E")
-            self.cb_rtype.grid(column = 1 + self.LEFT, row = 4 + self.TOP, sticky = "W")
-            self.l_rpower.grid(column = self.LEFT, row = 5 + self.TOP, sticky = "E")
-            self.cb_rpower.grid(column = 1 + self.LEFT, row = 5 + self.TOP, sticky = "W")
-            self.l_exposure.grid(column = self.LEFT, row = 6 + self.TOP, sticky = "E")
-            self.cb_exposure.grid(column = 1 + self.LEFT, row = 6 + self.TOP, sticky = "E")
-            
-        elif (gui_page == self.SEED_EPIDEMIC):
-            self.l_seedid.grid(column = self.LEFT, row = self.TOP, sticky = "E")
-            self.l_seedid2.grid(column = 1 + self.LEFT, row = self.TOP, sticky = "W")
-            self.l_forcer.grid(column = self.LEFT, row = 1 + self.TOP, sticky = "E")
-            self.tb_forcer.grid(column = 1 + self.LEFT, row = 1 + self.TOP, sticky = "W")
-            self.l_ncons.grid(column = self.LEFT, row = 2 + self.TOP, sticky = "E")
-            self.cb_forcer.grid(column = 1 + self.LEFT, row = 2 + self.TOP, sticky = "W")
-            
-    # Wipe/hide a particular page (ie the current page) from the GUI. 
-
-    def wipe_guipage(self, gui_page):
-        if (gui_page == self.CHOOSE_MASTER):
-            self.grid_forget_all([self.cb_masters, self.b_rescan, self.l_port,
-                                  self.l_software, self.l_software2,
-                                  self.l_serialno, self.l_serialno2])
-
-        elif (gui_page == self.SET_PARAMS):
-            self.grid_forget_all([self.l_epidno, self.e_epidno, self.l_paramset, self.cb_paramset,
-                        self.b_save_pset, self.b_del_pset, self.b_saveas_pset, self.l_r0,
-                        self.e_r0, self.l_rtype, self.cb_rtype, self.l_rpower, self.cb_rpower,
-                        self.l_exposure, self.cb_exposure])
-        
-        elif (gui_page == self.SEED_EPIDEMIC):
-            self.grid_forget_all([self.l_seedid, self.l_Seedid2, self.l_forcer, self.tb_forcer,
-                                  self.l_ncons, self.cb_forcer])
-
-
 
     def click_forcer(self):
         if (self.iv_forcer.get()==0):
@@ -348,12 +324,9 @@ class EpiGui:
                     command = lambda n1 = n: self.click_minion(n1))
                 self.minions[x][y].grid(column = x, row = y)
 
-        self.b_setMaster = Button(self.window, text = 'Set Master Micro:Bit', 
-                                  command = lambda: self.click_button(self.CHOOSE_MASTER))
-        self.b_sendParams = Button(self.window, text = 'Send Parameters', 
-                                  command = lambda: self.click_button(self.SET_PARAMS))
-        self.b_seedEpidemic = Button(self.window, text='Seed Epidemic',
-                                  command = lambda: self.click_button(self.SEED_EPIDEMIC))
+        self.b_setMaster = Button(self.window, text = 'Set Master Micro:Bit', command = self.click_set_master)
+        self.b_sendParams = Button(self.window, text = 'Send Parameters', command = self.click_send_params)
+        self.b_seedEpidemic = Button(self.window, text='Seed Epidemic', command = self.click_seed_epi)
         
         self.l_task = Label(self.window, text = "Current Task")
         self.st_font = tkFont.Font(family = "Calibri", size = 10)
@@ -362,7 +335,6 @@ class EpiGui:
 
         self.b_sendParams['state'] = 'disabled'
         self.b_setMaster['state'] = 'active'
-        self.button_list = [self.b_setMaster, self.b_sendParams, self.b_seedEpidemic]
         
         self.b_setMaster.grid(column = 0, row = 18, columnspan = 5)
         self.b_sendParams.grid(column = 5, row = 18, columnspan = 5)
@@ -386,6 +358,9 @@ class EpiGui:
         self.l_serialno = Label(self.window, text = "Serial No:")
         self.sv_serialno = StringVar()
         self.l_serialno2 = Label(self.window, textvariable = self.sv_serialno)
+        self.l_mbitver = Label(self.window, text = "micro:bit version:")
+        self.sv_mbitver = StringVar()
+        self.l_mbitver2 = Label(self.window, textvariable = self.sv_mbitver)
                 
         # GUI elements for the parameter settings page
                 
@@ -457,7 +432,16 @@ class EpiGui:
         
         # Show first interface
         
-        self.show_guipage(self.CHOOSE_MASTER)
+        self.l_port.grid(column = self.LEFT, row = self.TOP)
+        self.cb_masters.grid(column = 1 + self.LEFT, row = self.TOP)
+        self.b_rescan.grid(column = 2 + self.LEFT, row = self.TOP)
+        self.l_software.grid(column = self.LEFT, row = 1 + self.TOP, sticky = "E")
+        self.l_software2.grid(column = 1 + self.LEFT, row = 1 + self.TOP, sticky = "W")
+        self.l_serialno.grid(column = self.LEFT, row = 2 + self.TOP, sticky = "E")
+        self.l_serialno2.grid(column = 1 + self.LEFT, row = 2 + self.TOP, sticky = "W")
+        self.l_mbitver.grid(column = self.LEFT, row = 3 + self.TOP, sticky = "E")
+        self.l_mbitver2.grid(column = 1 + self.LEFT, row = 3 + self.TOP, sticky = "W")
+
         self.serial_link.refresh_microbit_comports()
         self.window.mainloop()
 

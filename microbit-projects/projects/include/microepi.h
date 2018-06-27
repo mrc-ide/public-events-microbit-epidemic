@@ -23,6 +23,7 @@
 
 #define MINION_STAGE_REGISTRY 10
 #define MINION_STAGE_EPIDEMIC 11
+#define MINION_STAGE_POWER_OFF 12
 
 // And different statuses of a minion
 
@@ -37,17 +38,19 @@
 
 // Messages to be handled over serial...
 
-#define VER_MESSAGE '1'
-#define PARAM_MESSAGE '2'
-#define SEED_MESSAGE_MASTER '3'
+#define SER_VER_MSG '1'
+#define SER_PARAM_MSG '2'
+#define SER_SEED_MSG '3'
+#define SER_RESET_MSG '4'
+#define SER_POWER_OFF_MSG '5'
 
 // Messages over radio
 
-#define REG_MESSAGE 4
+#define REG_MSG 4
   #define REG_SERIAL 1
   #define REG_MSG_SIZE 5
 
-#define REG_ACK_MESSAGE 5
+#define REG_ACK_MSG 5
   #define REG_ACK_MINION_SERIAL 1
   #define REG_ACK_ID 5
   #define REG_ACK_MASTER_SERIAL 7
@@ -66,28 +69,44 @@
   #define SEED_N_CONS 9
   #define SEED_MSG_SIZE 10
 
-#define REG_RESET_MESSAGE 7
-
-#define INF_BCAST_MSG 8
+#define INF_BCAST_MSG 7
   #define INF_BCAST_MASTER_SERIAL 1
   #define INF_BCAST_EPI_ID 5
   #define INF_BCAST_SOURCE_ID 7
   #define INF_BCAST_MSG_SIZE 9
 
-#define INF_CAND_MSG 9
+#define INF_CAND_MSG 8
   #define INF_CAND_MASTER_SERIAL 1
   #define INF_CAND_EPI_ID 5
   #define INF_CAND_SOURCE_ID 7
   #define INF_CAND_VICTIM_ID 9
   #define INF_CAND_MSG_SIZE 11
 
-#define INF_CONF_MSG 10
+#define INF_CONF_MSG 9
   #define INF_CONF_MASTER_SERIAL 1
   #define INF_CONF_EPI_ID 5
   #define INF_CONF_SOURCE_ID 7
   #define INF_CONF_VICTIM_ID 9
   #define INF_CONF_MSG_SIZE 11
 
+#define RESET_MSG 10
+#define POWER_OFF_MSG 11
+
+#define REP_INF_MSG 12
+  #define REP_INF_MASTER_SERIAL 1
+  #define REP_INF_EPI_ID 5
+  #define REP_INF_INFECTOR_ID 7
+  #define REP_INF_VICTIM_ID 9
+  #define REP_INF_TIME 11
+  #define REP_INF_NCONS 15
+  #define REP_INF_MSG_SIZE 16
+
+#define REP_RECOV_MSG 13
+  #define REP_RECOV_MASTER_SERIAL 1
+  #define REP_RECOV_EPI_ID 5
+  #define REP_RECOV_VICTIM_ID 9
+  #define REP_RECOV_TIME 11
+  #define REP_RECOV_MSG_SIZE 15
 
 #define SIZE_LONG 8
 #define SIZE_FLOAT 4

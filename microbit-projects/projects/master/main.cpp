@@ -8,6 +8,8 @@ ManagedString REG("REG");
 ManagedString COLON(":");
 ManagedString VERSION_INFO("VER:Epi Master 1.0:");
 ManagedString PARAM_ACK("PAR:");
+ManagedString INF_MSG("INF:");
+ManagedString RECOV_MSG("RECOV:");
 
 unsigned short epi_id;
 float param_R0;
@@ -27,11 +29,28 @@ void sendSerial(ManagedString s) {
   }
 }
 
+
+// We often have to check that the master serial number, and epidemic number
+// match the epidemic that a minion was recruited for. To save some lines of
+// code, and make it look pretty, here is a macro that does it. I think macro
+// with a bit more code is better than a function call here...
+
+#define CHECK_RIGHT_EPIDEMIC(__serial, __epi) \
+  int check_master_serial; \
+  memcpy(&check_master_serial, &ibuf[__serial], SIZE_INT); \
+  if (check_master_serial == serial_no) { \
+    unsigned short check_epid; \
+    memcpy(&check_epid, &ibuf[__epi], SIZE_SHORT); \
+    if (check_epid == epi_id) {
+
+#define END_CHECK_RIGHT_EPIDEMIC }}
+
+// Handle incoming radio message
 void onData(MicroBitEvent) {
   if (!busy) {
     busy=true;
-    PacketBuffer msg = uBit.radio.datagram.recv();
-    uint8_t *mbuf = msg.getBytes();
+    PacketBuffer imsg = uBit.radio.datagram.recv();
+    uint8_t *ibuf = imsg.getBytes();
 
     // If we're in the "recruit minions stage"...
     if (current_stage == MASTER_STAGE_RECRUITMENT) {
@@ -39,11 +58,11 @@ void onData(MicroBitEvent) {
       // We receive a "Register Me" sort of message. Format:
       // MSG_ID [char]   Serial_No [int]
 
-      if (msg[MSG_TYPE] == REG_MESSAGE) {
+      if (imsg[MSG_TYPE] == REG_MSG) {
 
         // Fetch serial number, and look-up a more friendly version.
         int incoming_serial;
-        memcpy(&incoming_serial, &mbuf[REG_SERIAL], SIZE_INT);
+        memcpy(&incoming_serial, &ibuf[REG_SERIAL], SIZE_INT);
         short friendly_id = get_id_from_serial(incoming_serial);
         ManagedString m_id(incoming_serial);
         ManagedString f_id(friendly_id);
@@ -59,37 +78,79 @@ void onData(MicroBitEvent) {
 
         unsigned long the_time = uBit.systemTime();
 
-        PacketBuffer reply(REG_ACK_SIZE);
-        uint8_t *rbuf = reply.getBytes();
-        reply[MSG_TYPE] = REG_ACK_MESSAGE;
-        memcpy(&rbuf[REG_ACK_MINION_SERIAL], &mbuf[REG_SERIAL], SIZE_INT);
-        memcpy(&rbuf[REG_ACK_ID], &friendly_id, SIZE_SHORT);
-        memcpy(&rbuf[REG_ACK_MASTER_SERIAL], &serial_no, SIZE_INT);
-        memcpy(&rbuf[REG_ACK_MASTER_TIME], &the_time, SIZE_LONG);
-        memcpy(&rbuf[REG_ACK_EPID], &epi_id, SIZE_SHORT);
-        memcpy(&rbuf[REG_ACK_R0], &param_R0, SIZE_FLOAT);
-        memcpy(&rbuf[REG_ACK_RTYPE], &param_Rtype, SIZE_CHAR);
-        memcpy(&rbuf[REG_ACK_RPOWER], &param_rpower, SIZE_SHORT);
-        memcpy(&rbuf[REG_ACK_EXPOSURE], &param_exposure, SIZE_SHORT);
-        uBit.radio.datagram.send(reply);
+        PacketBuffer omsg(REG_ACK_SIZE);
+        uint8_t *obuf = omsg.getBytes();
+        obuf[MSG_TYPE] = REG_ACK_MSG;
+        memcpy(&obuf[REG_ACK_MINION_SERIAL], &ibuf[REG_SERIAL], SIZE_INT);
+        memcpy(&obuf[REG_ACK_ID], &friendly_id, SIZE_SHORT);
+        memcpy(&obuf[REG_ACK_MASTER_SERIAL], &serial_no, SIZE_INT);
+        memcpy(&obuf[REG_ACK_MASTER_TIME], &the_time, SIZE_LONG);
+        memcpy(&obuf[REG_ACK_EPID], &epi_id, SIZE_SHORT);
+        memcpy(&obuf[REG_ACK_R0], &param_R0, SIZE_FLOAT);
+        memcpy(&obuf[REG_ACK_RTYPE], &param_Rtype, SIZE_CHAR);
+        memcpy(&obuf[REG_ACK_RPOWER], &param_rpower, SIZE_SHORT);
+        memcpy(&obuf[REG_ACK_EXPOSURE], &param_exposure, SIZE_SHORT);
+        uBit.radio.datagram.send(omsg);
+      }
+
+    } else if (current_stage == MASTER_STAGE_EPIDEMIC) {
+
+      // Receive information about a minion becoming infected.
+      if (ibuf[MSG_TYPE] == REP_INF_MSG) {
+        CHECK_RIGHT_EPIDEMIC(REP_INF_MASTER_SERIAL, REP_INF_EPI_ID)
+          unsigned short infector_id;
+          memcpy(&infector_id, &ibuf[REP_INF_INFECTOR_ID], SIZE_SHORT);
+          unsigned short victim_id;
+          memcpy(&victim_id, &ibuf[REP_INF_VICTIM_ID], SIZE_SHORT);
+          int inf_time;
+          memcpy(&inf_time, &ibuf[REP_INF_TIME], SIZE_INT);
+          unsigned char ncons;
+          memcpy(&ncons, &ibuf[REP_INF_NCONS], SIZE_CHAR);
+          ManagedString INF(infector_id);
+          ManagedString VID(victim_id);
+          ManagedString TIME(inf_time);
+          ManagedString NCON(ncons);
+          sendSerial(INF_MSG+INF+COLON+VID+COLON+TIME+COLON+NCON+NEWLINE);
+        END_CHECK_RIGHT_EPIDEMIC
+
+      } else if (ibuf[MSG_TYPE] == REP_RECOV_MSG) {
+        CHECK_RIGHT_EPIDEMIC(REP_RECOV_MASTER_SERIAL, REP_RECOV_EPI_ID)
+          unsigned short victim_id;
+          memcpy(&victim_id, &ibuf[REP_RECOV_VICTIM_ID], SIZE_SHORT);
+          int inf_time;
+          memcpy(&inf_time, &ibuf[REP_INF_TIME], SIZE_INT);
+          ManagedString VID(victim_id);
+          ManagedString TIME(inf_time);
+          sendSerial(RECOV_MSG+VID+COLON+TIME+NEWLINE);
+        END_CHECK_RIGHT_EPIDEMIC
       }
     }
     busy = false;
   }
 }
 
+// Handle messages coming from the manager app through the serial port.
+
 void receiveSerial(MicroBitEvent) {
   ManagedString msg = uBit.serial.readUntil(NEWLINE);
   uBit.serial.clearRxBuffer();
 
+  // Message dealt with when we're waiting for the user to setup
+  // parameters:
   if (current_stage == MASTER_STAGE_WAIT_PARAMS) {
   
-    if (msg.charAt(0) == VER_MESSAGE) {
+    // Report our software/micro:bit vresion and serial number.
 
+    if (msg.charAt(0) == SER_VER_MSG) {
       ManagedString SERIAL_NO(serial_no);
-      sendSerial(VERSION_INFO+SERIAL_NO);
+      ManagedString MB_VERSION(uBit.systemVersion());
+      sendSerial(VERSION_INFO+SERIAL_NO+COLON+MB_VERSION);
 
-    } else if (msg.charAt(0) == PARAM_MESSAGE) {
+    // Receive parameter values, which cause us to move into
+    // recruitment stage, and handle all the minions' requests
+    // to play the game.
+
+    } else if (msg.charAt(0) == SER_PARAM_MSG) {
       int start = 1;
       int param_no = 0;
       for (int i = 1; i<msg.length(); i++) {
@@ -108,8 +169,12 @@ void receiveSerial(MicroBitEvent) {
       }
       current_stage = MASTER_STAGE_RECRUITMENT;
     }
-  } else if (current_stage == MASTER_STAGE_RECRUITMENT) {
-    if(msg.charAt(0) == SEED_MESSAGE_MASTER) {
+  } else {
+    
+    // Allow first-time seeding in recruitment stage;
+    // Also allow later seeding in epidemic stage.
+    
+    if(msg.charAt(0) == SER_SEED_MSG) {
       int start = 1;
       int param_no = 0;
       short seed_id = -1;
@@ -126,14 +191,16 @@ void receiveSerial(MicroBitEvent) {
       }
       PacketBuffer buf(SEED_MSG_SIZE);
       uint8_t *ibuf = buf.getBytes();
-      ibuf[MSG_TYPE] = SEED_MSG_MINION;
+      ibuf[MSG_TYPE] = SEED_MINION_MSG;
       memcpy(&ibuf[SEED_MASTER_SERIAL], &serial_no, SIZE_INT);
       memcpy(&ibuf[SEED_EPI_ID], &epi_id, SIZE_SHORT);
       memcpy(&ibuf[SEED_VICTIM_ID], &seed_id, SIZE_SHORT);
       memcpy(&ibuf[SEED_N_CONS], &seed_contacts, SIZE_CHAR);
+      uBit.radio.setGroup(REGISTERED_GROUP);
       uBit.radio.datagram.send(buf);
+      current_stage = MASTER_STAGE_EPIDEMIC;
     }
-  }
+  } 
   uBit.serial.eventOn(NEWLINE);
 }
 
@@ -170,7 +237,7 @@ int main() {
   // This stage ends when we receive a kill signal from the serial port
 
   uBit.display.print("E");
-  while (current_stage == MASTER_STAGE_RECRUITMENT) uBit.sleep(1000);
+  while (current_stage == MASTER_STAGE_EPIDEMIC) uBit.sleep(1000);
 
   // Now we're in MASTER_STAGE_DONE. Turn off everything and await a
   // restart signal.
