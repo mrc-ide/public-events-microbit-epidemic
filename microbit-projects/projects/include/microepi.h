@@ -55,12 +55,12 @@
   #define REG_ACK_ID 5
   #define REG_ACK_MASTER_SERIAL 7
   #define REG_ACK_MASTER_TIME 11
-  #define REG_ACK_EPID 19
-  #define REG_ACK_R0 21
-  #define REG_ACK_RTYPE 25
-  #define REG_ACK_RPOWER 26
-  #define REG_ACK_EXPOSURE 27
-  #define REG_ACK_SIZE 28
+  #define REG_ACK_EPID 15
+  #define REG_ACK_R0 17
+  #define REG_ACK_RTYPE 21
+  #define REG_ACK_RPOWER 22
+  #define REG_ACK_EXPOSURE 23
+  #define REG_ACK_SIZE 24
 
 #define SEED_MINION_MSG 6
   #define SEED_MASTER_SERIAL 1

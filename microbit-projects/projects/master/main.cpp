@@ -16,6 +16,7 @@ float param_R0;
 unsigned char param_Rtype;
 unsigned short param_exposure;
 unsigned char param_rpower;
+uint64_t time0;
 
 unsigned char current_stage;
 bool busy = false;
@@ -76,7 +77,7 @@ void onData(MicroBitEvent) {
         // Epidemic_ID [short]   R0 [float]  Rtype [Char]  Rpower [Char]
         // Exposure [Short]
 
-        unsigned long the_time = uBit.systemTime();
+        int the_time = (int) (uBit.systemTime() - time0);
 
         PacketBuffer omsg(REG_ACK_SIZE);
         uint8_t *obuf = omsg.getBytes();
@@ -84,7 +85,7 @@ void onData(MicroBitEvent) {
         memcpy(&obuf[REG_ACK_MINION_SERIAL], &ibuf[REG_SERIAL], SIZE_INT);
         memcpy(&obuf[REG_ACK_ID], &friendly_id, SIZE_SHORT);
         memcpy(&obuf[REG_ACK_MASTER_SERIAL], &serial_no, SIZE_INT);
-        memcpy(&obuf[REG_ACK_MASTER_TIME], &the_time, SIZE_LONG);
+        memcpy(&obuf[REG_ACK_MASTER_TIME], &the_time, SIZE_INT);
         memcpy(&obuf[REG_ACK_EPID], &epi_id, SIZE_SHORT);
         memcpy(&obuf[REG_ACK_R0], &param_R0, SIZE_FLOAT);
         memcpy(&obuf[REG_ACK_RTYPE], &param_Rtype, SIZE_CHAR);
@@ -167,6 +168,7 @@ void receiveSerial(MicroBitEvent) {
           param_no++;
         }
       }
+      time0 = uBit.systemTime();
       current_stage = MASTER_STAGE_RECRUITMENT;
     }
   } else {

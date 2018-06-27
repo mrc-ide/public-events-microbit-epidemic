@@ -11,7 +11,8 @@ unsigned char current_stage = MINION_STAGE_REGISTRY;
 int serial_no;              // My internal serial number
 unsigned short my_id;       // My friendly serial number
 int master_serial;          // My master's serial number
-int delta_time;      // Master's time when params received
+
+int master_time0;           // Master (relative) time when params received
 uint64_t my_time0;          // My time when params received
 
 
@@ -59,7 +60,7 @@ void become_infected(bool set_contacts, unsigned short infector_id) {
       else n_contacts = (int) poi(param_R0);
     }
 
-    int now = (int) ((uBit.systemTime() - my_time0) - delta_time);
+    int now = (int) ((uBit.systemTime() - my_time0) + master_time0);
     PacketBuffer omsg(REP_INF_MSG_SIZE);
     uint8_t *obuf = omsg.getBytes();
     obuf[MSG_TYPE] = REP_INF_MSG;
@@ -117,9 +118,7 @@ void onData(MicroBitEvent) {
         my_time0 = uBit.systemTime();
 
         memcpy(&master_serial, &ibuf[REG_ACK_MASTER_SERIAL], SIZE_INT);
-        uint64_t master_time0;
-        memcpy(&master_time0, &ibuf[REG_ACK_MASTER_TIME], SIZE_LONG);
-        delta_time = (int) (my_time0 - master_time0);
+        memcpy(&master_time0, &ibuf[REG_ACK_MASTER_TIME], SIZE_INT);
 
         // Fetch the parameters out of the message.
 
