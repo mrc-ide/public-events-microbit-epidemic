@@ -14,6 +14,8 @@ class EpiSerial:
     MSG_IN_VERSION = 'VER:'
     MSG_IN_REGISTER = 'REG:'
     MSG_IN_PARAM = 'PAR:'
+    MSG_IN_INF = 'INF:'
+    MSG_IN_RECOV = 'REC:'
     
     MSG_IDENTIFY_YOURSELF = '1\r\n'
     MSG_OUT_PARAMS = '2'
@@ -107,6 +109,14 @@ class EpiSerial:
                 
             elif (data[0:4]==self.MSG_IN_PARAM):
                 print "PARAM ACK"
+            
+            elif (data[0:4]==self.MSG_IN_INF):
+                self.gui_link.set_minion_status(data.split(":")[2], 'red')
+                #Do more stuff about infection
+                
+            elif (data[0:4]==self.MSG_IN_RECOV):
+                self.gui_link.set_minion_statue(data.split(":")[2], 'blue')
+                #Do more stuff about recovery
                 
             else:
                 self.gui_link.sv_software.set("Unrecognised serial device")

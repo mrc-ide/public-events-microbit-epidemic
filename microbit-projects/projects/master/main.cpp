@@ -9,7 +9,7 @@ ManagedString COLON(":");
 ManagedString VERSION_INFO("VER:Epi Master 1.0:");
 ManagedString PARAM_ACK("PAR:");
 ManagedString INF_MSG("INF:");
-ManagedString RECOV_MSG("RECOV:");
+ManagedString RECOV_MSG("REC:");
 
 unsigned short epi_id;
 float param_R0;
