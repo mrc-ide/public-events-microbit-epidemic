@@ -271,6 +271,7 @@ class EpiGui:
         self.sv_seedid.set("")
     
     def click_minion(self, m_id):
+        m_id = int(m_id)
         if (self.serial_link.serial_port != 0):
             if (self.minions[m_id % 10][m_id / 10]['bg']=='green'):
                 self.sv_seedid.set(m_id)

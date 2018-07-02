@@ -115,7 +115,7 @@ class EpiSerial:
                 #Do more stuff about infection
                 
             elif (data[0:4]==self.MSG_IN_RECOV):
-                self.gui_link.set_minion_statue(data.split(":")[2], 'blue')
+                self.gui_link.set_minion_status(data.split(":")[1], 'blue')
                 #Do more stuff about recovery
                 
             else:

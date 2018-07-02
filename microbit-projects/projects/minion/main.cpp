@@ -154,9 +154,9 @@ void onData(MicroBitEvent) {
     } else if (ibuf[MSG_TYPE] == POWER_OFF_MSG) {
       current_stage = MINION_STAGE_POWER_OFF;
 
-    // Here, a minion receives a message to seed an infection.
+    // Here, a susceptible minion receives a message to seed an infection.
 
-    } else if (ibuf[MSG_TYPE] == SEED_MINION_MSG) {
+    } else if ((ibuf[MSG_TYPE] == SEED_MINION_MSG) && (current_state == STATE_SUSCEPTIBLE)) {
 
       CHECK_RIGHT_EPIDEMIC(SEED_MASTER_SERIAL, SEED_EPI_ID)
 
@@ -169,9 +169,9 @@ void onData(MicroBitEvent) {
 
       END_CHECK_RIGHT_EPIDEMIC
 
-    // Here, a minion receives an infectious broadcast.
+    // Here, a susceptible minion receives an infectious broadcast.
 
-    } else if (ibuf[MSG_TYPE] == INF_BCAST_MSG) {
+    } else if ((ibuf[MSG_TYPE] == INF_BCAST_MSG) && (current_state == STATE_SUSCEPTIBLE)) {
 
       CHECK_RIGHT_EPIDEMIC(INF_BCAST_MASTER_SERIAL, INF_BCAST_EPI_ID)
 
@@ -208,9 +208,9 @@ void onData(MicroBitEvent) {
 
       END_CHECK_RIGHT_EPIDEMIC
 
-    // And the code for handling the incoming infection candidate message
+    // And the code for an infectious minion handling an incoming infection candidate message
 
-    } else if (ibuf[MSG_TYPE] == INF_CAND_MSG) {
+    } else if ((ibuf[MSG_TYPE] == INF_CAND_MSG) && (current_state == STATE_INFECTIOUS)) {
 
       CHECK_RIGHT_EPIDEMIC(INF_CAND_MASTER_SERIAL, INF_CAND_EPI_ID)
 
@@ -223,7 +223,7 @@ void onData(MicroBitEvent) {
           // don't start making any new contacts of our own.
 
           unsigned short victim_id;
-          memcpy(&victim_id, &ibuf[INF_CAND_SOURCE_ID], SIZE_SHORT);
+          memcpy(&victim_id, &ibuf[INF_CAND_VICTIM_ID], SIZE_SHORT);
           PacketBuffer omsg(INF_CONF_MSG_SIZE);
           uint8_t *obuf = omsg.getBytes();
           obuf[MSG_TYPE] = INF_CONF_MSG;
@@ -238,6 +238,16 @@ void onData(MicroBitEvent) {
             n_contacts--;
             if (n_contacts == 0) {
               current_state = STATE_RECOVERED;
+              int now = (int) ((uBit.systemTime() - my_time0) + master_time0);
+              PacketBuffer omsg(REP_RECOV_MSG_SIZE);
+              uint8_t *obuf = omsg.getBytes();
+              obuf[MSG_TYPE] = REP_RECOV_MSG;
+              memcpy(&obuf[REP_RECOV_MASTER_SERIAL], &master_serial, SIZE_INT);
+              memcpy(&obuf[REP_RECOV_EPI_ID], &epi_id, SIZE_SHORT);
+              memcpy(&obuf[REP_INF_VICTIM_ID], &my_id, SIZE_SHORT);
+              memcpy(&obuf[REP_INF_TIME], &now, SIZE_LONG);
+              uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
+              uBit.radio.datagram.send(omsg);
               uBit.display.print('R');
             }
           }
@@ -249,11 +259,11 @@ void onData(MicroBitEvent) {
       // our INF_CAND_MSG). The infector has confirmed we are one of their favourite
       // victims, so we are officially infectious.
 
-    } else if (ibuf[MSG_TYPE] == INF_CONF_MSG) {
+    } else if ((ibuf[MSG_TYPE] == INF_CONF_MSG) && (current_state == STATE_SUSCEPTIBLE)) {
 
       CHECK_RIGHT_EPIDEMIC(INF_CONF_MASTER_SERIAL, INF_CONF_EPI_ID)
 
-        unsigned short victim_id;
+      unsigned short victim_id;
         memcpy(&victim_id, &ibuf[INF_CONF_VICTIM_ID], SIZE_SHORT);
         if (victim_id == my_id) {
           unsigned short source_id;
@@ -297,7 +307,7 @@ void broadcastRegister() {
 }
 
 // Going to listen to serial port anyway, just in case a minion micro:bit
-// gets plugged into the serial port by mistake. Would be helpfull if the
+// gets plugged into the serial port by mistake. Would be helpful if the
 // manager tells us that's what we've done, and giving serial number for
 // this minion might also be helpful.
 
@@ -332,6 +342,7 @@ int main() {
 
   reset();
   while ((current_stage == MINION_STAGE_REGISTRY) || (current_stage==MINION_STAGE_EPIDEMIC)) {
+    
     while (current_stage == MINION_STAGE_REGISTRY) {
       uBit.sleep(1000);
       broadcastRegister();
