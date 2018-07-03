@@ -213,6 +213,7 @@ int main() {
   uBit.radio.setGroup(UNREGISTERED_GROUP);
   uBit.display.setBrightness(64);
   uBit.serial.setRxBufferSize(32);
+  uBit.serial.setTxBufferSize(64);
   uBit.serial.baud(115200);
   uBit.messageBus.listen(MICROBIT_ID_SERIAL,  MICROBIT_SERIAL_EVT_DELIM_MATCH, receiveSerial);
   uBit.serial.eventOn(NEWLINE);

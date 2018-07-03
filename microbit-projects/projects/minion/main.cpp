@@ -182,8 +182,8 @@ void onData(MicroBitEvent) {
         memcpy(&source_id, &ibuf[INF_BCAST_SOURCE_ID], SIZE_SHORT);
         exposure_tracker[source_id]++;
 
-        if (exposure_tracker[source_id] == param_exposure) {
-
+        if (exposure_tracker[source_id] >= param_exposure) {
+        
           // If we've had enough exposure from a source, so consider
           // become infected - HOWEVER - this requres confirmation
           // from the infector, because there may be multiple replies
@@ -205,6 +205,8 @@ void onData(MicroBitEvent) {
           memcpy(&obuf[INF_CAND_VICTIM_ID], &my_id, SIZE_SHORT);
           uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
           uBit.radio.datagram.send(omsg);
+          
+
         }
 
       END_CHECK_RIGHT_EPIDEMIC
@@ -335,9 +337,11 @@ void receiveSerial(MicroBitEvent) {
 int main() {
   uBit.init();
   uBit.serial.setRxBufferSize(32);
+  uBit.serial.setTxBufferSize(64);
   uBit.serial.baud(115200);
   uBit.messageBus.listen(MICROBIT_ID_SERIAL,  MICROBIT_SERIAL_EVT_DELIM_MATCH, receiveSerial);
   uBit.serial.eventOn(NEWLINE);
+
   uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
   uBit.radio.enable();
 
