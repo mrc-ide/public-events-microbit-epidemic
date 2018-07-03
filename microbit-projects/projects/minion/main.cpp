@@ -6,6 +6,7 @@ MicroBit uBit;
 
 ManagedString VERSION_INFO("VER:Epi Minion 1.0:");
 ManagedString NEWLINE("\r\n");
+ManagedString END_SERIAL("#\r\n");
 
 unsigned char current_stage = MINION_STAGE_REGISTRY;
 int serial_no;              // My internal serial number
@@ -327,7 +328,7 @@ void receiveSerial(MicroBitEvent) {
     ManagedString SERIAL_NO(serial_no);
     ManagedString COLON(":");
     ManagedString MB_VERSION(uBit.systemVersion());
-    sendSerial(VERSION_INFO+SERIAL_NO+COLON+MB_VERSION);
+    sendSerial(VERSION_INFO + SERIAL_NO + COLON + MB_VERSION + END_SERIAL);
   }
 }
 

@@ -7,6 +7,7 @@ Created on 6 Jun 2018
 from threading import Thread
 import time
 import serial.tools.list_ports
+import re
 from serial.serialutil import SerialException
 
 class EpiSerial:
@@ -24,10 +25,15 @@ class EpiSerial:
     MICROBIT_PID = 516
     MICROBIT_VID = 3368
     
+    input_buffer = ""
     
     # Loop to read from the port  while there is data to be
     # read. This executes continually in its own thread, and sleeps
     # for 1/10 s when there is no data to process.
+    
+    # Python appeared to intermittently insert newlines into mid-message,
+    # in ways not apparent when using Putty. Therefore, all new-lines are
+    # ignored, and all valid incoming messages must end with '#'
       
     def read_from_port(self):
         while True:
@@ -40,7 +46,13 @@ class EpiSerial:
                         reading = ''
                     if (len(reading)!=0):
                         did_work = True
-                        self.handle_serial_data(reading)
+                        self.input_buffer = self.input_buffer + reading
+                        self.input_buffer = re.sub('[\n\r]', '', self.input_buffer)
+                        if (self.input_buffer.endswith('#')):
+                            self.input_buffer = re.sub('[#]','', self.input_buffer)
+                            self.handle_serial_data(self.input_buffer)
+                            self.input_buffer = ''
+                            
             if (did_work == False):
                 time.sleep(0.1)
 

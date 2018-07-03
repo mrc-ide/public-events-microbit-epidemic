@@ -3,11 +3,11 @@
 #include "serialno.h"
 
 MicroBit uBit;
+ManagedString END_SERIAL("#\r\n");
 ManagedString NEWLINE("\r\n");
 ManagedString REG("REG");
 ManagedString COLON(":");
 ManagedString VERSION_INFO("VER:Epi Master 1.0:");
-ManagedString PARAM_ACK("PAR:");
 ManagedString INF_MSG("INF:");
 ManagedString RECOV_MSG("REC:");
 
@@ -69,7 +69,7 @@ void onData(MicroBitEvent) {
         ManagedString f_id(friendly_id);
 
         // Report to serial port
-        sendSerial(REG + COLON + m_id + COLON + f_id + NEWLINE);
+        sendSerial(REG + COLON + m_id + COLON + f_id + END_SERIAL);
   
         // Reply to minion by broadcasting friendly id and params:-
         // MSG_ID [char]  Minion_Serial_No [int]   Minion_Friendly_Id [Short] 
@@ -111,7 +111,7 @@ void onData(MicroBitEvent) {
           ManagedString VID(victim_id);
           ManagedString TIME(inf_time);
           ManagedString NCON(ncons);
-          sendSerial(INF_MSG+INF+COLON+VID+COLON+TIME+COLON+NCON+NEWLINE);
+          sendSerial(INF_MSG + INF + COLON + VID + COLON + TIME + COLON + NCON + END_SERIAL);
         END_CHECK_RIGHT_EPIDEMIC
 
       } else if (ibuf[MSG_TYPE] == REP_RECOV_MSG) {
@@ -122,7 +122,7 @@ void onData(MicroBitEvent) {
           memcpy(&inf_time, &ibuf[REP_INF_TIME], SIZE_INT);
           ManagedString VID(victim_id);
           ManagedString TIME(inf_time);
-          sendSerial(RECOV_MSG+VID+COLON+TIME+NEWLINE);
+          sendSerial(RECOV_MSG + VID + COLON + TIME + END_SERIAL);
         END_CHECK_RIGHT_EPIDEMIC
       }
     }
@@ -145,7 +145,7 @@ void receiveSerial(MicroBitEvent) {
     if (msg.charAt(0) == SER_VER_MSG) {
       ManagedString SERIAL_NO(serial_no);
       ManagedString MB_VERSION(uBit.systemVersion());
-      sendSerial(VERSION_INFO+SERIAL_NO+COLON+MB_VERSION);
+      sendSerial(VERSION_INFO + SERIAL_NO + COLON + MB_VERSION + END_SERIAL);
 
     // Receive parameter values, which cause us to move into
     // recruitment stage, and handle all the minions' requests
