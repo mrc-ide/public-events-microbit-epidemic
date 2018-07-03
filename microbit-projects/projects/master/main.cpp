@@ -7,7 +7,7 @@ ManagedString END_SERIAL("#\r\n");
 ManagedString NEWLINE("\r\n");
 ManagedString REG("REG");
 ManagedString COLON(":");
-ManagedString VERSION_INFO("VER:Epi Master 1.0:");
+ManagedString VERSION_INFO("VER:Epi Master 1.1:");
 ManagedString INF_MSG("INF:");
 ManagedString RECOV_MSG("REC:");
 

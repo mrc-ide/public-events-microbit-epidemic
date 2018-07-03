@@ -4,7 +4,7 @@
 
 MicroBit uBit;
 
-ManagedString VERSION_INFO("VER:Epi Minion 1.0:");
+ManagedString VERSION_INFO("VER:Epi Minion 1.1:");
 ManagedString NEWLINE("\r\n");
 ManagedString END_SERIAL("#\r\n");
 

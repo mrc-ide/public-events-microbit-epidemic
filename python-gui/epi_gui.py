@@ -212,7 +212,7 @@ class EpiGui:
     
     def click_set_master(self):
         proceed = False
-        if (self.sv_software.get() != 'Epi Master 1.0'):
+        if (self.sv_software.get() != 'Epi Master 1.1'):
             tkMessageBox.showerror("Error", "Micro:Bit master is not on that serial port, or needs restarting")
         else:
             self.set_task_text(self.lang.instructions_2)
