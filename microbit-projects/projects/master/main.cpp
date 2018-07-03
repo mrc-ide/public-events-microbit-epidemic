@@ -7,7 +7,8 @@ ManagedString END_SERIAL("#\r\n");
 ManagedString NEWLINE("\r\n");
 ManagedString REG("REG");
 ManagedString COLON(":");
-ManagedString VERSION_INFO("VER:Epi Master 1.1:");
+ManagedString VERSION_INFO("VER:Epi Master 1.2:");
+ManagedString RESTART_INFO("VER:Push reset button and rescan:");
 ManagedString INF_MSG("INF:");
 ManagedString RECOV_MSG("REC:");
 
@@ -97,6 +98,13 @@ void onData(MicroBitEvent) {
     } else if (current_stage == MASTER_STAGE_EPIDEMIC) {
 
       // Receive information about a minion becoming infected.
+      // Message will be: master_serial (int), epi_id (short)
+      // infetor id (short), victim id (short), time (int) and
+      // number of contacts to be made (char)
+
+      // These are all sent to serial port in the form:
+      // INF:infector_id:victim_id:time:ncontacts#\r\n
+
       if (ibuf[MSG_TYPE] == REP_INF_MSG) {
         CHECK_RIGHT_EPIDEMIC(REP_INF_MASTER_SERIAL, REP_INF_EPI_ID)
           unsigned short infector_id;
@@ -113,6 +121,15 @@ void onData(MicroBitEvent) {
           ManagedString NCON(ncons);
           sendSerial(INF_MSG + INF + COLON + VID + COLON + TIME + COLON + NCON + END_SERIAL);
         END_CHECK_RIGHT_EPIDEMIC
+
+      // Here, master receives a message giving details of a recovery
+      // (ie, success acquiring all 'n' contacts.
+      
+      // Msg format: master_serial (int), epi_id (short),
+      // victim_id (short), time (int)
+
+      // Sent to serial port in the form:
+      // REC:victim_id:time#\r\n
 
       } else if (ibuf[MSG_TYPE] == REP_RECOV_MSG) {
         CHECK_RIGHT_EPIDEMIC(REP_RECOV_MASTER_SERIAL, REP_RECOV_EPI_ID)
@@ -172,11 +189,21 @@ void receiveSerial(MicroBitEvent) {
       current_stage = MASTER_STAGE_RECRUITMENT;
     }
   } else {
+     
+     // Here, we get a request for version information while we're busy with
+     // an epidemic, so return a helpful error message.
+
+     if (msg.charAt(0) == SER_VER_MSG) {
+      ManagedString SERIAL_NO(serial_no);
+      ManagedString MB_VERSION(uBit.systemVersion());
+      sendSerial(RESTART_INFO + SERIAL_NO + COLON + MB_VERSION + END_SERIAL);
+     }
     
-    // Allow first-time seeding in recruitment stage;
-    // Also allow later seeding in epidemic stage.
+    // Below, we receive a request to force a new infection.
+    // Format: 3 \t victim_id \t no_contacts
+    // If no_contacts == 0, then use the epidemic's R0 parameters.
     
-    if(msg.charAt(0) == SER_SEED_MSG) {
+    else if (msg.charAt(0) == SER_SEED_MSG) {
       int start = 1;
       int param_no = 0;
       short seed_id = -1;
@@ -191,6 +218,9 @@ void receiveSerial(MicroBitEvent) {
           param_no++;
         }
       }
+
+      // Send out the seed message by radio. 
+
       PacketBuffer buf(SEED_MSG_SIZE);
       uint8_t *ibuf = buf.getBytes();
       ibuf[MSG_TYPE] = SEED_MINION_MSG;
@@ -201,6 +231,22 @@ void receiveSerial(MicroBitEvent) {
       uBit.radio.setGroup(REGISTERED_GROUP);
       uBit.radio.datagram.send(buf);
       current_stage = MASTER_STAGE_EPIDEMIC;
+
+    } else if (msg.charAt(0) == SER_RESET_MSG) {
+      PacketBuffer buf(RESET_MSG_SIZE);
+      uint8_t *ibuf = buf.getBytes();
+      ibuf[MSG_TYPE] = RESET_MSG;
+      uBit.radio.setGroup(REGISTERED_GROUP);
+      uBit.radio.datagram.send(buf);
+      current_stage = MASTER_STAGE_WAIT_PARAMS;
+      
+    } else if (msg.charAt(0) == SER_POWER_OFF_MSG) {
+      PacketBuffer buf(POWER_OFF_MSG_SIZE);
+      uint8_t *ibuf = buf.getBytes();
+      ibuf[MSG_TYPE] = POWER_OFF_MSG;
+      uBit.radio.setGroup(REGISTERED_GROUP);
+      uBit.radio.datagram.send(buf);
+      current_stage = MASTER_STAGE_POWER_OFF;
     }
   } 
   uBit.serial.eventOn(NEWLINE);
@@ -210,41 +256,43 @@ int main() {
   serial_no = microbit_serial_number();
   current_stage = MASTER_STAGE_WAIT_PARAMS;
   uBit.init();
-  uBit.radio.setGroup(UNREGISTERED_GROUP);
+
   uBit.display.setBrightness(64);
   uBit.serial.setRxBufferSize(32);
-  uBit.serial.setTxBufferSize(64);
+  uBit.serial.setTxBufferSize(80);
   uBit.serial.baud(115200);
   uBit.messageBus.listen(MICROBIT_ID_SERIAL,  MICROBIT_SERIAL_EVT_DELIM_MATCH, receiveSerial);
   uBit.serial.eventOn(NEWLINE);
 
-  // Wait for parameters through serial port, which will move our
-  // stage from MASTER_STAGE_WAIT_PARAMS to MASTER_STAGE_RECRUITMENT
+  while (current_stage != MASTER_STAGE_POWER_OFF) {
+    // Wait for parameters through serial port, which will move our
+    // stage from MASTER_STAGE_WAIT_PARAMS to MASTER_STAGE_RECRUITMENT
+  
+    uBit.radio.setGroup(UNREGISTERED_GROUP);
+    uBit.display.print("W");
+    while (current_stage == MASTER_STAGE_WAIT_PARAMS) uBit.sleep(1000);
 
-  uBit.display.print("W");
-  while (current_stage == MASTER_STAGE_WAIT_PARAMS) uBit.sleep(1000);
+    // Now we're in MASTER_STAGE_RECRUITENT. Turn on the radio,
+    // and start to answer requests from minions to play. Wait for
+    // serial-port seeding information, which moves us to
+    // MASTER_STAGE_EPIDEMIC mode.
 
-  // Now we're in MASTER_STAGE_RECRUITENT. Turn on the radio,
-  // and start to answer requests from minions to play. Wait for
-  // serial-port seeding information, which moves us to
-  // MASTER_STAGE_EPIDEMIC mode.
+    uBit.display.print("R");
+    uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
+    uBit.radio.enable();
+    uBit.radio.setTransmitPower(7);
+    while (current_stage == MASTER_STAGE_RECRUITMENT) uBit.sleep(1000);
 
-  uBit.display.print("R");
-  uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
-  uBit.radio.enable();
-  uBit.radio.setTransmitPower(7);
-  while (current_stage == MASTER_STAGE_RECRUITMENT) uBit.sleep(1000);
+    // Now we're in MASTER_STAGE_EPIDEMIC. The radio listens for infection
+    // news reports, and forwards them to the serial port for processing.
+    // This stage ends when we receive a kill signal from the serial port
 
-  // Now we're in MASTER_STAGE_EPIDEMIC. The radio listens for infection
-  // news reports, and forwards them to the serial port for processing.
-  // This stage ends when we receive a kill signal from the serial port
+    uBit.display.print("E");
+    while (current_stage == MASTER_STAGE_EPIDEMIC) uBit.sleep(1000);
 
-  uBit.display.print("E");
-  while (current_stage == MASTER_STAGE_EPIDEMIC) uBit.sleep(1000);
-
-  // Now we're in MASTER_STAGE_DONE. Turn off everything and await a
-  // restart signal.
-
+    // Now we're either in MASTER_STAGE_POWER_OFF, or back to MASTER_STAGE_WAIT_PARAMS,
+    // following a RESET/POWER_OFF message through the serial.
+  }
   uBit.display.print("Z");
   uBit.radio.disable();
 

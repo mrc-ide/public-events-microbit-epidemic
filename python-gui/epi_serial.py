@@ -14,13 +14,14 @@ class EpiSerial:
     
     MSG_IN_VERSION = 'VER:'
     MSG_IN_REGISTER = 'REG:'
-    MSG_IN_PARAM = 'PAR:'
     MSG_IN_INF = 'INF:'
     MSG_IN_RECOV = 'REC:'
     
     MSG_IDENTIFY_YOURSELF = '1\r\n'
     MSG_OUT_PARAMS = '2'
     MSG_SEED_EPI = '3'
+    MSG_RESET_EPI = '4\r\n'
+    MSG_POWER_OFF = '5\r\n'
     
     MICROBIT_PID = 516
     MICROBIT_VID = 3368
@@ -109,7 +110,6 @@ class EpiSerial:
     # Process incoming serial data    
         
     def handle_serial_data(self, data):
-        print data
         if (len(data)>4):
             if (data[0:4]==self.MSG_IN_VERSION):
                 self.gui_link.sv_software.set(data.split(":")[1])
@@ -119,16 +119,13 @@ class EpiSerial:
             elif (data[0:4]==self.MSG_IN_REGISTER):
                 self.gui_link.set_minion_status(data.split(":")[2], 'green')
                 
-            elif (data[0:4]==self.MSG_IN_PARAM):
-                print "PARAM ACK"
-            
             elif (data[0:4]==self.MSG_IN_INF):
                 self.gui_link.set_minion_status(data.split(":")[2], 'red')
-                #Do more stuff about infection
+                print data
                 
             elif (data[0:4]==self.MSG_IN_RECOV):
                 self.gui_link.set_minion_status(data.split(":")[1], 'blue')
-                #Do more stuff about recovery
+                print data
                 
             else:
                 self.gui_link.sv_software.set("Unrecognised serial device")
@@ -148,12 +145,14 @@ class EpiSerial:
     
     # Send the parameters to the micro:bit master.
     def send_params(self):
-        self.serial_port.write(self.MSG_OUT_PARAMS+
-                               self.gui_link.sv_epidno.get() + "\t" +
-                               self.gui_link.sv_r0.get() + "\t" +
-                               str(self.gui_link.cb_rtype.current()) + "\t" +
-                               self.gui_link.cb_rpower.get() + "\t" +
-                               self.gui_link.cb_exposure.get() + "\t\r\n")
+        msg = (self.MSG_OUT_PARAMS+
+               self.gui_link.sv_epidno.get() + "\t" +
+               self.gui_link.sv_r0.get() + "\t" +
+               str(self.gui_link.cb_rtype.current()) + "\t" +
+               self.gui_link.cb_rpower.get() + "\t" +
+               self.gui_link.cb_exposure.get() + "\t\r\n")
+              
+        self.serial_port.write(msg)
         
     
     # Send seeding information to master, who forwards it by radio to minion.
@@ -166,6 +165,12 @@ class EpiSerial:
                                self.gui_link.sv_seedid.get() +"\t" +
                                str(forcer) + "\t\r\n")
         
+    def reset_epidemic(self):
+        self.serial_port.write(self.MSG_RESET_EPI)
+        
+    def poweroff_minions(self):
+        self.serial_port.write(self.MSG_POWER_OFF)
+     
     # Initialise serial port listener thread
     
     def __init__(self):

@@ -212,7 +212,7 @@ class EpiGui:
     
     def click_set_master(self):
         proceed = False
-        if (self.sv_software.get() != 'Epi Master 1.1'):
+        if (self.sv_software.get() != 'Epi Master 1.2'):
             tkMessageBox.showerror("Error", "Micro:Bit master is not on that serial port, or needs restarting")
         else:
             self.set_task_text(self.lang.instructions_2)
@@ -242,11 +242,23 @@ class EpiGui:
             self.l_exposure.grid(column = self.LEFT, row = 6 + self.TOP, sticky = "E")
             self.cb_exposure.grid(column = 1 + self.LEFT, row = 6 + self.TOP, sticky = "E")
 
+    def update_seed_epi_button(self):
+        self.b_seedEpidemic['state'] = 'disabled'
+        sid = self.sv_seedid.get()
+        if (len(sid)>0):
+            sid = int(sid)
+            if (self.minions[sid % 10][sid / 10]['bg'] == 'green'):
+                self.b_seedEpidemic['state'] = 'active'
+                
+                
+    
+    
     def click_send_params(self):
         self.save_defaults()
         self.b_setMaster.grid_forget()
         self.b_sendParams.grid_forget()
         self.b_seedEpidemic.grid(column = 0, row = 18, columnspan = 5)
+        self.b_resetEpidemic.grid(column = 5, row = 18, columnspan = 5)
         self.serial_link.send_params()
         self.set_task_text(self.lang.instructions_3)
         self.grid_forget_all([self.l_epidno, self.e_epidno, self.l_paramset, self.cb_paramset,
@@ -260,7 +272,7 @@ class EpiGui:
         self.l_ncons.grid(column = self.LEFT, row = 2 + self.TOP, sticky = "E")
         self.cb_forcer.grid(column = 1 + self.LEFT, row = 2 + self.TOP, sticky = "W")
         self.b_sendParams['state']='disabled'
-        self.b_seedEpidemic['state']='active'
+        self.b_seedEpidemic['state']='disabled'
         
 
             
@@ -269,6 +281,23 @@ class EpiGui:
         
         self.serial_link.seed_epidemic()
         self.sv_seedid.set("")
+        
+    def click_reset_epi(self):
+        confirm = tkSimpleDialog.askstring("End Epidemic", "Type RESET for a new epidemic, or POWEROFF to kill the minions")
+        
+        if (confirm == 'RESET') or (confirm == 'POWEROFF'):
+
+            self.grid_forget_all([self.l_seedid, self.l_seedid2, self.l_forcer, self.tb_forcer,
+                self.l_ncons, self.cb_forcer, self.b_seedEpidemic, self.b_resetEpidemic])
+        
+            if (confirm == 'RESET'):
+                self.serial_link.reset_epidemic()
+                self.CURRENT_EPI_ID = 1 + self.CURRENT_EPI_ID
+                self.sv_epidno.set(self.CURRENT_EPI_ID)
+                self.show_first_interface()
+            
+            elif (confirm == 'POWEROFF'):
+                self.serial_link.poweroff_minions()
     
     def click_minion(self, m_id):
         m_id = int(m_id)
@@ -277,10 +306,12 @@ class EpiGui:
                 self.sv_seedid.set(m_id)
             else:
                 self.sv_seedid.set('')
+        self.update_seed_epi_button()
             
     def set_minion_status(self, minion_id, status):
         m_id = int(minion_id)
         self.minions[m_id % 10][m_id / 10]['bg'] = status
+        self.update_seed_epi_button()
         
     # Update the instructions box for what to do in this stage of the epidemic.
     
@@ -302,6 +333,26 @@ class EpiGui:
         else:
             self.cb_forcer['state'] = 'active'
         
+    def show_first_interface(self):
+        self.l_port.grid(column = self.LEFT, row = self.TOP)
+        self.cb_masters.grid(column = 1 + self.LEFT, row = self.TOP)
+        self.b_rescan.grid(column = 2 + self.LEFT, row = self.TOP)
+        self.l_software.grid(column = self.LEFT, row = 1 + self.TOP, sticky = "E")
+        self.l_software2.grid(column = 1 + self.LEFT, row = 1 + self.TOP, sticky = "W")
+        self.l_serialno.grid(column = self.LEFT, row = 2 + self.TOP, sticky = "E")
+        self.l_serialno2.grid(column = 1 + self.LEFT, row = 2 + self.TOP, sticky = "W")
+        self.l_mbitver.grid(column = self.LEFT, row = 3 + self.TOP, sticky = "E")
+        self.l_mbitver2.grid(column = 1 + self.LEFT, row = 3 + self.TOP, sticky = "W")
+        self.set_task_text(self.lang.instructions_1)
+        self.b_sendParams['state'] = 'disabled'
+        self.b_setMaster['state'] = 'active'
+        
+        self.b_setMaster.grid(column = 0, row = 18, columnspan = 5)
+        self.b_sendParams.grid(column = 5, row = 18, columnspan = 5)
+        for i in range(100):
+            self.set_minion_status(i, '#f0f0f0')
+        self.serial_link.refresh_microbit_comports()
+    
     # Create the GUI. 
     
     def __init__(self, serial_link):
@@ -328,20 +379,17 @@ class EpiGui:
         self.b_setMaster = Button(self.window, text = 'Set Master Micro:Bit', command = self.click_set_master)
         self.b_sendParams = Button(self.window, text = 'Send Parameters', command = self.click_send_params)
         self.b_seedEpidemic = Button(self.window, text='Seed Epidemic', command = self.click_seed_epi)
+        self.b_resetEpidemic = Button(self.window, text='Reset Epidemic', command = self.click_reset_epi)
         
         self.l_task = Label(self.window, text = "Current Task")
         self.st_font = tkFont.Font(family = "Calibri", size = 10)
         self.st_instruct = ScrolledText(self.window, width = 30, height = 5, font = self.st_font,
                                         wrap = 'word', state = 'disabled')
 
-        self.b_sendParams['state'] = 'disabled'
-        self.b_setMaster['state'] = 'active'
-        
-        self.b_setMaster.grid(column = 0, row = 18, columnspan = 5)
-        self.b_sendParams.grid(column = 5, row = 18, columnspan = 5)
+
         self.l_task.grid(column = 0, row = 13, columnspan = 10)
         self.st_instruct.grid(column=0, row = 14, columnspan = 10)
-        self.set_task_text(self.lang.instructions_1)
+        
         
         # GUI elements for the Micro:Bit master selection page
         
@@ -433,17 +481,8 @@ class EpiGui:
         
         # Show first interface
         
-        self.l_port.grid(column = self.LEFT, row = self.TOP)
-        self.cb_masters.grid(column = 1 + self.LEFT, row = self.TOP)
-        self.b_rescan.grid(column = 2 + self.LEFT, row = self.TOP)
-        self.l_software.grid(column = self.LEFT, row = 1 + self.TOP, sticky = "E")
-        self.l_software2.grid(column = 1 + self.LEFT, row = 1 + self.TOP, sticky = "W")
-        self.l_serialno.grid(column = self.LEFT, row = 2 + self.TOP, sticky = "E")
-        self.l_serialno2.grid(column = 1 + self.LEFT, row = 2 + self.TOP, sticky = "W")
-        self.l_mbitver.grid(column = self.LEFT, row = 3 + self.TOP, sticky = "E")
-        self.l_mbitver2.grid(column = 1 + self.LEFT, row = 3 + self.TOP, sticky = "W")
-
-        self.serial_link.refresh_microbit_comports()
+        self.show_first_interface()
+        
         self.window.mainloop()
 
     

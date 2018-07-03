@@ -18,6 +18,7 @@
 #define MASTER_STAGE_WAIT_PARAMS 1
 #define MASTER_STAGE_RECRUITMENT 2
 #define MASTER_STAGE_EPIDEMIC    3
+#define MASTER_STAGE_POWER_OFF   4
 
 // The different stages for the MINION
 
@@ -90,7 +91,10 @@
   #define INF_CONF_MSG_SIZE 11
 
 #define RESET_MSG 10
+#define RESET_MSG_SIZE 1
+
 #define POWER_OFF_MSG 11
+#define POWER_OFF_MSG_SIZE 1
 
 #define REP_INF_MSG 12
   #define REP_INF_MASTER_SERIAL 1

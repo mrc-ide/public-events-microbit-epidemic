@@ -4,7 +4,7 @@
 
 MicroBit uBit;
 
-ManagedString VERSION_INFO("VER:Epi Minion 1.1:");
+ManagedString VERSION_INFO("VER:Epi Minion 1.2:");
 ManagedString NEWLINE("\r\n");
 ManagedString END_SERIAL("#\r\n");
 
@@ -35,6 +35,7 @@ void reset() {
   current_stage = MINION_STAGE_REGISTRY;
   uBit.display.print('U');
   uBit.radio.setGroup(UNREGISTERED_GROUP);
+  uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
 }
 
 float poi(double e) {
@@ -144,10 +145,6 @@ void onData(MicroBitEvent) {
     // I receive a RESET code:-
 
     if (ibuf[MSG_TYPE] == RESET_MSG) {
-      current_stage = MINION_STAGE_REGISTRY;
-      uBit.radio.setGroup(UNREGISTERED_GROUP);
-      uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
-      uBit.display.print('U');
       reset();
 
     // I receive a POWER-OFF code:-
@@ -339,7 +336,7 @@ int main() {
   uBit.serial.setRxBufferSize(32);
   uBit.serial.setTxBufferSize(64);
   uBit.serial.baud(115200);
-  uBit.messageBus.listen(MICROBIT_ID_SERIAL,  MICROBIT_SERIAL_EVT_DELIM_MATCH, receiveSerial);
+  uBit.messageBus.listen(MICROBIT_ID_SERIAL, MICROBIT_SERIAL_EVT_DELIM_MATCH, receiveSerial);
   uBit.serial.eventOn(NEWLINE);
 
   uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
@@ -360,7 +357,8 @@ int main() {
   }
 
   uBit.display.clear();
-  // Stop listening to radio and serial
+  uBit.messageBus.ignore(MICROBIT_ID_SERIAL, MICROBIT_SERIAL_EVT_DELIM_MATCH, receiveSerial);
+  uBit.messageBus.ignore(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
   uBit.radio.disable();
   release_fiber();
 }
