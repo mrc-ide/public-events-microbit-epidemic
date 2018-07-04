@@ -1,4 +1,4 @@
-# Microbit-Epidemic: Compiling Guide
+# public-events-microbit-epdemic: Compiling Guide
 
 Here, we describe how to create an environment on windows, 
 for compiling our code into binaries to copy to the micro:bit.
