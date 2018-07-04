@@ -6,15 +6,15 @@ this hardware on the way.
 
 ### 101 micro:bits
 
-* We ordered ten packs of ten from Farnell
-(CPC), which included non-famous-brand AAA batteries (quite useful),
+* We ordered ten [packs of ten](http://cpc.farnell.com/bbc-micro-bit/mb224-us/bbc-micro-bit-club-fcc-10-pack/dp/ED00316?rpsku=rel2:ED00036&isexcsku=false)
+from Farnell (CPC), which included non-famous-brand AAA batteries (quite useful),
 battery holders (not so useful, as not switched), and MicroUSB
 cables (useful, for as long as they worked). We wanted 100
 minions, and one master micro:bit, hence 101.
 
 * We had one failure out-of-the-box, where a unit caused
 Windows to disable the USB port due to excessive power usage. 
-Probably this was a short-circuit in the USB socket.
+Probably this was a short in the USB socket...
 
 * We additionally found that the USB socket on the micro:bit is
 not particularly strong, yet plugging/unplugging the cable
@@ -34,7 +34,8 @@ cables are probably quite weak.
 * We wanted to be able to
 switch the micro:bits on and off without disconnecting the 
 fairly fragile power cable from the equally fragile socket. We 
-found RapidOnline supplied switched-battery holders fitted
+found [RapidOnline](https://www.rapidonline.com/bbc-micro-bit-switched-battery-box-2-x-aaa-18-2899)
+supplied switched-battery holders fitted
 with the 2-pin plug for micro:bit, which is convenient, but
 build quality and design is not perfect.  
   
@@ -55,8 +56,8 @@ build quality and design is not perfect.
   
 ### _100 wall-mount cases for micro:bit_. 
 
-* We found these at kitronic.co.uk. These protect the micro:bits 
-nicely, and have screw holes on each side that will fit a
+* We used [these](http://cpc.farnell.com/kitronik/5605/mi-pro-mountable-case/dp/ED00030). 
+These protect the micro:bits nicely, and have screw holes on each side that will fit a
 standard lanyard clip.
 
 * They take about a minute to assemble, and have 4 nylon screws
@@ -75,7 +76,7 @@ to a laptop serial port.
 
 * We needed 100 lanyards with two clips, and no safety break.
 See the artwork folder for the pattern we went for! We used
-carddispenseruk.com
+the IC approved provider, [www.carddispenseruk.com](www.carddispenseruk.com)
 
 * We also wanted to stick something on the battery case to 
 indicate the id of each minion; we used Niceday 2.5 x 1.5" 
@@ -83,9 +84,11 @@ stickers.
   
 ### Superglue
 
-* We superglued the battery case to the micro:bit holder,
+* We [superglued](https://www.amazon.co.uk/Loctite-Triple-Instant-Adhesive-Bonding/dp/B01BUA92PM/ref=sr_1_7?ie=UTF8&qid=1530712161&sr=8-7&keywords=super+glue+triple) 
+the battery case to the micro:bit holder,
 and also stuck the power cable to the top (the removable part)
-of the battery case to attempt to keep it tidy.
+of the battery case to attempt to keep it tidy. It took 6 tubes,
+and quite a lot of time.
 
 ### A laptop
 
