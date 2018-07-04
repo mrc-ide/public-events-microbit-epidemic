@@ -7,12 +7,14 @@ probably be quite similar on the whole.
 
 ## Compiler Tools on Windows
 
-* Following the instructions for yotta...
+I wanted to do offline compilation of C code to Microbit, on Windows. So,
+I used these [Instructions](https://lancaster-university.github.io/microbit-docs/offline-toolchains/) which
+pointed me to [here](http://docs.yottabuild.org/#installing-on-windows).
 
 * The "simple" installer didn't work for me - `yt` and `yotta` 
 didn't seem to exist, even though the `Run Yotta` shortcut 
-seemed to be present. So, I followed the manual instructions 
-to get it working, namely...
+seemed to be present. So, I followed the [manual](http://docs.yottabuild.org/#manual-windows-installation)
+instructions and got it working:-
 * Install latest Python 2.7, 64-bit version. 
 [Here](https://www.python.org/ftp/python/2.7.14/python-2.7.14.amd64.msi). I installed into 
 C:\Python27. I didn't get the option in the installer to add 

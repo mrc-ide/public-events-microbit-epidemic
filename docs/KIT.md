@@ -1,4 +1,4 @@
-# Microbit-Epidemic: Hardware Guide
+# public-events-microbit-epdemic: Hardware Guide
 
 Below are the list of components required to run an micro:bit
 epidemic in the way we have, and some experiences of using 
@@ -10,7 +10,7 @@ this hardware on the way.
 from Farnell (CPC), which included non-famous-brand AAA batteries (quite useful),
 battery holders (not so useful, as not switched), and MicroUSB
 cables (useful, for as long as they worked). We wanted 100
-minions, and one master micro:bit, hence 101.
+minions, and one master, hence 101.
 
 * We had one failure out-of-the-box, where a unit caused
 Windows to disable the USB port due to excessive power usage. 
