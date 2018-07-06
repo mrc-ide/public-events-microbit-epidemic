@@ -40,10 +40,11 @@
 // Messages to be handled over serial...
 
 #define SER_VER_MSG '1'
-#define SER_PARAM_MSG '2'
-#define SER_SEED_MSG '3'
-#define SER_RESET_MSG '4'
-#define SER_POWER_OFF_MSG '5'
+#define SER_REG_MSG '2'
+#define SER_PARAM_MSG '3'
+#define SER_SEED_MSG '4'
+#define SER_RESET_MSG '5'
+#define SER_POWER_OFF_MSG '6'
 
 // Messages over radio
 

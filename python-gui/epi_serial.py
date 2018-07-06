@@ -8,7 +8,9 @@ from threading import Thread
 import time
 import serial.tools.list_ports
 import re
+import csv
 from serial.serialutil import SerialException
+import tkMessageBox
 
 class EpiSerial:
     
@@ -18,15 +20,38 @@ class EpiSerial:
     MSG_IN_RECOV = 'REC:'
     
     MSG_IDENTIFY_YOURSELF = '1\r\n'
-    MSG_OUT_PARAMS = '2'
-    MSG_SEED_EPI = '3'
-    MSG_RESET_EPI = '4\r\n'
-    MSG_POWER_OFF = '5\r\n'
+    MSG_REG = '2'
+    MSG_OUT_PARAMS = '3'
+    MSG_SEED_EPI = '4'
+    MSG_RESET_EPI = '5\r\n'
+    MSG_POWER_OFF = '6\r\n'
     
     MICROBIT_PID = 516
     MICROBIT_VID = 3368
     
     input_buffer = ""
+    
+    def get_friendly_id(self, sid):
+        result = -1
+        for i in range(len(sid)):
+            if (self.serials[i]['serial'] == sid):
+                result = self.serials[i]['id']
+                break
+        
+        # Serial not found - add to file if there are blanks...
+        
+        if (result==-1):
+            for i in range(len(sid)):
+                if (self.serials[i]['serial'] == ''):
+                    self.serials[i]['serial'] = sid
+                    result = i
+                    with open('serials.txt', 'w') as f:
+                        f.write('serial,id\n')
+                        for i in range(len(sid)):
+                            s = "{},{}\n".format(self.serials[i]['serial'],self.serials[i]['id'])
+                            f.write(s)
+        
+        return result
     
     # Loop to read from the port  while there is data to be
     # read. This executes continually in its own thread, and sleeps
@@ -117,7 +142,14 @@ class EpiSerial:
                 self.gui_link.sv_mbitver.set(data.split(":")[3])
             
             elif (data[0:4]==self.MSG_IN_REGISTER):
-                self.gui_link.set_minion_status(data.split(":")[2], 'green')
+                serialno = int(data.split(":")[1])
+                friendlyid = self.get_friendly_id(serialno)
+                if (friendlyid == -1):
+                    tkMessageBox.showerror("Error", "No space in serials.csv file for micro:bit serial no. {}", serialno)
+                else:
+                    msg = (self.MSG_REG + serialno + "\t" + friendlyid + "\t\r\n")
+                    self.serial_port.write(msg)
+                    self.gui_link.set_minion_status(data.split(":")[2], 'green')
                 
             elif (data[0:4]==self.MSG_IN_INF):
                 self.gui_link.set_minion_status(data.split(":")[2], 'red')
@@ -172,11 +204,14 @@ class EpiSerial:
         self.serial_port.write(self.MSG_POWER_OFF)
      
     # Initialise serial port listener thread
-    
+
     def __init__(self):
         self.gui = 0
         self.serial_port = 0
         self.serial_port_thread = Thread(target = self.read_from_port)
         self.serial_port_thread.setDaemon(True)
         self.serial_port_thread.start()
-
+        
+        with open("serials.csv") as f:
+            reader = csv.DictReader(f)
+            self.serials = [r for r in reader]

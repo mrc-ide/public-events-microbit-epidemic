@@ -14,6 +14,8 @@ from tkinter.scrolledtext import ScrolledText
 
 class EpiGui:
     
+    REQ_MASTER_VERSION = 'Epi Master 1.3'
+    
     CURRENT_EPI_ID = -1
     
     CHOOSE_MASTER = 1
@@ -212,8 +214,8 @@ class EpiGui:
     
     def click_set_master(self):
         proceed = False
-        if (self.sv_software.get() != 'Epi Master 1.2'):
-            tkMessageBox.showerror("Error", "Micro:Bit master is not on that serial port, or needs restarting")
+        if (self.sv_software.get() != self.REQ_MASTER_VERSION):
+            tkMessageBox.showerror("Error", "Micro:Bit master is absent, wrong version, or needs restarting")
         else:
             self.set_task_text(self.lang.instructions_2)
             proceed = True

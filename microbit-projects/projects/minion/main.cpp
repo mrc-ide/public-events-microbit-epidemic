@@ -4,7 +4,7 @@
 
 MicroBit uBit;
 
-ManagedString VERSION_INFO("VER:Epi Minion 1.2:");
+ManagedString VERSION_INFO("VER:Epi Minion 1.3:");
 ManagedString NEWLINE("\r\n");
 ManagedString END_SERIAL("#\r\n");
 
@@ -167,9 +167,11 @@ void onData(MicroBitEvent) {
 
       END_CHECK_RIGHT_EPIDEMIC
 
-    // Here, a susceptible minion receives an infectious broadcast.
+    // Here, minion (in any state) receives an infectious broadcast. 
+    // ie - you can be in any state to be a contact, but only susceptibles will then
+    // become infectious and make their own contacts.
 
-    } else if ((ibuf[MSG_TYPE] == INF_BCAST_MSG) && (current_state == STATE_SUSCEPTIBLE)) {
+    } else if (ibuf[MSG_TYPE] == INF_BCAST_MSG) {
 
       CHECK_RIGHT_EPIDEMIC(INF_BCAST_MASTER_SERIAL, INF_BCAST_EPI_ID)
 
@@ -179,14 +181,17 @@ void onData(MicroBitEvent) {
         memcpy(&source_id, &ibuf[INF_BCAST_SOURCE_ID], SIZE_SHORT);
         exposure_tracker[source_id]++;
 
-        if (exposure_tracker[source_id] >= param_exposure) {
+        if (exposure_tracker[source_id] == param_exposure) {
         
-          // If we've had enough exposure from a source, so consider
-          // become infected - HOWEVER - this requres confirmation
-          // from the infector, because there may be multiple replies
+          // If we've reached the exposure threshold from a single source, 
+          // we now might be one of their contacts - HOWEVER - this requres 
+          // confirmation from the infector, because there may be multiple replies
           // to the broadcast message, and we might be too late.
 
-          // So, send a message back to the infector, indicating we are
+          // Using == param_exposure here, to ensure we only offer ourselves
+          // as a contact once.
+
+          // So, we send a message back to the infector, indicating we are
           // willing to be one of their infections.
 
           // Broadcast a candidate infection message with:
@@ -256,14 +261,14 @@ void onData(MicroBitEvent) {
         END_CHECK_RIGHT_EPIDEMIC
 
       // Now, suppose we've received a confirmation message (ie, the reply from
-      // our INF_CAND_MSG). The infector has confirmed we are one of their favourite
-      // victims, so we are officially infectious.
+      // our INF_CAND_MSG). We are now a contact - and if we're susceptible, then
+      // we now become infectious. (Otherwise, we don't need to do anything).
 
     } else if ((ibuf[MSG_TYPE] == INF_CONF_MSG) && (current_state == STATE_SUSCEPTIBLE)) {
 
       CHECK_RIGHT_EPIDEMIC(INF_CONF_MASTER_SERIAL, INF_CONF_EPI_ID)
 
-      unsigned short victim_id;
+        unsigned short victim_id;
         memcpy(&victim_id, &ibuf[INF_CONF_VICTIM_ID], SIZE_SHORT);
         if (victim_id == my_id) {
           unsigned short source_id;
