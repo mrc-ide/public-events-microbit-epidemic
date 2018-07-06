@@ -10,7 +10,6 @@ import serial.tools.list_ports
 import re
 import csv
 from serial.serialutil import SerialException
-import tkMessageBox
 
 class EpiSerial:
     
@@ -32,22 +31,22 @@ class EpiSerial:
     input_buffer = ""
     
     def get_friendly_id(self, sid):
-        result = -1
-        for i in range(len(sid)):
+        result = '-1'
+        for i in range(len(self.serials)):
             if (self.serials[i]['serial'] == sid):
                 result = self.serials[i]['id']
                 break
         
         # Serial not found - add to file if there are blanks...
         
-        if (result==-1):
-            for i in range(len(sid)):
+        if (result=='-1'):
+            for i in range(len(self.serials)):
                 if (self.serials[i]['serial'] == ''):
                     self.serials[i]['serial'] = sid
-                    result = i
-                    with open('serials.txt', 'w') as f:
+                    result = str(i)
+                    with open('serials.csv', 'w') as f:
                         f.write('serial,id\n')
-                        for i in range(len(sid)):
+                        for i in range(len(self.serials)):
                             s = "{},{}\n".format(self.serials[i]['serial'],self.serials[i]['id'])
                             f.write(s)
         
@@ -142,14 +141,14 @@ class EpiSerial:
                 self.gui_link.sv_mbitver.set(data.split(":")[3])
             
             elif (data[0:4]==self.MSG_IN_REGISTER):
-                serialno = int(data.split(":")[1])
+                serialno = data.split(":")[1]
                 friendlyid = self.get_friendly_id(serialno)
-                if (friendlyid == -1):
-                    tkMessageBox.showerror("Error", "No space in serials.csv file for micro:bit serial no. {}", serialno)
+                if (friendlyid == '-1'):
+                    print "Warning: No space in serials.csv file for micro:bit serial no. {}".format(serialno)
                 else:
-                    msg = (self.MSG_REG + serialno + "\t" + friendlyid + "\t\r\n")
+                    msg = "{}{}\t{}\t\r\n".format(self.MSG_REG, serialno, friendlyid) 
                     self.serial_port.write(msg)
-                    self.gui_link.set_minion_status(data.split(":")[2], 'green')
+                    self.gui_link.set_minion_status(friendlyid, 'green')
                 
             elif (data[0:4]==self.MSG_IN_INF):
                 self.gui_link.set_minion_status(data.split(":")[2], 'red')
