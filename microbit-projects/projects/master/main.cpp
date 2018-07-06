@@ -6,7 +6,7 @@ ManagedString END_SERIAL("#\r\n");
 ManagedString NEWLINE("\r\n");
 ManagedString REG("REG");
 ManagedString COLON(":");
-ManagedString VERSION_INFO("VER:Epi Master 1.3:");
+ManagedString VERSION_INFO("VER:Epi Master 1.4:");
 ManagedString RESTART_INFO("VER:Push reset button and rescan:");
 ManagedString INF_MSG("INF:");
 ManagedString RECOV_MSG("REC:");
@@ -96,6 +96,17 @@ void onData(MicroBitEvent) {
           ManagedString TIME(inf_time);
           ManagedString NCON(ncons);
           sendSerial(INF_MSG + INF + COLON + VID + COLON + TIME + COLON + NCON + END_SERIAL);
+
+          // Message resiliance - broadcast receipt to victim.
+    
+          PacketBuffer omsg(CONF_REP_INF_MSG_SIZE);
+          uint8_t *obuf = omsg.getBytes();
+          obuf[MSG_TYPE] = CONF_REP_INF_MSG;
+          memcpy(&obuf[CONF_REP_INF_MASTER_SERIAL], &serial_no, SIZE_INT);
+          memcpy(&obuf[CONF_REP_INF_EPI_ID], &epi_id, SIZE_SHORT);
+          memcpy(&obuf[CONF_REP_INF_VICTIM_ID], &victim_id, SIZE_SHORT);
+          uBit.radio.datagram.send(omsg);
+
         END_CHECK_RIGHT_EPIDEMIC
 
       // Here, master receives a message giving details of a recovery
@@ -116,6 +127,17 @@ void onData(MicroBitEvent) {
           ManagedString VID(victim_id);
           ManagedString TIME(inf_time);
           sendSerial(RECOV_MSG + VID + COLON + TIME + END_SERIAL);
+          
+          // Message resiliance - broadcast receipt to victim.
+    
+          PacketBuffer omsg(CONF_REP_RECOV_MSG_SIZE);
+          uint8_t *obuf = omsg.getBytes();
+          obuf[MSG_TYPE] = CONF_REP_RECOV_MSG;
+          memcpy(&obuf[CONF_REP_RECOV_MASTER_SERIAL], &serial_no, SIZE_INT);
+          memcpy(&obuf[CONF_REP_RECOV_EPI_ID], &epi_id, SIZE_SHORT);
+          memcpy(&obuf[CONF_REP_RECOV_VICTIM_ID], &victim_id, SIZE_SHORT);
+          uBit.radio.datagram.send(omsg);
+
         END_CHECK_RIGHT_EPIDEMIC
       }
     }

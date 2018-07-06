@@ -4,17 +4,22 @@
 
 MicroBit uBit;
 
-ManagedString VERSION_INFO("VER:Epi Minion 1.3:");
+ManagedString VERSION_INFO("VER:Epi Minion 1.4:");
 ManagedString NEWLINE("\r\n");
 ManagedString END_SERIAL("#\r\n");
 
 unsigned char current_stage = MINION_STAGE_REGISTRY;
 int serial_no;              // My internal serial number
-unsigned short my_id;       // My friendly serial number
+unsigned short my_id;       // My friendly id number
 int master_serial;          // My master's serial number
 
 int master_time0;           // Master (relative) time when params received
 uint64_t my_time0;          // My time when params received
+unsigned char inf_reported;    // Track whether the master acknowledged infection report
+unsigned char recov_reported;  // Track whether the master acknowledged recovery report
+int recovery_time;              // Remember when I recovered (for resilient resending)
+int infection_time;             // Remember when I was infected (for resilient resending)
+unsigned short who_infected_me; // Remember who infected me (for resilient resending)
 
 
 // Parameters for the current epidemic
@@ -36,6 +41,8 @@ void reset() {
   uBit.display.print('U');
   uBit.radio.setGroup(UNREGISTERED_GROUP);
   uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
+  inf_reported=0;
+  recov_reported=0;
 }
 
 float poi(double e) {
@@ -52,9 +59,23 @@ float poi(double e) {
 }
 
 
+void reportInfected() {
+  PacketBuffer omsg(REP_INF_MSG_SIZE);
+  uint8_t *obuf = omsg.getBytes();
+  obuf[MSG_TYPE] = REP_INF_MSG;
+  memcpy(&obuf[REP_INF_MASTER_SERIAL], &master_serial, SIZE_INT);
+  memcpy(&obuf[REP_INF_EPI_ID], &epi_id, SIZE_SHORT);
+  memcpy(&obuf[REP_INF_INFECTOR_ID], &who_infected_me, SIZE_SHORT);
+  memcpy(&obuf[REP_INF_VICTIM_ID], &my_id, SIZE_SHORT);
+  memcpy(&obuf[REP_INF_TIME], &infection_time, SIZE_LONG);
+  memcpy(&obuf[REP_INF_NCONS], &n_contacts, SIZE_SHORT);
+  uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
+  uBit.radio.datagram.send(omsg);
+}
+
 // Become infected...
 
-void become_infected(bool set_contacts, unsigned short infector_id) {
+void becomeInfected(bool set_contacts) {
   if (current_state == STATE_SUSCEPTIBLE) {
     uBit.display.print('I');
     if (set_contacts) {
@@ -62,18 +83,8 @@ void become_infected(bool set_contacts, unsigned short infector_id) {
       else n_contacts = (int) poi(param_R0);
     }
 
-    int now = (int) ((uBit.systemTime() - my_time0) + master_time0);
-    PacketBuffer omsg(REP_INF_MSG_SIZE);
-    uint8_t *obuf = omsg.getBytes();
-    obuf[MSG_TYPE] = REP_INF_MSG;
-    memcpy(&obuf[REP_INF_MASTER_SERIAL], &master_serial, SIZE_INT);
-    memcpy(&obuf[REP_INF_EPI_ID], &epi_id, SIZE_SHORT);
-    memcpy(&obuf[REP_INF_INFECTOR_ID], &infector_id, SIZE_SHORT);
-    memcpy(&obuf[REP_INF_VICTIM_ID], &my_id, SIZE_SHORT);
-    memcpy(&obuf[REP_INF_TIME], &now, SIZE_LONG);
-    memcpy(&obuf[REP_INF_NCONS], &n_contacts, SIZE_SHORT);
-    uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
-    uBit.radio.datagram.send(omsg);
+    infection_time = (int) ((uBit.systemTime() - my_time0) + master_time0);
+    reportInfected();
     current_state = STATE_INFECTIOUS;
   }
 }
@@ -93,6 +104,18 @@ void become_infected(bool set_contacts, unsigned short infector_id) {
 
 #define END_CHECK_RIGHT_EPIDEMIC }}
 
+
+void reportRecovery() {
+  PacketBuffer omsg(REP_RECOV_MSG_SIZE);
+  uint8_t *obuf = omsg.getBytes();
+  obuf[MSG_TYPE] = REP_RECOV_MSG;
+  memcpy(&obuf[REP_RECOV_MASTER_SERIAL], &master_serial, SIZE_INT);
+  memcpy(&obuf[REP_RECOV_EPI_ID], &epi_id, SIZE_SHORT);
+  memcpy(&obuf[REP_INF_VICTIM_ID], &my_id, SIZE_SHORT);
+  memcpy(&obuf[REP_INF_TIME], &recovery_time, SIZE_LONG);
+  uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
+  uBit.radio.datagram.send(omsg);
+}
 // Receive a radio message.
 
 void onData(MicroBitEvent) {
@@ -162,12 +185,13 @@ void onData(MicroBitEvent) {
         memcpy(&victim_id, &ibuf[SEED_VICTIM_ID], SIZE_SHORT);
         if (victim_id == my_id) {
           memcpy(&n_contacts, &ibuf[SEED_N_CONS], SIZE_CHAR);
-          become_infected(n_contacts==0, 32767);
+          who_infected_me = 32767;
+          becomeInfected(n_contacts==0);
         }
 
       END_CHECK_RIGHT_EPIDEMIC
 
-    // Here, minion (in any state) receives an infectious broadcast. 
+    // Here, minion (in any state) receives an infectious broadcast.
     // ie - you can be in any state to be a contact, but only susceptibles will then
     // become infectious and make their own contacts.
 
@@ -182,9 +206,9 @@ void onData(MicroBitEvent) {
         exposure_tracker[source_id]++;
 
         if (exposure_tracker[source_id] == param_exposure) {
-        
-          // If we've reached the exposure threshold from a single source, 
-          // we now might be one of their contacts - HOWEVER - this requres 
+
+          // If we've reached the exposure threshold from a single source,
+          // we now might be one of their contacts - HOWEVER - this requres
           // confirmation from the infector, because there may be multiple replies
           // to the broadcast message, and we might be too late.
 
@@ -207,7 +231,7 @@ void onData(MicroBitEvent) {
           memcpy(&obuf[INF_CAND_VICTIM_ID], &my_id, SIZE_SHORT);
           uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
           uBit.radio.datagram.send(omsg);
-          
+
 
         }
 
@@ -243,16 +267,8 @@ void onData(MicroBitEvent) {
             n_contacts--;
             if (n_contacts == 0) {
               current_state = STATE_RECOVERED;
-              int now = (int) ((uBit.systemTime() - my_time0) + master_time0);
-              PacketBuffer omsg(REP_RECOV_MSG_SIZE);
-              uint8_t *obuf = omsg.getBytes();
-              obuf[MSG_TYPE] = REP_RECOV_MSG;
-              memcpy(&obuf[REP_RECOV_MASTER_SERIAL], &master_serial, SIZE_INT);
-              memcpy(&obuf[REP_RECOV_EPI_ID], &epi_id, SIZE_SHORT);
-              memcpy(&obuf[REP_INF_VICTIM_ID], &my_id, SIZE_SHORT);
-              memcpy(&obuf[REP_INF_TIME], &now, SIZE_LONG);
-              uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
-              uBit.radio.datagram.send(omsg);
+              recovery_time = (int) ((uBit.systemTime() - my_time0) + master_time0);
+              reportRecovery();
               uBit.display.print('R');
             }
           }
@@ -271,11 +287,36 @@ void onData(MicroBitEvent) {
         unsigned short victim_id;
         memcpy(&victim_id, &ibuf[INF_CONF_VICTIM_ID], SIZE_SHORT);
         if (victim_id == my_id) {
-          unsigned short source_id;
-          memcpy(&source_id, &ibuf[INF_CONF_SOURCE_ID], SIZE_SHORT);
-          become_infected(true, source_id);
+          memcpy(&who_infected_me, &ibuf[INF_CONF_SOURCE_ID], SIZE_SHORT);
+          becomeInfected(true);
         }
 
+      END_CHECK_RIGHT_EPIDEMIC
+
+    // If we're in Infectious / Recovered state, listen for the confirmation that
+    // our infection report was received by the master.
+
+    } else if ((ibuf[MSG_TYPE] == CONF_REP_INF_MSG) && (current_state != STATE_SUSCEPTIBLE)) {
+
+      CHECK_RIGHT_EPIDEMIC(CONF_REP_INF_MASTER_SERIAL, CONF_REP_INF_EPI_ID)
+        unsigned short victim_id;
+        memcpy(&victim_id, &ibuf[CONF_REP_INF_VICTIM_ID], SIZE_SHORT);
+        if (victim_id == my_id) {
+          inf_reported = 1;
+        }
+      END_CHECK_RIGHT_EPIDEMIC
+
+            // If we're in Infectious / Recovered state, listen for the confirmation that
+    // our infection report was received by the master.
+
+    } else if ((ibuf[MSG_TYPE] == CONF_REP_RECOV_MSG) && (current_state == STATE_RECOVERED)) {
+
+      CHECK_RIGHT_EPIDEMIC(CONF_REP_RECOV_MASTER_SERIAL, CONF_REP_RECOV_EPI_ID)
+        unsigned short victim_id;
+        memcpy(&victim_id, &ibuf[CONF_REP_RECOV_VICTIM_ID], SIZE_SHORT);
+        if (victim_id == my_id) {
+          recov_reported = 1;
+        }
       END_CHECK_RIGHT_EPIDEMIC
 
     }
@@ -349,7 +390,7 @@ int main() {
 
   reset();
   while ((current_stage == MINION_STAGE_REGISTRY) || (current_stage==MINION_STAGE_EPIDEMIC)) {
-    
+
     while (current_stage == MINION_STAGE_REGISTRY) {
       uBit.sleep(1000);
       broadcastRegister();
@@ -358,6 +399,8 @@ int main() {
     while (current_stage == MINION_STAGE_EPIDEMIC) {
       uBit.sleep(1000);
       if (current_state == STATE_INFECTIOUS) broadcastInfection();
+      if ((current_state != STATE_INFECTIOUS) && (inf_reported==0)) reportInfected();
+      if ((current_state == STATE_RECOVERED) && (recov_reported==0)) reportRecovery();
     }
   }
 
