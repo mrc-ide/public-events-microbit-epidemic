@@ -14,7 +14,7 @@ from tkinter.scrolledtext import ScrolledText
 
 class EpiGui:
     
-    REQ_MASTER_VERSION = 'Epi Master 1.4'
+    REQ_MASTER_VERSION = 'Epi Master 1.5'
     
     CURRENT_EPI_ID = -1
     

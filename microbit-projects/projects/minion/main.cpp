@@ -4,7 +4,8 @@
 
 MicroBit uBit;
 
-ManagedString VERSION_INFO("VER:Epi Minion 1.4:");
+ManagedString VERSION_INFO("VER:Epi Minion 1.5:");
+#define MINION_BUILD_NO 5
 ManagedString NEWLINE("\r\n");
 ManagedString END_SERIAL("#\r\n");
 
@@ -348,6 +349,7 @@ void broadcastRegister() {
   obuf[MSG_TYPE] = REG_MSG;
   serial_no = microbit_serial_number();
   memcpy(&obuf[REG_SERIAL], &serial_no, SIZE_INT);
+  obuf[REG_BUILD] = MINION_BUILD_NO;
   uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
   uBit.radio.datagram.send(omsg);
 }

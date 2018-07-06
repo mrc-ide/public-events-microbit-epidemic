@@ -50,7 +50,8 @@
 
 #define REG_MSG 4
   #define REG_SERIAL 1
-  #define REG_MSG_SIZE 5
+  #define REG_BUILD 5
+  #define REG_MSG_SIZE 6
 
 #define REG_ACK_MSG 5
   #define REG_ACK_MINION_SERIAL 1

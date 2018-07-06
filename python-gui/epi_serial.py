@@ -29,6 +29,7 @@ class EpiSerial:
     MICROBIT_VID = 3368
     
     input_buffer = ""
+    latest_buildno = '5'
     
     def get_friendly_id(self, sid):
         result = '-1'
@@ -142,7 +143,12 @@ class EpiSerial:
             
             elif (data[0:4]==self.MSG_IN_REGISTER):
                 serialno = data.split(":")[1]
+                buildno = data.split(":")[2]
                 friendlyid = self.get_friendly_id(serialno)
+                if (buildno != self.latest_buildno):
+                    print "Warning: micro:bit {} ({}) build {} is out of date. Update to {}".format(serialno, 
+                        friendlyid, buildno, self.latest_buildno)
+
                 if (friendlyid == '-1'):
                     print "Warning: No space in serials.csv file for micro:bit serial no. {}".format(serialno)
                 else:

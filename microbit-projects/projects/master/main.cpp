@@ -6,7 +6,7 @@ ManagedString END_SERIAL("#\r\n");
 ManagedString NEWLINE("\r\n");
 ManagedString REG("REG");
 ManagedString COLON(":");
-ManagedString VERSION_INFO("VER:Epi Master 1.4:");
+ManagedString VERSION_INFO("VER:Epi Master 1.5:");
 ManagedString RESTART_INFO("VER:Push reset button and rescan:");
 ManagedString INF_MSG("INF:");
 ManagedString RECOV_MSG("REC:");
@@ -63,11 +63,14 @@ void onData(MicroBitEvent) {
 
         // Fetch serial number, and look-up a more friendly version.
         int incoming_serial;
+        unsigned char build_no;
         memcpy(&incoming_serial, &ibuf[REG_SERIAL], SIZE_INT);
+        memcpy(&build_no, &ibuf[REG_BUILD], SIZE_CHAR);
         ManagedString m_id(incoming_serial);
+        ManagedString b_id(build_no);
  
         // Report to serial port, and wait for serial reply with friendly id msg.
-        sendSerial(REG + COLON + m_id + END_SERIAL);
+        sendSerial(REG + COLON + m_id + COLON + b_id + END_SERIAL);
 
       }
 
