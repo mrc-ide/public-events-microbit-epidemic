@@ -29,7 +29,7 @@ class EpiSerial:
     MICROBIT_VID = 3368
     
     input_buffer = ""
-    latest_buildno = '5'
+    latest_minion_buildno = '6'
     
     def get_friendly_id(self, sid):
         result = '-1'
@@ -145,7 +145,7 @@ class EpiSerial:
                 serialno = data.split(":")[1]
                 buildno = data.split(":")[2]
                 friendlyid = self.get_friendly_id(serialno)
-                if (buildno != self.latest_buildno):
+                if (buildno != self.latest_minion_buildno):
                     print "Warning: micro:bit {} ({}) build {} is out of date. Update to {}".format(serialno, 
                         friendlyid, buildno, self.latest_buildno)
 

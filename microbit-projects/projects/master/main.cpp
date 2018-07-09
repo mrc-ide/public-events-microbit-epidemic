@@ -6,7 +6,7 @@ ManagedString END_SERIAL("#\r\n");
 ManagedString NEWLINE("\r\n");
 ManagedString REG("REG");
 ManagedString COLON(":");
-ManagedString VERSION_INFO("VER:Epi Master 1.5.1:");
+ManagedString VERSION_INFO("VER:Epi Master 1.6:");
 ManagedString RESTART_INFO("VER:Push reset button and rescan:");
 ManagedString INF_MSG("INF:");
 ManagedString RECOV_MSG("REC:");
@@ -86,7 +86,8 @@ void onData(MicroBitEvent) {
 
       if (ibuf[MSG_TYPE] == REP_INF_MSG) {
         CHECK_RIGHT_EPIDEMIC(REP_INF_MASTER_SERIAL, REP_INF_EPI_ID)
-          unsigned short infector_id;
+          
+        unsigned short infector_id;
           memcpy(&infector_id, &ibuf[REP_INF_INFECTOR_ID], SIZE_SHORT);
           unsigned short victim_id;
           memcpy(&victim_id, &ibuf[REP_INF_VICTIM_ID], SIZE_SHORT);
@@ -126,7 +127,7 @@ void onData(MicroBitEvent) {
           unsigned short victim_id;
           memcpy(&victim_id, &ibuf[REP_RECOV_VICTIM_ID], SIZE_SHORT);
           int inf_time;
-          memcpy(&inf_time, &ibuf[REP_INF_TIME], SIZE_INT);
+          memcpy(&inf_time, &ibuf[REP_RECOV_TIME], SIZE_INT);
           ManagedString VID(victim_id);
           ManagedString TIME(inf_time);
           sendSerial(RECOV_MSG + VID + COLON + TIME + END_SERIAL);

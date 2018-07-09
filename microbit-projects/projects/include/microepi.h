@@ -126,7 +126,6 @@
   #define CONF_REP_RECOV_VICTIM_ID 7
   #define CONF_REP_RECOV_MSG_SIZE 9
 
-#define SIZE_LONG 8
 #define SIZE_FLOAT 4
 #define SIZE_INT 4
 #define SIZE_SHORT 2

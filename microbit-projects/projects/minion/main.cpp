@@ -4,8 +4,8 @@
 
 MicroBit uBit;
 
-ManagedString VERSION_INFO("VER:Epi Minion 1.5:");
-#define MINION_BUILD_NO 5
+ManagedString VERSION_INFO("VER:Epi Minion 1.6:");
+#define MINION_BUILD_NO 6
 ManagedString NEWLINE("\r\n");
 ManagedString END_SERIAL("#\r\n");
 
@@ -42,8 +42,8 @@ void reset() {
   uBit.display.print('U');
   uBit.radio.setGroup(UNREGISTERED_GROUP);
   uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
-  inf_reported=0;
-  recov_reported=0;
+  inf_reported = 0;
+  recov_reported = 0;
 }
 
 float poi(double e) {
@@ -59,7 +59,6 @@ float poi(double e) {
   return n;
 }
 
-
 void reportInfected() {
   PacketBuffer omsg(REP_INF_MSG_SIZE);
   uint8_t *obuf = omsg.getBytes();
@@ -68,8 +67,8 @@ void reportInfected() {
   memcpy(&obuf[REP_INF_EPI_ID], &epi_id, SIZE_SHORT);
   memcpy(&obuf[REP_INF_INFECTOR_ID], &who_infected_me, SIZE_SHORT);
   memcpy(&obuf[REP_INF_VICTIM_ID], &my_id, SIZE_SHORT);
-  memcpy(&obuf[REP_INF_TIME], &infection_time, SIZE_LONG);
-  memcpy(&obuf[REP_INF_NCONS], &n_contacts, SIZE_SHORT);
+  memcpy(&obuf[REP_INF_TIME], &infection_time, SIZE_INT);
+  memcpy(&obuf[REP_INF_NCONS], &n_contacts, SIZE_CHAR);
   uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
   uBit.radio.datagram.send(omsg);
 }
@@ -80,12 +79,11 @@ void becomeInfected(bool set_contacts) {
   if (current_state == STATE_SUSCEPTIBLE) {
     uBit.display.print('I');
     if (set_contacts) {
-      if (param_Rtype == 0) n_contacts = (int) param_R0;
-      else n_contacts = (int) poi(param_R0);
+      if (param_Rtype == 0) n_contacts = (unsigned char) param_R0;
+      else n_contacts = (unsigned char) poi(param_R0);
     }
 
     infection_time = (int) ((uBit.systemTime() - my_time0) + master_time0);
-    reportInfected();
     current_state = STATE_INFECTIOUS;
   }
 }
@@ -112,8 +110,8 @@ void reportRecovery() {
   obuf[MSG_TYPE] = REP_RECOV_MSG;
   memcpy(&obuf[REP_RECOV_MASTER_SERIAL], &master_serial, SIZE_INT);
   memcpy(&obuf[REP_RECOV_EPI_ID], &epi_id, SIZE_SHORT);
-  memcpy(&obuf[REP_INF_VICTIM_ID], &my_id, SIZE_SHORT);
-  memcpy(&obuf[REP_INF_TIME], &recovery_time, SIZE_LONG);
+  memcpy(&obuf[REP_RECOV_VICTIM_ID], &my_id, SIZE_SHORT);
+  memcpy(&obuf[REP_RECOV_TIME], &recovery_time, SIZE_INT);
   uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
   uBit.radio.datagram.send(omsg);
 }
@@ -232,7 +230,6 @@ void onData(MicroBitEvent) {
           memcpy(&obuf[INF_CAND_VICTIM_ID], &my_id, SIZE_SHORT);
           uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
           uBit.radio.datagram.send(omsg);
-
 
         }
 
@@ -401,7 +398,7 @@ int main() {
     while (current_stage == MINION_STAGE_EPIDEMIC) {
       uBit.sleep(1000);
       if (current_state == STATE_INFECTIOUS) broadcastInfection();
-      if ((current_state != STATE_INFECTIOUS) && (inf_reported==0)) reportInfected();
+      if ((current_state != STATE_SUSCEPTIBLE) && (inf_reported==0)) reportInfected();
       if ((current_state == STATE_RECOVERED) && (recov_reported==0)) reportRecovery();
     }
   }
