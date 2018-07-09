@@ -25,6 +25,10 @@ class EpiGui:
     BUTTON_COL = 16
     TOP = 2
     LEFT = 12
+    
+    STATUS_SUSCEPTIBLE = 'green'
+    STATUS_INFECTED = 'red'
+    STATUS_RECOVERED = 'blue' 
                 
     # The defaults are:
     # (1) The ID of an epidemic (so we can distinguish one epidemic from another)
@@ -249,7 +253,7 @@ class EpiGui:
         sid = self.sv_seedid.get()
         if (len(sid)>0):
             sid = int(sid)
-            if (self.minions[sid % 10][sid / 10]['bg'] == 'green'):
+            if (self.minions[sid % 10][sid / 10]['bg'] == self.STATUS_SUSCEPTIBLE):
                 self.b_seedEpidemic['state'] = 'active'
                 
                 
@@ -257,6 +261,9 @@ class EpiGui:
     
     def click_send_params(self):
         self.save_defaults()
+        self.sv_susc.set('0')
+        self.sv_inf.set('0')
+        self.sv_recov.set('0')
         self.b_setMaster.grid_forget()
         self.b_sendParams.grid_forget()
         self.b_seedEpidemic.grid(column = 0, row = 18, columnspan = 5)
@@ -275,6 +282,16 @@ class EpiGui:
         self.cb_forcer.grid(column = 1 + self.LEFT, row = 2 + self.TOP, sticky = "W")
         self.b_sendParams['state']='disabled'
         self.b_seedEpidemic['state']='disabled'
+        
+        self.l_susc.grid(column = self.LEFT, row = 6 + self.TOP, sticky = "E")
+        self.l_susc2.grid(column = 1 + self.LEFT, row = 6 + self.TOP, sticky = "E")
+        self.l_inf.grid(column = self.LEFT, row = 7 + self.TOP, sticky = "E")
+        self.l_inf2.grid(column = 1 + self.LEFT, row = 7 + self.TOP, sticky = "E")
+        self.l_recov.grid(column = self.LEFT, row = 8 + self.TOP, sticky = "E")
+        self.l_recov2.grid(column = 1 + self.LEFT, row = 8 + self.TOP, sticky = "E")
+        
+        
+        
         
 
             
@@ -312,7 +329,17 @@ class EpiGui:
             
     def set_minion_status(self, minion_id, status):
         m_id = int(minion_id)
-        self.minions[m_id % 10][m_id / 10]['bg'] = status
+        if (self.minions[m_id % 10][m_id / 10]['bg'] != status):
+            self.minions[m_id % 10][m_id / 10]['bg'] = status
+            if (status == self.STATUS_SUSCEPTIBLE):
+                self.sv_susc.set(str(int(self.sv_susc)+1))
+            elif (status == self.STATUS_INFECTED):
+                self.sv_susc.set(str(int(self.sv_susc)-1))
+                self.sv_inf.set(str(int(self.sv_inf)+1))
+            elif (status == self.STATUS_RECOVERED):
+                self.sv_inf.set(str(int(self.sv_inf)-1))
+                self.sv_recov.set(str(int(self.sv_inf)+1))
+                          
         self.update_seed_epi_button()
         
     # Update the instructions box for what to do in this stage of the epidemic.
@@ -446,7 +473,7 @@ class EpiGui:
         self.e_r0.bind("<Key>", self.set_params_unsaved)
         self.e_epidno.bind("<Key>", self.change_epidno)
 
-        # Gui Elements for the Seeding Page
+        # Gui Elements for the Seeding / Progress Page
 
         self.l_seedid = Label(self.window, text = "Victim:")
         self.sv_seedid = StringVar()
@@ -457,6 +484,16 @@ class EpiGui:
         self.tb_forcer = Checkbutton(self.window, text="", variable = self.iv_forcer, command=self.click_forcer)
         self.l_ncons = Label(self.window, text = "No. contacts")
         self.cb_forcer = Combobox(self.window, state = 'readonly')
+        
+        self.l_susc = Label(self.window, text = "Susceptible:")
+        self.sv_susc = StringVar()
+        self.l_susc2 = Label(self.window, textvariable = self.sv_susc)
+        self.l_inf = Label(self.window, text="Infected:")
+        self.sv_inf = StringVar()
+        self.l_inf2 = Label(self.window, textvariable = self.sv_inf)
+        self.l_recov = Label(self.window, text = "Recovered:")
+        self.sv_recov = StringVar()
+        self.l_recov2 = Label(self.window, textvariable = self.sv_recov)
 
         self.cb_forcer['values'] = [1,2,3,4,5,6]
         self.cb_forcer.current(3)

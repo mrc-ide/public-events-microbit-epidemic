@@ -154,14 +154,14 @@ class EpiSerial:
                 else:
                     msg = "{}{}\t{}\t\r\n".format(self.MSG_REG, serialno, friendlyid) 
                     self.serial_port.write(msg)
-                    self.gui_link.set_minion_status(friendlyid, 'green')
+                    self.gui_link.set_minion_status(friendlyid, self.gui_link.STATUS_SUSCEPTIBLE)
                 
             elif (data[0:4]==self.MSG_IN_INF):
-                self.gui_link.set_minion_status(data.split(":")[2], 'red')
+                self.gui_link.set_minion_status(data.split(":")[2], self.gui_link.STATUS_INFECTED)
                 print data
                 
             elif (data[0:4]==self.MSG_IN_RECOV):
-                self.gui_link.set_minion_status(data.split(":")[1], 'blue')
+                self.gui_link.set_minion_status(data.split(":")[1], self.gui_link.STATUS_RECOVERED)
                 print data
                 
             else:
