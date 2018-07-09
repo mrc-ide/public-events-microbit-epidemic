@@ -147,7 +147,7 @@ class EpiSerial:
                 friendlyid = self.get_friendly_id(serialno)
                 if (buildno != self.latest_minion_buildno):
                     print "Warning: micro:bit {} ({}) build {} is out of date. Update to {}".format(serialno, 
-                        friendlyid, buildno, self.latest_buildno)
+                        friendlyid, buildno, self.latest_minion_buildno)
 
                 if (friendlyid == '-1'):
                     print "Warning: No space in serials.csv file for micro:bit serial no. {}".format(serialno)
