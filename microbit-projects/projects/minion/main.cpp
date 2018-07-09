@@ -9,10 +9,10 @@ ManagedString VERSION_INFO("VER:Epi Minion 1.6:");
 ManagedString NEWLINE("\r\n");
 ManagedString END_SERIAL("#\r\n");
 
-unsigned char current_stage = MINION_STAGE_REGISTRY;
-int serial_no;              // My internal serial number
-unsigned short my_id;       // My friendly id number
-int master_serial;          // My master's serial number
+unsigned char current_stage; // Can be MINION_STAGE_REGISTRY, or MINION_STAGE_EPIDEMIC, or MINION_STAGE_POWEROFF.
+int serial_no;               // My internal serial number
+unsigned short my_id;        // My friendly id number
+int master_serial;           // My master's serial number
 
 int master_time0;           // Master (relative) time when params received
 uint64_t my_time0;          // My time when params received
@@ -184,13 +184,13 @@ void onData(MicroBitEvent) {
         memcpy(&victim_id, &ibuf[SEED_VICTIM_ID], SIZE_SHORT);
         if (victim_id == my_id) {
           memcpy(&n_contacts, &ibuf[SEED_N_CONS], SIZE_CHAR);
-          who_infected_me = 32767;
+          who_infected_me = SEED_CONTACT_ID;
           becomeInfected(n_contacts==0);
         }
 
       END_CHECK_RIGHT_EPIDEMIC
 
-    // Here, minion (in any state) receives an infectious broadcast.
+    // Here, a minion (in any state) receives an infectious broadcast.
     // ie - you can be in any state to be a contact, but only susceptibles will then
     // become infectious and make their own contacts.
 
@@ -202,40 +202,47 @@ void onData(MicroBitEvent) {
 
         unsigned short source_id;
         memcpy(&source_id, &ibuf[INF_BCAST_SOURCE_ID], SIZE_SHORT);
-        exposure_tracker[source_id]++;
+        if (exposure_tracker[source_id] != ALREADY_CONTACTED) {
+          exposure_tracker[source_id]++;
+          
+          // Consider >= below - wondering whether a large number of simultaneous
+          // replies causes a problem...
+          // Perhaps also consider a short random pause before sending.
 
-        if (exposure_tracker[source_id] == param_exposure) {
+          if (exposure_tracker[source_id] == param_exposure) {
 
-          // If we've reached the exposure threshold from a single source,
-          // we now might be one of their contacts - HOWEVER - this requres
-          // confirmation from the infector, because there may be multiple replies
-          // to the broadcast message, and we might be too late.
+            // If we've reached the exposure threshold from a single source,
+            // we now might be one of their contacts - HOWEVER - this requres
+            // confirmation from the infector, because there may be multiple replies
+            // to the broadcast message, and we might be too late.
 
-          // Using == param_exposure here, to ensure we only offer ourselves
-          // as a contact once.
+            // Using == param_exposure here, to ensure we only offer ourselves
+            // as a contact once.
 
-          // So, we send a message back to the infector, indicating we are
-          // willing to be one of their infections.
+            // So, we send a message back to the infector, indicating we are
+            // willing to be one of their infections.
 
-          // Broadcast a candidate infection message with:
-          // master_serial (int), epidemic id (short)
-          // the infector's id (short), my id (short)
+            // Broadcast a candidate infection message with:
+            // master_serial (int), epidemic id (short)
+            // the infector's id (short), my id (short)
 
-          PacketBuffer omsg(INF_CAND_MSG_SIZE);
-          uint8_t *obuf = omsg.getBytes();
-          obuf[MSG_TYPE] = INF_CAND_MSG;
-          memcpy(&obuf[INF_CAND_MASTER_SERIAL], &master_serial, SIZE_INT);
-          memcpy(&obuf[INF_CAND_EPI_ID], &epi_id, SIZE_SHORT);
-          memcpy(&obuf[INF_CAND_SOURCE_ID], &source_id, SIZE_SHORT);
-          memcpy(&obuf[INF_CAND_VICTIM_ID], &my_id, SIZE_SHORT);
-          uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
-          uBit.radio.datagram.send(omsg);
+            PacketBuffer omsg(INF_CAND_MSG_SIZE);
+            uint8_t *obuf = omsg.getBytes();
+            obuf[MSG_TYPE] = INF_CAND_MSG;
+            memcpy(&obuf[INF_CAND_MASTER_SERIAL], &master_serial, SIZE_INT);
+            memcpy(&obuf[INF_CAND_EPI_ID], &epi_id, SIZE_SHORT);
+            memcpy(&obuf[INF_CAND_SOURCE_ID], &source_id, SIZE_SHORT);
+            memcpy(&obuf[INF_CAND_VICTIM_ID], &my_id, SIZE_SHORT);
+            uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
+            uBit.radio.datagram.send(omsg);
 
+          }
         }
 
       END_CHECK_RIGHT_EPIDEMIC
-
-    // And the code for an infectious minion handling an incoming infection candidate message
+    // Here: we receive a "candidate infection" message, which is a reply to a previous "infection broadcast"
+    // message we sent. We care about this message if we are infectious and wanting to confirm contacts.
+    // When we have made sufficient contacts, we stop being infectious. 
 
     } else if ((ibuf[MSG_TYPE] == INF_CAND_MSG) && (current_state == STATE_INFECTIOUS)) {
 
@@ -245,12 +252,9 @@ void onData(MicroBitEvent) {
         memcpy(&source_id, &ibuf[INF_CAND_SOURCE_ID], SIZE_SHORT);
         if (source_id == my_id) {
 
-          // Note that we "play along" even if we've recovered; a recovered
-          // minion still counts as a contact - just when we're recovered, we
-          // don't start making any new contacts of our own.
-
           unsigned short victim_id;
           memcpy(&victim_id, &ibuf[INF_CAND_VICTIM_ID], SIZE_SHORT);
+
           PacketBuffer omsg(INF_CONF_MSG_SIZE);
           uint8_t *obuf = omsg.getBytes();
           obuf[MSG_TYPE] = INF_CONF_MSG;
@@ -276,17 +280,18 @@ void onData(MicroBitEvent) {
 
       // Now, suppose we've received a confirmation message (ie, the reply from
       // our INF_CAND_MSG). We are now a contact - and if we're susceptible, then
-      // we now become infectious. (Otherwise, we don't need to do anything).
+      // we now become infectious.
 
-    } else if ((ibuf[MSG_TYPE] == INF_CONF_MSG) && (current_state == STATE_SUSCEPTIBLE)) {
-
+    } else if ((ibuf[MSG_TYPE] == INF_CONF_MSG) {
+      
       CHECK_RIGHT_EPIDEMIC(INF_CONF_MASTER_SERIAL, INF_CONF_EPI_ID)
 
         unsigned short victim_id;
         memcpy(&victim_id, &ibuf[INF_CONF_VICTIM_ID], SIZE_SHORT);
         if (victim_id == my_id) {
           memcpy(&who_infected_me, &ibuf[INF_CONF_SOURCE_ID], SIZE_SHORT);
-          becomeInfected(true);
+          if (current_state==STATE_SUSCEPTIBLE) becomeInfected(true);
+          exposure[who_infected_me]=ALREADY_CONTACTED;
         }
 
       END_CHECK_RIGHT_EPIDEMIC
@@ -326,6 +331,7 @@ void onData(MicroBitEvent) {
 // every second from main loop, if in the infectious state)
 
 void broadcastInfection() {
+  uBit.display.scroll('B');
   PacketBuffer omsg(INF_BCAST_MSG_SIZE);
   uint8_t *obuf = omsg.getBytes();
   obuf[MSG_TYPE] = INF_BCAST_MSG;

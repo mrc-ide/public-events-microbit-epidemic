@@ -132,4 +132,7 @@
 #define SIZE_CHAR 1
 #define INT_MAX 2147483647
 
+#define ALREADY_CONTACTED 32766
+#define SEED_CONTACT_ID 32767
+
 #endif
