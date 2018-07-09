@@ -10,17 +10,30 @@ import javax.imageio.ImageIO;
 
 public class MakeStickers {
   
+  public static void argsMsg() {
+    System.out.println("Example usage: java MakeStickers 0 99 sticker.png");
+    System.exit(-1);
+  }
+
   public static void main(String[] args) throws Exception {
     int start = 0;
     int end = 99;
-    
+    String sticker = "sticker.png";
+    if (args.length==3) {
+      try {
+        start = Integer.parseInt(args[0]);
+        end = Integer.parseInt(args[1]);
+        sticker = args[2];
+      } catch (Exception e) { argsMsg(); }
+    } else if (args.length!=0) argsMsg();
+
     BufferedImage bi = new BufferedImage(4960, 7008, BufferedImage.TYPE_3BYTE_BGR);
     Graphics2D g = (Graphics2D) bi.getGraphics();
     g.setColor(Color.WHITE);
     g.fillRect(0, 0, 4960, 7008);
     g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
     g.setFont(new Font("Calibri",Font.BOLD, 192));
-    BufferedImage back = ImageIO.read(new File("sticker.png"));
+    BufferedImage back = ImageIO.read(new File(sticker));
     int page=1;
     FontMetrics fm = g.getFontMetrics();
     while (start<=end) {
