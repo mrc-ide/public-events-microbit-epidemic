@@ -6,7 +6,7 @@ ManagedString END_SERIAL("#\r\n");
 ManagedString NEWLINE("\r\n");
 ManagedString REG("REG");
 ManagedString COLON(":");
-ManagedString VERSION_INFO("VER:Epi Master 1.5:");
+ManagedString VERSION_INFO("VER:Epi Master 1.5.1:");
 ManagedString RESTART_INFO("VER:Push reset button and rescan:");
 ManagedString INF_MSG("INF:");
 ManagedString RECOV_MSG("REC:");
@@ -165,42 +165,7 @@ void receiveSerial(MicroBitEvent) {
       ManagedString MB_VERSION(uBit.systemVersion());
       sendSerial(VERSION_INFO + SERIAL_NO + COLON + MB_VERSION + END_SERIAL);
 
-    } else if (msg.charAt(0) == SER_REG_MSG) {
-      int start = 1;
-      int param_no = 0;
-      int minion_serial_no;
-      unsigned short friendly_id;
-      for (int i = 1; i<msg.length(); i++) {
-        if (msg.charAt(i)=='\t') {
-          ManagedString bit = msg.substring(start, i-start);
-          const char* bitp = bit.toCharArray();
-          if (param_no==0)      minion_serial_no = (int) atoi(bitp);
-          else if (param_no==1) friendly_id = (unsigned short) atoi(bitp);
-        }
-      }
-
-      // Reply to minion by broadcasting friendly id and params:-
-      // MSG_ID [char]  Minion_Serial_No [int]   Minion_Friendly_Id [Short] 
-      // Master_Serial_No [int]   Master_Time [long]
-      // Epidemic_ID [short]   R0 [float]  Rtype [Char]  Rpower [Char]
-      // Exposure [Short]
-
-      int the_time = (int) (uBit.systemTime() - time0);
-
-      PacketBuffer omsg(REG_ACK_SIZE);
-      uint8_t *obuf = omsg.getBytes();
-      obuf[MSG_TYPE] = REG_ACK_MSG;
-      memcpy(&obuf[REG_ACK_MINION_SERIAL], &minion_serial_no, SIZE_INT);
-      memcpy(&obuf[REG_ACK_ID], &friendly_id, SIZE_SHORT);
-      memcpy(&obuf[REG_ACK_MASTER_SERIAL], &serial_no, SIZE_INT);
-      memcpy(&obuf[REG_ACK_MASTER_TIME], &the_time, SIZE_INT);
-      memcpy(&obuf[REG_ACK_EPID], &epi_id, SIZE_SHORT);
-      memcpy(&obuf[REG_ACK_R0], &param_R0, SIZE_FLOAT);
-      memcpy(&obuf[REG_ACK_RTYPE], &param_Rtype, SIZE_CHAR);
-      memcpy(&obuf[REG_ACK_RPOWER], &param_rpower, SIZE_SHORT);
-      memcpy(&obuf[REG_ACK_EXPOSURE], &param_exposure, SIZE_SHORT);
-      uBit.radio.datagram.send(omsg);
-
+   
     // Receive parameter values, which cause us to move into
     // recruitment stage, and handle all the minions' requests
     // to play the game.
@@ -234,13 +199,53 @@ void receiveSerial(MicroBitEvent) {
       ManagedString SERIAL_NO(serial_no);
       ManagedString MB_VERSION(uBit.systemVersion());
       sendSerial(RESTART_INFO + SERIAL_NO + COLON + MB_VERSION + END_SERIAL);
-     }
+     
     
+     // This is the reply message to registration, which gives the serial number
+     // and friendly id pair for a minion that's just registered itself. 
+     
+     } else if (msg.charAt(0) == SER_REG_MSG) {
+      int start = 1;
+      int param_no = 0;
+      int minion_serial_no;
+      unsigned short friendly_id;
+      for (int i = 1; i<msg.length(); i++) {
+        if (msg.charAt(i)=='\t') {
+          ManagedString bit = msg.substring(start, i-start);
+          const char* bitp = bit.toCharArray();
+          if (param_no==0)      minion_serial_no = (int) atoi(bitp);
+          else if (param_no==1) friendly_id = (unsigned short) atoi(bitp);
+          start = i+1;
+          param_no++;
+        }
+      }
+
+      // Reply to minion by broadcasting friendly id and params:-
+      // MSG_ID [char]  Minion_Serial_No [int]   Minion_Friendly_Id [Short] 
+      // Master_Serial_No [int]   Master_Time [long]
+      // Epidemic_ID [short]   R0 [float]  Rtype [Char]  Rpower [Char]
+      // Exposure [Short]
+
+      int the_time = (int) (uBit.systemTime() - time0);
+
+      PacketBuffer omsg(REG_ACK_SIZE);
+      uint8_t *obuf = omsg.getBytes();
+      obuf[MSG_TYPE] = REG_ACK_MSG;
+      memcpy(&obuf[REG_ACK_MINION_SERIAL], &minion_serial_no, SIZE_INT);
+      memcpy(&obuf[REG_ACK_ID], &friendly_id, SIZE_SHORT);
+      memcpy(&obuf[REG_ACK_MASTER_SERIAL], &serial_no, SIZE_INT);
+      memcpy(&obuf[REG_ACK_MASTER_TIME], &the_time, SIZE_INT);
+      memcpy(&obuf[REG_ACK_EPID], &epi_id, SIZE_SHORT);
+      memcpy(&obuf[REG_ACK_R0], &param_R0, SIZE_FLOAT);
+      memcpy(&obuf[REG_ACK_RTYPE], &param_Rtype, SIZE_CHAR);
+      memcpy(&obuf[REG_ACK_RPOWER], &param_rpower, SIZE_SHORT);
+      memcpy(&obuf[REG_ACK_EXPOSURE], &param_exposure, SIZE_SHORT);
+      uBit.radio.datagram.send(omsg);
     // Below, we receive a request to force a new infection.
     // Format: 3 \t victim_id \t no_contacts
     // If no_contacts == 0, then use the epidemic's R0 parameters.
     
-    else if (msg.charAt(0) == SER_SEED_MSG) {
+     } else if (msg.charAt(0) == SER_SEED_MSG) {
       int start = 1;
       int param_no = 0;
       short seed_id = -1;
