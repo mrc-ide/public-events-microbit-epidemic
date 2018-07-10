@@ -4,8 +4,8 @@
 
 MicroBit uBit;
 
-ManagedString VERSION_INFO("VER:Epi Minion 1.6:");
-#define MINION_BUILD_NO 6
+ManagedString VERSION_INFO("VER:Epi Minion 1.7:");
+#define MINION_BUILD_NO 7
 ManagedString NEWLINE("\r\n");
 ManagedString END_SERIAL("#\r\n");
 
@@ -282,7 +282,7 @@ void onData(MicroBitEvent) {
       // our INF_CAND_MSG). We are now a contact - and if we're susceptible, then
       // we now become infectious.
 
-    } else if ((ibuf[MSG_TYPE] == INF_CONF_MSG) {
+    } else if (ibuf[MSG_TYPE] == INF_CONF_MSG) {
       
       CHECK_RIGHT_EPIDEMIC(INF_CONF_MASTER_SERIAL, INF_CONF_EPI_ID)
 
@@ -291,7 +291,7 @@ void onData(MicroBitEvent) {
         if (victim_id == my_id) {
           memcpy(&who_infected_me, &ibuf[INF_CONF_SOURCE_ID], SIZE_SHORT);
           if (current_state==STATE_SUSCEPTIBLE) becomeInfected(true);
-          exposure[who_infected_me]=ALREADY_CONTACTED;
+          exposure_tracker[who_infected_me]=ALREADY_CONTACTED;
         }
 
       END_CHECK_RIGHT_EPIDEMIC

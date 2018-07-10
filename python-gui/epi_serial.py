@@ -29,7 +29,7 @@ class EpiSerial:
     MICROBIT_VID = 3368
     
     input_buffer = ""
-    latest_minion_buildno = '6'
+    latest_minion_buildno = '7'
     
     def get_friendly_id(self, sid):
         result = '-1'
