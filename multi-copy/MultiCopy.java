@@ -2,11 +2,13 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 
 import javax.swing.BoxLayout;
@@ -37,28 +39,38 @@ public class MultiCopy extends JFrame {
   ActivityTable dtm_activity = new ActivityTable();
   JTable jt_activity = new JTable(dtm_activity);
   
+  byte[] firmware;
+  
+  public void loadFirmware(String fn) {
+    File f = new File(fn);
+    firmware = new byte[(int)(f.length())];
+    DataInputStream dis;
+    try {
+      dis = new DataInputStream(new BufferedInputStream(new FileInputStream(f)));
+      for (int i=0; i<firmware.length; i++) firmware[i]=dis.readByte();
+      dis.close();
+    } catch (Exception e) { e.printStackTrace(); } 
+  }
+  
+  public void writeFirmware(File fn) {
+    try {
+      DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(fn)));
+      for (int i=0; i<firmware.length; i++) dos.writeByte(firmware[i]);
+      dos.close();
+    } catch (Exception e) { e.printStackTrace(); }
+  }
+   
   
   class CopyThread extends Thread {
-    File source, dest;
-    CopyThread(File s, File d) {
-      source = s; 
+    File dest;
+    CopyThread(File d) {
       dest = d;
     }
     
     public void run() {
       try {
-        InputStream is = null;
-        OutputStream os = null;   
-        try {
-          is = new FileInputStream(source);
-          os = new FileOutputStream(dest);
-          byte[] buffer = new byte[1024000];
-          int length;
-          while ((length = is.read(buffer)) > 0) os.write(buffer, 0, length);
-        } finally {
-          is.close();
-          os.close();
-        }
+        Thread.sleep(1000);
+        writeFirmware(dest);
       } catch (Exception e) { e.printStackTrace(); }
     }
   }
@@ -96,15 +108,16 @@ public class MultiCopy extends JFrame {
         microbit_counter[i]=1;
         File src = new File(jt_file.getText());
         File dest = new File(drive+":\\"+src.getName());
-        if (jcb_enabled.isSelected()) new CopyThread(src,dest).start();
+        if (jcb_enabled.isSelected()) new CopyThread(dest).start();
       } else if ((!microbit_present[i]) && (microbit_counter[i]==1)) {
         dtm_activity.setStatus(drive+":", "Rebooting...");
         microbit_counter[i]=2;
       } else if ((microbit_present[i]) && (microbit_counter[i]==2)) {
-        dtm_activity.setStatus(drive+":", "Rebooted");
+        dtm_activity.setStatus(drive+":", "Rebooted - ready to remove");
         microbit_counter[i]=3;
       } else if ((!microbit_present[i]) && (microbit_counter[i]==3)) {
         dtm_activity.removeDrive(drive+":");
+        microbit_counter[i]=0;
       }
     }
   }
@@ -228,6 +241,7 @@ public class MultiCopy extends JFrame {
             JOptionPane.showMessageDialog(MultiCopy.this, "Browse for a .hex file");
             jcb_enabled.setSelected(false);
           } else {
+            MultiCopy.this.loadFirmware(jt_file.getText());
             jb_browse.setEnabled(false);
             jt_file.setEnabled(false);
           }
