@@ -4,8 +4,8 @@
 
 MicroBit uBit;
 
-ManagedString VERSION_INFO("VER:Epi Minion 1.9:");
-#define MINION_BUILD_NO 9
+ManagedString VERSION_INFO("VER:Epi Minion 1.10:");
+#define MINION_BUILD_NO 10
 ManagedString NEWLINE("\n");
 ManagedString END_SERIAL("#\n");
 
@@ -71,15 +71,15 @@ void reset() {
   recov_reported = 0;
 }
 
-float poi(double e) {
+int poi(double e) {
   int n = 0;
   double limit;
   double x;
   limit = exp(-e);
-  x = uBit.random(INT_MAX) / INT_MAX;
+  x = (double)uBit.random(INT_MAX) / (double)INT_MAX;
   while (x > limit) {
     n++;
-    x = x * (uBit.random(INT_MAX) / INT_MAX);
+    x = x * ((double)uBit.random(INT_MAX) / (double)INT_MAX);
   }
   return n;
 }
@@ -104,7 +104,7 @@ void becomeInfected(bool set_contacts) {
   if (current_state == STATE_SUSCEPTIBLE) {
     if (set_contacts) {
       if (param_Rtype == 0) n_contacts = (unsigned char) param_R0;
-      else {
+      else if (param_Rtype == 1) {
         n_contacts = (unsigned char) poi(param_R0);
         if (n_contacts < param_poimin) n_contacts = param_poimin;
         if (n_contacts > param_poimax) n_contacts = param_poimax;
@@ -116,6 +116,14 @@ void becomeInfected(bool set_contacts) {
     ledStatus();
   }
 }
+
+void recover() {
+  current_state = STATE_RECOVERED;
+  ledStatus();
+  uBit.display.image.setPixelValue(4,1,0);
+  recovery_time = (int) ((uBit.systemTime() - my_time0) + master_time0);
+}
+
 
 // We often have to check that the master serial number, and epidemic number
 // match the epidemic that a minion was recruited for. To save some lines of
@@ -216,6 +224,7 @@ void onData(MicroBitEvent) {
           memcpy(&n_contacts, &ibuf[SEED_N_CONS], SIZE_CHAR);
           who_infected_me = SEED_CONTACT_ID;
           becomeInfected(n_contacts==0);
+          if (n_contacts==0) recover();
         }
 
       END_CHECK_RIGHT_EPIDEMIC
@@ -305,12 +314,7 @@ void onData(MicroBitEvent) {
 
           if (n_contacts>0) {
             n_contacts--;
-            if (n_contacts == 0) {
-              current_state = STATE_RECOVERED;
-              ledStatus();
-              uBit.display.image.setPixelValue(4,1,0);
-              recovery_time = (int) ((uBit.systemTime() - my_time0) + master_time0);
-            }
+            if (n_contacts == 0) recover();
           }
         }
 
@@ -329,7 +333,10 @@ void onData(MicroBitEvent) {
         if (victim_id == my_id) {
           uBit.display.image.setPixelValue(4,4,255-uBit.display.image.getPixelValue(4,4));
           memcpy(&who_infected_me, &ibuf[INF_CONF_SOURCE_ID], SIZE_SHORT);
-          if (current_state == STATE_SUSCEPTIBLE) becomeInfected(true);
+          if (current_state == STATE_SUSCEPTIBLE) {
+            becomeInfected(true);
+            if (n_contacts == 0) recover();
+          }
           exposure_tracker[who_infected_me] = ALREADY_CONTACTED;
         }
 
@@ -422,12 +429,6 @@ void receiveSerial(MicroBitEvent) {
   }
 }
 
-void onButton(MicroBitEvent e) {
-  if (e.source == MICROBIT_ID_BUTTON_A) {
-    uBit.display.scroll(param_exposure);
-  }
-}
-
 int main() {
   uBit.init();
   uBit.serial.setRxBufferSize(32);
@@ -435,7 +436,6 @@ int main() {
   uBit.serial.baud(115200);
   uBit.messageBus.listen(MICROBIT_ID_SERIAL, MICROBIT_SERIAL_EVT_DELIM_MATCH, receiveSerial, MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY);
   uBit.serial.eventOn(NEWLINE);
-  uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButton);
   uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData, MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY);
   exposure_tracker = new unsigned short[MAX_MINIONS];
 

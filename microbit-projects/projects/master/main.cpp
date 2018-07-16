@@ -11,7 +11,7 @@ ManagedString END_SERIAL("#\n");
 ManagedString NEWLINE("\n");
 ManagedString REG("REG");
 ManagedString COLON(":");
-ManagedString VERSION_INFO("VER:Epi Master 1.9:");
+ManagedString VERSION_INFO("VER:Epi Master 1.10:");
 ManagedString RESTART_INFO("VER:Push reset button and rescan:");
 ManagedString INF_MSG("INF:");
 ManagedString RECOV_MSG("REC:");

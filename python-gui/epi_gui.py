@@ -14,7 +14,7 @@ from tkinter.scrolledtext import ScrolledText
 
 class EpiGui:
     
-    REQ_MASTER_VERSION = 'Epi Master 1.9'
+    REQ_MASTER_VERSION = 'Epi Master 1.10'
     
     CURRENT_EPI_ID = -1
     
@@ -36,8 +36,8 @@ class EpiGui:
     #
     # I store these in a defaults.ini file, with a CSV-like format:-
     # First line is always:    epid,1    -  
-    # All other lines:         "Param Set",r0_value,"r_type",transmit_power,exposure_time
-    #              eg:         "Default",2,"poisson",4,10
+    # All other lines:         "Param Set",r0_value,"r_type",min_poi,max_poi,transmit_power,exposure_time
+    #              eg:         "Default",2,"poisson",1,5,4,10
     
     # Here I load all the parameter sets...
       
@@ -71,7 +71,7 @@ class EpiGui:
         out_file = open("defaults.ini", "w")
         out_file.write("epid,{0}\n".format(self.CURRENT_EPI_ID))
         for i in range(0, len(self.paramsets)):
-            out_file.write('"{0}",{1},"{2}",{3},{4}\n'.format(
+            out_file.write('"{0}",{1},"{2}",{3},{4},{5},{6}\n'.format(
                 self.paramsets[i], 
                 self.p_r0[i], 
                 self.p_rtype[i],

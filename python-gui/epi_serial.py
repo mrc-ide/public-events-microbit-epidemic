@@ -9,6 +9,8 @@ import time
 import serial.tools.list_ports
 import re
 import csv
+import os.path
+
 from serial.serialutil import SerialException
 
 class EpiSerial:
@@ -30,7 +32,7 @@ class EpiSerial:
     MICROBIT_VID = 3368
     
     input_buffer = ""
-    latest_minion_buildno = '9'
+    latest_minion_buildno = '10'
     
     def get_friendly_id(self, sid):
         result = '-1'
@@ -122,14 +124,13 @@ class EpiSerial:
     
     def get_master_info(self, event):
         port = self.gui_link.cb_masters.get()
-        if (self.serial_port!=0):
-            self.serial_port.close
+        if (self.serial_port != 0):
+            self.serial_port.close()
             self.serial_port = 0
             
         try:
             self.serial_port = serial.Serial(port, 115200, timeout=1, xonxoff=True)
             self.serial_port.write(self.MSG_IDENTIFY_YOURSELF+"\n")
-            print "OUT:"+self.MSG_IDENTIFY_YOURSELF
         
         except SerialException:
             self.gui_link.sv_software.set("Can't open serial port. Already in use?")
@@ -139,15 +140,15 @@ class EpiSerial:
     def handle_serial_data(self, data):
         if (len(data)>4):
 
-            if (data[0:4]==self.MSG_IN_DEBUG):
+            if (data[0:4] == self.MSG_IN_DEBUG):
                 print data
                 
-            if (data[0:4]==self.MSG_IN_VERSION):
+            if (data[0:4] == self.MSG_IN_VERSION):
                 self.gui_link.sv_software.set(data.split(":")[1])
                 self.gui_link.sv_serialno.set(data.split(":")[2])
                 self.gui_link.sv_mbitver.set(data.split(":")[3])
             
-            elif (data[0:4]==self.MSG_IN_REGISTER):
+            elif (data[0:4] == self.MSG_IN_REGISTER):
                 serialno = data.split(":")[1]
                 buildno = data.split(":")[2]
                 friendlyid = self.get_friendly_id(serialno)
@@ -159,16 +160,33 @@ class EpiSerial:
                     print "Warning: No space in serials.csv file for micro:bit serial no. {}".format(serialno)
                 else:
                     msg = "{}{},{},#".format(self.MSG_REG, serialno, friendlyid)
-                    print "OUT:"+msg
                     self.serial_port.write(msg+"\n")
                     self.gui_link.set_minion_status(friendlyid, self.gui_link.STATUS_SUSCEPTIBLE)
                 
-            elif (data[0:4]==self.MSG_IN_INF):
-                self.gui_link.set_minion_status(data.split(":")[2], self.gui_link.STATUS_INFECTED)
+            elif (data[0:4] == self.MSG_IN_INF):
+                bits = data.split(":")
+                self.gui_link.set_minion_status(bits[2], self.gui_link.STATUS_INFECTED)
+                fn = self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
+                
+                if (not os.path.isfile(fn)):
+                    with open(fn, "w") as f:
+                        f.write("event,time,infector,victim,ncons\n")
+                        f.write("I,{},{},{},{}\n".format(bits[3], bits[1] ,bits[2], bits[4]))
+                                                
+                else:
+                    with open(fn, "a") as f:
+                        f.write("I,{},{},{},{}\n".format(bits[3], bits[1] ,bits[2], bits[4]))
+                    
                 print data
                 
-            elif (data[0:4]==self.MSG_IN_RECOV):
-                self.gui_link.set_minion_status(data.split(":")[1], self.gui_link.STATUS_RECOVERED)
+            elif (data[0:4] == self.MSG_IN_RECOV):
+                bits = data.split(":")
+                self.gui_link.set_minion_status(bits[1], self.gui_link.STATUS_RECOVERED)
+                fn = self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
+                
+                with open(fn, "a") as f:
+                    f.write("R,{},-1,{},-1\n".format(bits[2], bits[1]))
+                
                 print data
                 
             else:
@@ -189,35 +207,32 @@ class EpiSerial:
     
     # Send the parameters to the micro:bit master.
     def send_params(self):
+        print str(self.gui_link.cb_rtype.current())
+              
         msg = (self.MSG_OUT_PARAMS+
                self.gui_link.sv_epidno.get() + "," +
                self.gui_link.sv_r0.get() + "," +
                str(self.gui_link.cb_rtype.current()) + "," +
-               self.gui_link.cb_rpower.get() + "," +
                self.gui_link.cb_poimin.get() + "," +
                self.gui_link.cb_poimax.get() + "," +
+               self.gui_link.cb_rpower.get() + "," +
                self.gui_link.cb_exposure.get() + ",#")
               
         self.serial_port.write(msg+"\n")
-        print "OUT:"+msg
-        
     
     # Send seeding information to master, who forwards it by radio to minion.
     def seed_epidemic(self):
         forcer = 0
         if (self.gui_link.iv_forcer.get()==1):
             forcer = 1 + self.gui_link.cb_forcer.current()
-        msg = self.MSG_SEED_EPI+ self.gui_link.sv_seedid.get() +"," + str(forcer) + ",#"
-        print "OUT:"+msg;
+        msg = self.MSG_SEED_EPI + self.gui_link.sv_seedid.get() + "," + str(forcer) + ",#"
         self.serial_port.write(msg+"\n")
         
     def reset_epidemic(self):
         self.serial_port.write(self.MSG_RESET_EPI+"\n")
-        print "OUT:"+self.MSG_RESET_EPI
         
     def poweroff_minions(self):
         self.serial_port.write(self.MSG_POWER_OFF+"\n")
-        print "OUT:"+self.MSG_POWER_OFF
      
     # Initialise serial port listener thread
 
