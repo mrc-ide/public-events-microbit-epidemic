@@ -51,7 +51,7 @@ class EpiGui:
                 if ((len(s) == 2) & (s[0] == 'epid')):
                     self.CURRENT_EPI_ID = int(s[1])+1
                 
-                elif (len(s)==5):
+                elif (len(s)==7):
                     self.paramsets.append(s[0].replace('"', ''))
                     self.p_r0.append(s[1])
                     self.p_rtype.append(s[2].replace('"', ''))
@@ -106,7 +106,7 @@ class EpiGui:
         self.sv_r0.set(self.p_r0[i])
         self.cb_rtype.current(self.cb_rtype['values'].index(self.p_rtype[i]))
         self.cb_poimin.current(self.cb_poimin['values'].index(self.p_poimin[i]))
-        self.cb_poimin.current(self.cb_poimax['values'].index(self.p_poimax[i]))
+        self.cb_poimax.current(self.cb_poimax['values'].index(self.p_poimax[i]))
         self.cb_rpower.current(self.cb_rpower['values'].index(self.p_rpower[i]))
         self.cb_exposure.current(self.cb_exposure['values'].index(self.p_exposure[i]))
         
@@ -221,13 +221,13 @@ class EpiGui:
     def set_params_unsaved(self, event):
         self.b_save_pset['state'] = 'active'
         
-    def set_poimin(self, event):
+    def change_poimin(self, event):
         maxv = int(self.cb_poimax.current())
         minv = int(self.cb_poimin.current())
         if (minv>maxv):
             self.cb_poimax.current(minv)
         
-    def set_poimax(self, event):
+    def change_poimax(self, event):
         maxv = int(self.cb_poimax.current())
         minv = int(self.cb_poimin.current())
         if (maxv<minv):
@@ -489,7 +489,7 @@ class EpiGui:
         self.cb_rtype = Combobox(self.window, state = 'readonly')
         self.l_poimin = Label(self.window, text = "Poi minimum");
         self.cb_poimin = Combobox(self.window, state = 'readonly')
-        self.l_poimax = Label(self.window, text = "Poi minimum");
+        self.l_poimax = Label(self.window, text = "Poi maximum");
         self.cb_poimax = Combobox(self.window, state = 'readonly')
         
         self.l_rpower = Label(self.window, text = "Transmit Range:")
