@@ -207,8 +207,7 @@ class EpiSerial:
     
     # Send the parameters to the micro:bit master.
     def send_params(self):
-        print str(self.gui_link.cb_rtype.current())
-              
+                     
         msg = (self.MSG_OUT_PARAMS+
                self.gui_link.sv_epidno.get() + "," +
                self.gui_link.sv_r0.get() + "," +
