@@ -4,10 +4,10 @@
 
 MicroBit uBit;
 
-ManagedString VERSION_INFO("VER:Epi Minion 1.7:");
-#define MINION_BUILD_NO 7
-ManagedString NEWLINE("\r\n");
-ManagedString END_SERIAL("#\r\n");
+ManagedString VERSION_INFO("VER:Epi Minion 1.9:");
+#define MINION_BUILD_NO 9
+ManagedString NEWLINE("\n");
+ManagedString END_SERIAL("#\n");
 
 unsigned char current_stage; // Can be MINION_STAGE_REGISTRY, or MINION_STAGE_EPIDEMIC, or MINION_STAGE_POWEROFF.
 int serial_no;               // My internal serial number
@@ -22,18 +22,44 @@ int recovery_time;              // Remember when I recovered (for resilient rese
 int infection_time;             // Remember when I was infected (for resilient resending)
 unsigned short who_infected_me; // Remember who infected me (for resilient resending)
 
-
 // Parameters for the current epidemic
 
 unsigned short epi_id;
 float param_R0;
 unsigned char param_Rtype;
+unsigned char param_poimin;
+unsigned char param_poimax;
 unsigned short param_exposure;
 unsigned char param_rpower;
 unsigned char n_contacts;
 
-unsigned short* exposure_tracker = new unsigned short[MAX_MINIONS];
+unsigned short* exposure_tracker;
 char current_state;
+
+void ledStatus() {
+  for (int i=0; i<4; i++) for (int j=0; j<5; j++)
+      uBit.display.image.setPixelValue(i,j,0);
+
+  if (current_state == STATE_SUSCEPTIBLE) {
+    for (int i=0; i<3; i++) for (int j=0; j<5; j+=2)
+      uBit.display.image.setPixelValue(i,j,255);
+    uBit.display.image.setPixelValue(0,1,255);
+    uBit.display.image.setPixelValue(2,3,255);
+
+  } else if (current_state == STATE_INFECTIOUS) {
+    for (int i=0; i<3; i++) for (int j=0; j<5; j+=4)
+      uBit.display.image.setPixelValue(i,j,255);
+    for (int j=1; j<=3; j++) uBit.display.image.setPixelValue(1,j,255);
+
+  } else if (current_state == STATE_RECOVERED) {
+    for (int j=0; j<5; j++) uBit.display.image.setPixelValue(0,j,255);
+    uBit.display.image.setPixelValue(1,0,255);
+    uBit.display.image.setPixelValue(2,1,255);
+    uBit.display.image.setPixelValue(1,2,255);
+    uBit.display.image.setPixelValue(2,3,255);
+    uBit.display.image.setPixelValue(2,4,255);
+  }
+}
 
 void reset() {
   for (int i=0; i<MAX_MINIONS; i++) exposure_tracker[i]=0;
@@ -41,7 +67,6 @@ void reset() {
   current_stage = MINION_STAGE_REGISTRY;
   uBit.display.print('U');
   uBit.radio.setGroup(UNREGISTERED_GROUP);
-  uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
   inf_reported = 0;
   recov_reported = 0;
 }
@@ -77,14 +102,18 @@ void reportInfected() {
 
 void becomeInfected(bool set_contacts) {
   if (current_state == STATE_SUSCEPTIBLE) {
-    uBit.display.print('I');
     if (set_contacts) {
       if (param_Rtype == 0) n_contacts = (unsigned char) param_R0;
-      else n_contacts = (unsigned char) poi(param_R0);
+      else {
+        n_contacts = (unsigned char) poi(param_R0);
+        if (n_contacts < param_poimin) n_contacts = param_poimin;
+        if (n_contacts > param_poimax) n_contacts = param_poimax;
+      }
     }
 
     infection_time = (int) ((uBit.systemTime() - my_time0) + master_time0);
     current_state = STATE_INFECTIOUS;
+    ledStatus();
   }
 }
 
@@ -103,7 +132,6 @@ void becomeInfected(bool set_contacts) {
 
 #define END_CHECK_RIGHT_EPIDEMIC }}
 
-
 void reportRecovery() {
   PacketBuffer omsg(REP_RECOV_MSG_SIZE);
   uint8_t *obuf = omsg.getBytes();
@@ -118,7 +146,6 @@ void reportRecovery() {
 // Receive a radio message.
 
 void onData(MicroBitEvent) {
-
   PacketBuffer imsg = uBit.radio.datagram.recv();
   uint8_t* ibuf = imsg.getBytes();
 
@@ -145,10 +172,11 @@ void onData(MicroBitEvent) {
         memcpy(&master_time0, &ibuf[REG_ACK_MASTER_TIME], SIZE_INT);
 
         // Fetch the parameters out of the message.
-
         memcpy(&epi_id, &ibuf[REG_ACK_EPID], SIZE_SHORT);
         memcpy(&param_R0, &ibuf[REG_ACK_R0], SIZE_FLOAT);
         memcpy(&param_Rtype, &ibuf[REG_ACK_RTYPE], SIZE_CHAR);
+        memcpy(&param_poimin, &ibuf[REG_ACK_POIMIN], SIZE_CHAR);
+        memcpy(&param_poimax, &ibuf[REG_ACK_POIMAX], SIZE_CHAR);
         memcpy(&param_rpower, &ibuf[REG_ACK_RPOWER], SIZE_CHAR);
         memcpy(&param_exposure, &ibuf[REG_ACK_EXPOSURE], SIZE_SHORT);
 
@@ -157,17 +185,20 @@ void onData(MicroBitEvent) {
 
         current_stage = MINION_STAGE_EPIDEMIC;
         uBit.radio.setGroup(REGISTERED_GROUP);
-        uBit.display.print('S');
+        ledStatus();
         uBit.seedRandom();
       }
     }
 
   } else if (current_stage == MINION_STAGE_EPIDEMIC) {
 
-    // I receive a RESET code:-
+  // I receive a RESET code:-
 
     if (ibuf[MSG_TYPE] == RESET_MSG) {
+      uBit.radio.disable();
       reset();
+      uBit.radio.enable();
+
 
     // I receive a POWER-OFF code:-
 
@@ -175,7 +206,6 @@ void onData(MicroBitEvent) {
       current_stage = MINION_STAGE_POWER_OFF;
 
     // Here, a susceptible minion receives a message to seed an infection.
-
     } else if ((ibuf[MSG_TYPE] == SEED_MINION_MSG) && (current_state == STATE_SUSCEPTIBLE)) {
 
       CHECK_RIGHT_EPIDEMIC(SEED_MASTER_SERIAL, SEED_EPI_ID)
@@ -190,13 +220,14 @@ void onData(MicroBitEvent) {
 
       END_CHECK_RIGHT_EPIDEMIC
 
-    // Here, a minion (in any state) receives an infectious broadcast.
-    // ie - you can be in any state to be a contact, but only susceptibles will then
-    // become infectious and make their own contacts.
+      // Here, a minion (in any state) receives an infectious broadcast.
+      // ie - you can be in any state to be a contact, but only susceptibles will then
+      // become infectious and make their own contacts.
 
     } else if (ibuf[MSG_TYPE] == INF_BCAST_MSG) {
 
       CHECK_RIGHT_EPIDEMIC(INF_BCAST_MASTER_SERIAL, INF_BCAST_EPI_ID)
+        uBit.display.image.setPixelValue(4,0,255-uBit.display.image.getPixelValue(4,0));
 
         // Increase our exposure counter for this (potential) infector.
 
@@ -204,13 +235,9 @@ void onData(MicroBitEvent) {
         memcpy(&source_id, &ibuf[INF_BCAST_SOURCE_ID], SIZE_SHORT);
         if (exposure_tracker[source_id] != ALREADY_CONTACTED) {
           exposure_tracker[source_id]++;
-          
-          // Consider >= below - wondering whether a large number of simultaneous
-          // replies causes a problem...
-          // Perhaps also consider a short random pause before sending.
+          uBit.display.image.setPixelValue(3,0,255-uBit.display.image.getPixelValue(4,0));
 
-          if (exposure_tracker[source_id] == param_exposure) {
-
+          if (exposure_tracker[source_id] >= param_exposure) {
             // If we've reached the exposure threshold from a single source,
             // we now might be one of their contacts - HOWEVER - this requres
             // confirmation from the infector, because there may be multiple replies
@@ -226,6 +253,10 @@ void onData(MicroBitEvent) {
             // master_serial (int), epidemic id (short)
             // the infector's id (short), my id (short)
 
+            // Random pause - spread out replies a bit.
+
+            uBit.sleep(uBit.random(500));
+            uBit.display.image.setPixelValue(4,2,255-uBit.display.image.getPixelValue(4,2));
             PacketBuffer omsg(INF_CAND_MSG_SIZE);
             uint8_t *obuf = omsg.getBytes();
             obuf[MSG_TYPE] = INF_CAND_MSG;
@@ -240,9 +271,10 @@ void onData(MicroBitEvent) {
         }
 
       END_CHECK_RIGHT_EPIDEMIC
+
     // Here: we receive a "candidate infection" message, which is a reply to a previous "infection broadcast"
     // message we sent. We care about this message if we are infectious and wanting to confirm contacts.
-    // When we have made sufficient contacts, we stop being infectious. 
+    // When we have made sufficient contacts, we stop being infectious.
 
     } else if ((ibuf[MSG_TYPE] == INF_CAND_MSG) && (current_state == STATE_INFECTIOUS)) {
 
@@ -251,10 +283,12 @@ void onData(MicroBitEvent) {
         unsigned short source_id;
         memcpy(&source_id, &ibuf[INF_CAND_SOURCE_ID], SIZE_SHORT);
         if (source_id == my_id) {
+          uBit.display.image.setPixelValue(4,3,255-uBit.display.image.getPixelValue(4,3));
 
           unsigned short victim_id;
           memcpy(&victim_id, &ibuf[INF_CAND_VICTIM_ID], SIZE_SHORT);
 
+          uBit.sleep(uBit.random(200));
           PacketBuffer omsg(INF_CONF_MSG_SIZE);
           uint8_t *obuf = omsg.getBytes();
           obuf[MSG_TYPE] = INF_CONF_MSG;
@@ -265,13 +299,17 @@ void onData(MicroBitEvent) {
           uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
           uBit.radio.datagram.send(omsg);
 
+        // Prevent the victim making the infector their first contact...
+
+          exposure_tracker[victim_id] = ALREADY_CONTACTED;
+
           if (n_contacts>0) {
             n_contacts--;
             if (n_contacts == 0) {
               current_state = STATE_RECOVERED;
+              ledStatus();
+              uBit.display.image.setPixelValue(4,1,0);
               recovery_time = (int) ((uBit.systemTime() - my_time0) + master_time0);
-              reportRecovery();
-              uBit.display.print('R');
             }
           }
         }
@@ -283,15 +321,16 @@ void onData(MicroBitEvent) {
       // we now become infectious.
 
     } else if (ibuf[MSG_TYPE] == INF_CONF_MSG) {
-      
+
       CHECK_RIGHT_EPIDEMIC(INF_CONF_MASTER_SERIAL, INF_CONF_EPI_ID)
 
         unsigned short victim_id;
         memcpy(&victim_id, &ibuf[INF_CONF_VICTIM_ID], SIZE_SHORT);
         if (victim_id == my_id) {
+          uBit.display.image.setPixelValue(4,4,255-uBit.display.image.getPixelValue(4,4));
           memcpy(&who_infected_me, &ibuf[INF_CONF_SOURCE_ID], SIZE_SHORT);
-          if (current_state==STATE_SUSCEPTIBLE) becomeInfected(true);
-          exposure_tracker[who_infected_me]=ALREADY_CONTACTED;
+          if (current_state == STATE_SUSCEPTIBLE) becomeInfected(true);
+          exposure_tracker[who_infected_me] = ALREADY_CONTACTED;
         }
 
       END_CHECK_RIGHT_EPIDEMIC
@@ -309,8 +348,8 @@ void onData(MicroBitEvent) {
         }
       END_CHECK_RIGHT_EPIDEMIC
 
-            // If we're in Infectious / Recovered state, listen for the confirmation that
-    // our infection report was received by the master.
+    // If we're in Recovered state, listen for the confirmation that
+    // our recovery report was received by the master.
 
     } else if ((ibuf[MSG_TYPE] == CONF_REP_RECOV_MSG) && (current_state == STATE_RECOVERED)) {
 
@@ -321,7 +360,6 @@ void onData(MicroBitEvent) {
           recov_reported = 1;
         }
       END_CHECK_RIGHT_EPIDEMIC
-
     }
   }
 }
@@ -331,7 +369,8 @@ void onData(MicroBitEvent) {
 // every second from main loop, if in the infectious state)
 
 void broadcastInfection() {
-  uBit.display.scroll('B');
+  uBit.sleep(uBit.random(200));
+  uBit.display.image.setPixelValue(4,1,255-uBit.display.image.getPixelValue(4,1));
   PacketBuffer omsg(INF_BCAST_MSG_SIZE);
   uint8_t *obuf = omsg.getBytes();
   obuf[MSG_TYPE] = INF_BCAST_MSG;
@@ -347,6 +386,7 @@ void broadcastInfection() {
 // loop when in the MINION_STAGE_REGISTRY stage.
 
 void broadcastRegister() {
+  uBit.display.image.setPixelValue(4,0,255-uBit.display.image.getPixelValue(4,0));
   PacketBuffer omsg(REG_MSG_SIZE);
   uint8_t *obuf = omsg.getBytes();
   obuf[MSG_TYPE] = REG_MSG;
@@ -382,30 +422,39 @@ void receiveSerial(MicroBitEvent) {
   }
 }
 
+void onButton(MicroBitEvent e) {
+  if (e.source == MICROBIT_ID_BUTTON_A) {
+    uBit.display.scroll(param_exposure);
+  }
+}
+
 int main() {
   uBit.init();
   uBit.serial.setRxBufferSize(32);
-  uBit.serial.setTxBufferSize(64);
+  uBit.serial.setTxBufferSize(32);
   uBit.serial.baud(115200);
-  uBit.messageBus.listen(MICROBIT_ID_SERIAL, MICROBIT_SERIAL_EVT_DELIM_MATCH, receiveSerial);
+  uBit.messageBus.listen(MICROBIT_ID_SERIAL, MICROBIT_SERIAL_EVT_DELIM_MATCH, receiveSerial, MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY);
   uBit.serial.eventOn(NEWLINE);
-
-  uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData);
-  uBit.radio.enable();
+  uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButton);
+  uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData, MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY);
+  exposure_tracker = new unsigned short[MAX_MINIONS];
 
   reset();
+  uBit.radio.enable();
+
   while ((current_stage == MINION_STAGE_REGISTRY) || (current_stage==MINION_STAGE_EPIDEMIC)) {
 
     while (current_stage == MINION_STAGE_REGISTRY) {
       uBit.sleep(1000);
       broadcastRegister();
     }
+    uBit.display.image.setPixelValue(4,0,0);
 
     while (current_stage == MINION_STAGE_EPIDEMIC) {
       uBit.sleep(1000);
       if (current_state == STATE_INFECTIOUS) broadcastInfection();
-      if ((current_state != STATE_SUSCEPTIBLE) && (inf_reported==0)) reportInfected();
-      if ((current_state == STATE_RECOVERED) && (recov_reported==0)) reportRecovery();
+      if ((current_state != STATE_SUSCEPTIBLE) && (inf_reported == 0)) reportInfected();
+      if ((current_state == STATE_RECOVERED) && (recov_reported == 0)) reportRecovery();
     }
   }
 

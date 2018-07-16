@@ -14,7 +14,7 @@ from tkinter.scrolledtext import ScrolledText
 
 class EpiGui:
     
-    REQ_MASTER_VERSION = 'Epi Master 1.7'
+    REQ_MASTER_VERSION = 'Epi Master 1.9'
     
     CURRENT_EPI_ID = -1
     
@@ -55,8 +55,10 @@ class EpiGui:
                     self.paramsets.append(s[0].replace('"', ''))
                     self.p_r0.append(s[1])
                     self.p_rtype.append(s[2].replace('"', ''))
-                    self.p_rpower.append(s[3])
-                    self.p_exposure.append(str(s[4]))
+                    self.p_poimin.append(s[3])
+                    self.p_poimax.append(s[4])
+                    self.p_rpower.append(s[5])
+                    self.p_exposure.append(str(s[6]))
         
         self.cb_paramset['values']=self.paramsets
         self.cb_paramset.current(0)
@@ -72,7 +74,9 @@ class EpiGui:
             out_file.write('"{0}",{1},"{2}",{3},{4}\n'.format(
                 self.paramsets[i], 
                 self.p_r0[i], 
-                self.p_rtype[i], 
+                self.p_rtype[i],
+                self.p_poimin[i],
+                self.p_poimax[i], 
                 self.p_rpower[i], 
                 self.p_exposure[i]))
                            
@@ -101,6 +105,8 @@ class EpiGui:
         i = self.cb_paramset.current()
         self.sv_r0.set(self.p_r0[i])
         self.cb_rtype.current(self.cb_rtype['values'].index(self.p_rtype[i]))
+        self.cb_poimin.current(self.cb_poimin['values'].index(self.p_poimin[i]))
+        self.cb_poimin.current(self.cb_poimax['values'].index(self.p_poimax[i]))
         self.cb_rpower.current(self.cb_rpower['values'].index(self.p_rpower[i]))
         self.cb_exposure.current(self.cb_exposure['values'].index(self.p_exposure[i]))
         
@@ -117,6 +123,8 @@ class EpiGui:
             i = self.cb_paramset.current()
             del self.p_r0.remove[i]
             del self.p_rtype[i]
+            del self.p_poimax[i]
+            del self.p_poimin[i]
             del self.p_rpower[i]
             del self.p_exposure[i]
             del self.paramsets[i]
@@ -161,6 +169,8 @@ class EpiGui:
             
             self.p_r0[index] = self.sv_r0.get()
             self.p_rtype[index] = self.cb_rtype.get()
+            self.p_poimin[index] = self.cb_poimin.get()
+            self.p_poimax[index] = self.cb_poimax.get()
             self.p_rpower[index] = self.cb_rpower.get()
             self.p_exposure[index] = self.cb_exposure.get()
             self.save_defaults()
@@ -192,6 +202,8 @@ class EpiGui:
         if new_name is not None:
             self.p_exposure.append(self.cb_exposure.get())
             self.p_rpower.append(self.cb_rpower.get())
+            self.p_poimin.append(self.cb_poimin.get())
+            self.p_poimax.append(self.cb_poimax.get())
             self.p_rtype.append(self.cb_rtype.get())
             self.p_r0.append(self.sv_r0.get())
             self.paramsets.append(new_name)
@@ -208,6 +220,18 @@ class EpiGui:
 
     def set_params_unsaved(self, event):
         self.b_save_pset['state'] = 'active'
+        
+    def set_poimin(self, event):
+        maxv = int(self.cb_poimax.current())
+        minv = int(self.cb_poimin.current())
+        if (minv>maxv):
+            self.cb_poimax.current(minv)
+        
+    def set_poimax(self, event):
+        maxv = int(self.cb_poimax.current())
+        minv = int(self.cb_poimin.current())
+        if (maxv<minv):
+            self.cb_poimin.current(maxv)
         
     # Exit confirmation dialogue
     
@@ -243,10 +267,14 @@ class EpiGui:
             self.e_r0.grid(column = 1 + self.LEFT, row = 3 + self.TOP, sticky = "W")
             self.l_rtype.grid(column = self.LEFT, row = 4 + self.TOP, sticky = "E")
             self.cb_rtype.grid(column = 1 + self.LEFT, row = 4 + self.TOP, sticky = "W")
-            self.l_rpower.grid(column = self.LEFT, row = 5 + self.TOP, sticky = "E")
-            self.cb_rpower.grid(column = 1 + self.LEFT, row = 5 + self.TOP, sticky = "W")
-            self.l_exposure.grid(column = self.LEFT, row = 6 + self.TOP, sticky = "E")
-            self.cb_exposure.grid(column = 1 + self.LEFT, row = 6 + self.TOP, sticky = "E")
+            self.l_poimin.grid(column = self.LEFT, row = 5 + self.TOP, sticky = "W")
+            self.cb_poimin.grid(column = 1 + self.LEFT, row = 5 + self.TOP, sticky = "E")
+            self.l_poimax.grid(column = self.LEFT, row = 6 + self.TOP, sticky = "W")
+            self.cb_poimax.grid(column = 1 + self.LEFT, row = 6 + self.TOP, sticky = "E")
+            self.l_rpower.grid(column = self.LEFT, row = 7 + self.TOP, sticky = "E")
+            self.cb_rpower.grid(column = 1 + self.LEFT, row = 7 + self.TOP, sticky = "W")
+            self.l_exposure.grid(column = self.LEFT, row = 8 + self.TOP, sticky = "E")
+            self.cb_exposure.grid(column = 1 + self.LEFT, row = 8 + self.TOP, sticky = "E")
 
     def update_seed_epi_button(self):
         self.b_seedEpidemic['state'] = 'disabled'
@@ -272,7 +300,8 @@ class EpiGui:
         self.set_task_text(self.lang.instructions_3)
         self.grid_forget_all([self.l_epidno, self.e_epidno, self.l_paramset, self.cb_paramset,
                 self.b_save_pset, self.b_del_pset, self.b_saveas_pset, self.l_r0,
-                self.e_r0, self.l_rtype, self.cb_rtype, self.l_rpower, self.cb_rpower,
+                self.e_r0, self.l_rtype, self.cb_rtype, self.l_poimin, self.cb_poimin,
+                self.l_poimax, self.cb_poimax, self.l_rpower, self.cb_rpower,
                 self.l_exposure, self.cb_exposure])
         self.l_seedid.grid(column = self.LEFT, row = self.TOP, sticky = "E")
         self.l_seedid2.grid(column = 1 + self.LEFT, row = self.TOP, sticky = "W")
@@ -307,7 +336,8 @@ class EpiGui:
         if (confirm == 'RESET') or (confirm == 'POWEROFF'):
 
             self.grid_forget_all([self.l_seedid, self.l_seedid2, self.l_forcer, self.tb_forcer,
-                self.l_ncons, self.cb_forcer, self.b_seedEpidemic, self.b_resetEpidemic])
+                self.l_ncons, self.cb_forcer, self.b_seedEpidemic, self.b_resetEpidemic,
+                self.l_susc, self.l_susc2, self.l_inf, self.l_inf2, self.l_recov, self.l_recov2])
         
             if (confirm == 'RESET'):
                 self.serial_link.reset_epidemic()
@@ -332,13 +362,13 @@ class EpiGui:
         if (self.minions[m_id % 10][m_id / 10]['bg'] != status):
             self.minions[m_id % 10][m_id / 10]['bg'] = status
             if (status == self.STATUS_SUSCEPTIBLE):
-                self.sv_susc.set(str(int(self.sv_susc)+1))
+                self.sv_susc.set(str(int(self.sv_susc.get())+1))
             elif (status == self.STATUS_INFECTED):
-                self.sv_susc.set(str(int(self.sv_susc)-1))
-                self.sv_inf.set(str(int(self.sv_inf)+1))
+                self.sv_susc.set(str(int(self.sv_susc.get())-1))
+                self.sv_inf.set(str(int(self.sv_inf.get())+1))
             elif (status == self.STATUS_RECOVERED):
-                self.sv_inf.set(str(int(self.sv_inf)-1))
-                self.sv_recov.set(str(int(self.sv_inf)+1))
+                self.sv_inf.set(str(int(self.sv_inf.get())-1))
+                self.sv_recov.set(str(int(self.sv_recov.get())+1))
                           
         self.update_seed_epi_button()
         
@@ -457,14 +487,23 @@ class EpiGui:
         self.e_r0 = Entry(self.window, textvariable = self.sv_r0)
         self.l_rtype = Label(self.window, text = "R type")
         self.cb_rtype = Combobox(self.window, state = 'readonly')
+        self.l_poimin = Label(self.window, text = "Poi minimum");
+        self.cb_poimin = Combobox(self.window, state = 'readonly')
+        self.l_poimax = Label(self.window, text = "Poi minimum");
+        self.cb_poimax = Combobox(self.window, state = 'readonly')
+        
         self.l_rpower = Label(self.window, text = "Transmit Range:")
         self.cb_rpower = Combobox(self.window, state = 'readonly')
         self.l_exposure = Label(self.window, text = "Exposure (s):")
         self.cb_exposure = Combobox(self.window, state = 'readonly')
         self.cb_rtype['values'] = ['Constant', 'Poisson']
-        self.cb_rpower['values'] = [0, 1, 2, 3, 4, 5, 6, 7]
-        self.cb_exposure['values'] = [1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120]
+        self.cb_rpower['values'] = range(0, 8)
+        self.cb_exposure['values'] = [1, 5, 10, 20, 30, 40, 50, 60, 90, 120, 150, 180, 210, 240, 270, 300, 360, 420, 480, 540, 600]
+        self.cb_poimin['values'] = range(0, 99)
+        self.cb_poimax['values'] = range(1, 100)
 
+        self.cb_poimin.bind("<<ComboboxSelected>>", self.change_poimin)
+        self.cb_poimax.bind("<<ComboboxSelected>>", self.change_poimax)
         self.cb_paramset.bind("<<ComboboxSelected>>", self.change_paramset)
         self.remember_paramset = -1
         self.cb_rtype.bind("<<ComboboxSelected>>", self.set_params_unsaved)
@@ -503,6 +542,8 @@ class EpiGui:
         self.paramsets = []
         self.p_r0 = []
         self.p_rtype = []
+        self.p_poimin = []
+        self.p_poimax = []
         self.p_rpower = []
         self.p_exposure = []
         

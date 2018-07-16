@@ -2,12 +2,12 @@
 #define MICROBIT_EPI_H
 
 // This is a header of shared constants between the master
-// and minion apps. 
+// and minion apps.
 
 #define MAX_MINIONS 100
 #define MAX_TRANSMIT_POWER 7
 
-// Save a bit of radio in the registration stage, by ignoring 
+// Save a bit of radio in the registration stage, by ignoring
 // registration messages once micro:bit is registered
 
 #define UNREGISTERED_GROUP 1
@@ -61,9 +61,11 @@
   #define REG_ACK_EPID 15
   #define REG_ACK_R0 17
   #define REG_ACK_RTYPE 21
-  #define REG_ACK_RPOWER 22
-  #define REG_ACK_EXPOSURE 23
-  #define REG_ACK_SIZE 24
+  #define REG_ACK_POIMIN 22
+  #define REG_ACK_POIMAX 23
+  #define REG_ACK_RPOWER 24
+  #define REG_ACK_EXPOSURE 25
+  #define REG_ACK_SIZE 27
 
 #define SEED_MINION_MSG 6
   #define SEED_MASTER_SERIAL 1
