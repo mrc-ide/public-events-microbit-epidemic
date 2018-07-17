@@ -62,6 +62,9 @@ void ledStatus() {
 }
 
 void reset() {
+  uBit.display.image.setPixelValue(4,0,0);
+  uBit.display.image.setPixelValue(4,1,0);
+  uBit.display.image.setPixelValue(4,2,0);
   for (int i=0; i<MAX_MINIONS; i++) exposure_tracker[i]=0;
   current_state = STATE_SUSCEPTIBLE;
   current_stage = MINION_STAGE_REGISTRY;
@@ -236,7 +239,7 @@ void onData(MicroBitEvent) {
     } else if (ibuf[MSG_TYPE] == INF_BCAST_MSG) {
 
       CHECK_RIGHT_EPIDEMIC(INF_BCAST_MASTER_SERIAL, INF_BCAST_EPI_ID)
-        uBit.display.image.setPixelValue(4,0,255-uBit.display.image.getPixelValue(4,0));
+        uBit.display.image.setPixelValue(4,2,255-uBit.display.image.getPixelValue(4,2));
 
         // Increase our exposure counter for this (potential) infector.
 
@@ -244,7 +247,6 @@ void onData(MicroBitEvent) {
         memcpy(&source_id, &ibuf[INF_BCAST_SOURCE_ID], SIZE_SHORT);
         if (exposure_tracker[source_id] != ALREADY_CONTACTED) {
           exposure_tracker[source_id]++;
-          uBit.display.image.setPixelValue(3,0,255-uBit.display.image.getPixelValue(4,0));
 
           if (exposure_tracker[source_id] >= param_exposure) {
             // If we've reached the exposure threshold from a single source,
@@ -265,7 +267,6 @@ void onData(MicroBitEvent) {
             // Random pause - spread out replies a bit.
 
             uBit.sleep(uBit.random(500));
-            uBit.display.image.setPixelValue(4,2,255-uBit.display.image.getPixelValue(4,2));
             PacketBuffer omsg(INF_CAND_MSG_SIZE);
             uint8_t *obuf = omsg.getBytes();
             obuf[MSG_TYPE] = INF_CAND_MSG;
@@ -292,7 +293,6 @@ void onData(MicroBitEvent) {
         unsigned short source_id;
         memcpy(&source_id, &ibuf[INF_CAND_SOURCE_ID], SIZE_SHORT);
         if (source_id == my_id) {
-          uBit.display.image.setPixelValue(4,3,255-uBit.display.image.getPixelValue(4,3));
 
           unsigned short victim_id;
           memcpy(&victim_id, &ibuf[INF_CAND_VICTIM_ID], SIZE_SHORT);
@@ -331,7 +331,6 @@ void onData(MicroBitEvent) {
         unsigned short victim_id;
         memcpy(&victim_id, &ibuf[INF_CONF_VICTIM_ID], SIZE_SHORT);
         if (victim_id == my_id) {
-          uBit.display.image.setPixelValue(4,4,255-uBit.display.image.getPixelValue(4,4));
           memcpy(&who_infected_me, &ibuf[INF_CONF_SOURCE_ID], SIZE_SHORT);
           if (current_state == STATE_SUSCEPTIBLE) {
             becomeInfected(true);

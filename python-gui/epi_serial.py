@@ -15,6 +15,8 @@ from serial.serialutil import SerialException
 
 class EpiSerial:
     
+    
+    
     MSG_IN_VERSION = 'VER:'
     MSG_IN_REGISTER = 'REG:'
     MSG_IN_INF = 'INF:'
@@ -33,6 +35,10 @@ class EpiSerial:
     
     input_buffer = ""
     latest_minion_buildno = '10'
+    
+    current_epi_t0 = 0
+    
+    RECENT_TIME_S = 900
     
     def get_friendly_id(self, sid):
         result = '-1'
@@ -164,18 +170,29 @@ class EpiSerial:
                     self.gui_link.set_minion_status(friendlyid, self.gui_link.STATUS_SUSCEPTIBLE)
                 
             elif (data[0:4] == self.MSG_IN_INF):
+                #Incoming is INF:ID:VICTIM:TIME:NCONTACTS
                 bits = data.split(":")
                 self.gui_link.set_minion_status(bits[2], self.gui_link.STATUS_INFECTED)
                 fn = self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
                 
                 if (not os.path.isfile(fn)):
                     with open(fn, "w") as f:
-                        f.write("event,time,infector,victim,ncons\n")
-                        f.write("I,{},{},{},{}\n".format(bits[3], bits[1] ,bits[2], bits[4]))
-                                                
-                else:
-                    with open(fn, "a") as f:
-                        f.write("I,{},{},{},{}\n".format(bits[3], bits[1] ,bits[2], bits[4]))
+                        f.write("Event,TimeH,Mins,Infectedby,Seeding,Recency,Category,ID,NoContacts\n")
+                                              
+                with open(fn, "a") as f:
+                    inf_time_epoch = self.current_epi_t0 + (float(bits[3]) / 1000.0)
+                    inf_time = time.gmtime(inf_time_epoch)
+                    mins = inf_time.tm_min + (inf_time.tm_sec/60.0)
+                    seeding = 'N'
+                    if (bits[1] == '32767'):
+                        seeding = 'S'
+                        bits[1] = 'NA'
+                    recency = 'Old'
+                    if (time.time() - inf_time_epoch < self.RECENT_TIME_S):
+                        recency = 'Recent'
+                                            
+                    f.write("I,{},{},{},{},{},{},{},{}\n".format(
+                        inf_time.tm_hour, mins, bits[1], seeding, recency, 0, bits[2], bits[4]))
                     
                 print data
                 
@@ -183,9 +200,12 @@ class EpiSerial:
                 bits = data.split(":")
                 self.gui_link.set_minion_status(bits[1], self.gui_link.STATUS_RECOVERED)
                 fn = self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
-                
+                rec_time_epoch = self.current_epi_t0 + (float(bits[2]) / 1000.0)
+                rec_time = time.gmtime(rec_time_epoch)
+                mins = rec_time.tm_min + (rec_time.tm_sec/60.0)
                 with open(fn, "a") as f:
-                    f.write("R,{},-1,{},-1\n".format(bits[2], bits[1]))
+                    f.write("R,{},{},NA,NA,NA,NA,{},NA\n".format(
+                        rec_time.tm_hour, mins, bits[1]))
                 
                 print data
                 
@@ -218,6 +238,9 @@ class EpiSerial:
                self.gui_link.cb_exposure.get() + ",#")
               
         self.serial_port.write(msg+"\n")
+        print msg
+        self.current_epi_t0 = time.time()
+        
     
     # Send seeding information to master, who forwards it by radio to minion.
     def seed_epidemic(self):
