@@ -44,7 +44,9 @@ import javafx.stage.Stage;
 
 public class MicroEpiSlideshow extends Application {
   
-  String in_file = "C:/Files/Dev/Eclipse/microepi-manager/498461975_289.csv";
+  //String in_file = "C:/Files/Dev/Eclipse/microepi-manager/498461975_289.csv";
+  String in_file = "C:/Files/Dev/Eclipse/microepi-manager/newepi.csv";
+  
   
   LangSupport L = new LangSupport();
 
@@ -393,7 +395,7 @@ public class MicroEpiSlideshow extends Application {
         int time0 = Integer.parseInt(epi_csv.get(i)[COL_TIMEH])*3600;
         time0 += (int) (Float.parseFloat(epi_csv.get(i)[COL_TIMEM])*60.0);
         for (int j=0; j<epi_csv.size(); j++) {
-          if (epi_csv.get(j)[COL_EVENT].equals("J")) {
+          if (epi_csv.get(j)[COL_EVENT].equals("I")) {
             if (epi_csv.get(i)[COL_VICTIM].equals(epi_csv.get(j)[COL_INFBY])) {
               int time1 = Integer.parseInt(epi_csv.get(j)[COL_TIMEH])*3600;
               time1 += (int) (Float.parseFloat(epi_csv.get(j)[COL_TIMEM])*60.0);
@@ -813,7 +815,6 @@ public class MicroEpiSlideshow extends Application {
       bits = new String[] {RScript,RNetGraph,in_file,String.valueOf(screen.width),String.valueOf(screen.height),div_col1, div_col2, div_col3, "staticnetworkplot.png"};
       try {
         rt.exec(bits);
-        System.out.println(bits[0]+" "+bits[1]+" "+bits[2]+" "+bits[3]+" "+bits[4]+" "+bits[5]+" "+bits[6] + " "+bits[7]+" "+bits[8]);
       } catch (Exception e) { e.printStackTrace(); }
       jtimer.setInitialDelay(500);
       jtimer.start();
