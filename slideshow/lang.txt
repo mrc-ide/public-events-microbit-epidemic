@@ -1,0 +1,111 @@
+# Language file for Barcode Epidemic.
+# First version. January 2017, Wes.
+#
+# Blank lines and # lines ignored. 
+#
+# The language we want is:
+
+__:GenTimeGraph
+EN:How long does it take to infect someone?
+FR:Combien de temps faut-il pour infecter quelqu'un?
+
+__:Minutes
+EN:Minutes
+FR:Minutes
+
+__:PCOfInfections
+EN:% of infections
+FR:% d'infections
+
+__:R0Graph
+EN:An ill person causes how many infections?
+FR:Combien une personne malade provoque-t-elle d'infections?
+
+__:HowMany
+EN:How many occurences?
+FR:Combien d'occurrences?
+
+__:Number_infections
+EN:Number of new infections caused
+FR:Nombre de nouvelles infections causées
+
+__:Effective_R0
+EN:What really happened
+FR:Ce qui s'est vraiment passé
+
+__:Theoretical_R0
+EN:What could have happend
+FR:Ce qui aurait pu se produire
+
+
+__:CasesGraph
+EN:New Infections Over Time
+FR:Les nouvelles infections au cours du temps
+
+__:CumulCasesGraph
+EN:Total Infections Over Time
+FR:Nombre total d'infections au cours du temps
+
+__:TotalInfs
+EN:Total Infections
+FR:Nombre total d'infections
+
+__:TimeAxis
+EN:Time
+FR:Temps
+
+__:ConfirmedCases
+EN:Confirmed Cases
+FR:Infections confirmées
+
+__:PotentialCases
+EN:Potential Cases
+FR:Infections potentielles
+
+__:Male
+EN:Male
+FR:Mâle
+
+__:Female
+EN:Female
+FR:Femelle
+
+__:Unknown
+EN:Unknown
+FR:Inconnu
+
+__:Vaccinated
+EN:Vaccinated
+FR:Vacciné
+
+__:NotVaccinated
+EN:Not Vaccinated
+FR:Non vacciné
+
+__:DIDE
+EN:DIDE Staff
+FR:DIDE Personnel
+
+__:NON_DIDE
+EN:Not DIDE
+FN:Pas de DIDE Personnel
+
+__:Recent
+EN:Recent
+FR:Récent
+
+__:Older
+EN:Older
+FR:Passé
+
+__:Seed
+EN:Seed
+FR:Origine
+
+__:Infector
+EN:Infector
+FR:Infector
+
+__:Terminal
+EN:Terminal
+FR:Terminal
