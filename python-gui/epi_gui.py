@@ -532,7 +532,7 @@ class EpiGui:
         self.cb_poimax['values'] = range(1, 100)
         self.cb_btrans['values'] = ['Auto','A','B','A+B']
         self.cb_brec['values'] = ['Auto','A','B','A+B']
-        self.cb_icons['values'] = ['SIR', 'I+R']
+        self.cb_icons['values'] = ['SIR', 'I+R', '-I-']
 
         self.cb_poimin.bind("<<ComboboxSelected>>", self.change_poimin)
         self.cb_poimax.bind("<<ComboboxSelected>>", self.change_poimax)

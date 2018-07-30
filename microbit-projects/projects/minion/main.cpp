@@ -17,6 +17,7 @@ ManagedString END_SERIAL("#\n");
 
 #define ICONS_SIR 0
 #define ICONS_IxR 1
+#define ICONS_oIo 2
 
 unsigned char current_stage; // Can be MINION_STAGE_REGISTRY, or MINION_STAGE_EPIDEMIC, or MINION_STAGE_POWEROFF.
 int serial_no;               // My internal serial number
@@ -73,7 +74,7 @@ void ledStatus() {
     }
 
   } else if (current_state == STATE_INFECTIOUS) {
-    if (param_icons == ICONS_SIR) {
+    if ((param_icons == ICONS_SIR) || (param_icons == ICONS_oIo)) {
       for (int i=0; i<3; i++) for (int j=0; j<5; j+=4)
         uBit.display.image.setPixelValue(i,j,255);
       for (int j=1; j<=3; j++) uBit.display.image.setPixelValue(1,j,255);
