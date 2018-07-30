@@ -4,14 +4,14 @@
 // #define DEBUG_SERIAL
 #ifdef DEBUG_SERIAL
   ManagedString DEB("DEB:");
-#endif DEBUG_SERIAL
+#endif
 
 MicroBit uBit;
 ManagedString END_SERIAL("#\n");
 ManagedString NEWLINE("\n");
 ManagedString REG("REG");
 ManagedString COLON(":");
-ManagedString VERSION_INFO("VER:Epi Master 1.10:");
+ManagedString VERSION_INFO("VER:Epi Master 1.12:");
 ManagedString RESTART_INFO("VER:Push reset button and rescan:");
 ManagedString INF_MSG("INF:");
 ManagedString RECOV_MSG("REC:");
@@ -23,6 +23,9 @@ unsigned char param_poimin;
 unsigned char param_poimax;
 unsigned short param_exposure;
 unsigned char param_rpower;
+unsigned char param_btrans;
+unsigned char param_brec;
+unsigned char param_icons;
 uint64_t time0;
 
 unsigned char current_stage;
@@ -216,6 +219,9 @@ void receiveSerial(MicroBitEvent) {
             else if (param_no==4) param_poimax = (unsigned char)atoi(bitp);
             else if (param_no==5) param_rpower = (unsigned char) atoi(bitp);
             else if (param_no==6) param_exposure = (unsigned short) atoi(bitp);
+            else if (param_no==7) param_btrans = (unsigned char) atoi(bitp);
+            else if (param_no==8) param_brec = (unsigned char) atoi(bitp);
+            else if (param_no==9) param_icons = (unsigned char) atoi(bitp);
             start = i+1;
             param_no++;
           }
@@ -273,6 +279,9 @@ void receiveSerial(MicroBitEvent) {
         memcpy(&obuf[REG_ACK_POIMAX], &param_poimax, SIZE_CHAR);
         memcpy(&obuf[REG_ACK_RPOWER], &param_rpower, SIZE_CHAR);
         memcpy(&obuf[REG_ACK_EXPOSURE], &param_exposure, SIZE_SHORT);
+        char bcombine = param_btrans + (4* param_brec) + (16 * param_icons);
+        memcpy(&obuf[REG_ACK_BFLAGS], &bcombine, SIZE_CHAR);
+
         uBit.radio.datagram.send(omsg);
 
       // Below, we receive a request to force a new infection.

@@ -65,7 +65,8 @@
   #define REG_ACK_POIMAX 23
   #define REG_ACK_RPOWER 24
   #define REG_ACK_EXPOSURE 25
-  #define REG_ACK_SIZE 27
+  #define REG_ACK_BFLAGS 27
+  #define REG_ACK_SIZE 28
 
 #define SEED_MINION_MSG 6
   #define SEED_MASTER_SERIAL 1

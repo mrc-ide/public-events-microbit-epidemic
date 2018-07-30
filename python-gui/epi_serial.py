@@ -15,8 +15,6 @@ from serial.serialutil import SerialException
 
 class EpiSerial:
     
-    
-    
     MSG_IN_VERSION = 'VER:'
     MSG_IN_REGISTER = 'REG:'
     MSG_IN_INF = 'INF:'
@@ -34,7 +32,7 @@ class EpiSerial:
     MICROBIT_VID = 3368
     
     input_buffer = ""
-    latest_minion_buildno = '10'
+    latest_minion_buildno = '12'
     
     current_epi_t0 = 0
     
@@ -235,18 +233,21 @@ class EpiSerial:
                self.gui_link.cb_poimin.get() + "," +
                self.gui_link.cb_poimax.get() + "," +
                self.gui_link.cb_rpower.get() + "," +
-               self.gui_link.cb_exposure.get() + ",#")
+               self.gui_link.cb_exposure.get() + "," +
+               str(self.gui_link.cb_btrans.current()) + "," +
+               str(self.gui_link.cb_brec.current()) + "," +
+               str(self.gui_link.cb_icons.current()) + ",#")
+        print msg
               
         self.serial_port.write(msg+"\n")
-        print msg
         self.current_epi_t0 = time.time()
-        
     
     # Send seeding information to master, who forwards it by radio to minion.
     def seed_epidemic(self):
         forcer = 0
         if (self.gui_link.iv_forcer.get()==1):
             forcer = 1 + self.gui_link.cb_forcer.current()
+
         msg = self.MSG_SEED_EPI + self.gui_link.sv_seedid.get() + "," + str(forcer) + ",#"
         self.serial_port.write(msg+"\n")
         

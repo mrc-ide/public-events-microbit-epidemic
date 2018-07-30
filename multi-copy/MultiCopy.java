@@ -155,6 +155,7 @@ public class MultiCopy extends JFrame {
     jfc.setAcceptAllFileFilterUsed(false);
     FileNameExtensionFilter filter = new FileNameExtensionFilter("Binary .hex files", "hex");
     jfc.addChoosableFileFilter(filter);
+    jfc.setCurrentDirectory(new File("../microbit-binaries"));
     setVisible(true);
   }
   

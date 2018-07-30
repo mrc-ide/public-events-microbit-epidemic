@@ -4,10 +4,19 @@
 
 MicroBit uBit;
 
-ManagedString VERSION_INFO("VER:Epi Minion 1.10:");
-#define MINION_BUILD_NO 10
+ManagedString VERSION_INFO("VER:Epi Minion 1.12:");
+#define MINION_BUILD_NO 12
 ManagedString NEWLINE("\n");
 ManagedString END_SERIAL("#\n");
+
+
+#define NO_BUTTONS 0
+#define BUTTON_A 1
+#define BUTTON_B 2
+#define BUTTON_AB 3
+
+#define ICONS_SIR 0
+#define ICONS_IxR 1
 
 unsigned char current_stage; // Can be MINION_STAGE_REGISTRY, or MINION_STAGE_EPIDEMIC, or MINION_STAGE_POWEROFF.
 int serial_no;               // My internal serial number
@@ -32,32 +41,57 @@ unsigned char param_poimax;
 unsigned short param_exposure;
 unsigned char param_rpower;
 unsigned char n_contacts;
+unsigned char param_btrans;
+unsigned char param_brec;
+unsigned char param_icons;
 
 unsigned short* exposure_tracker;
 char current_state;
+
+bool buttonsOk(char param) {
+  bool go = (param==NO_BUTTONS);
+  if (!go) go = (param == BUTTON_A) && (uBit.buttonA.isPressed()) && (!uBit.buttonB.isPressed());
+  if (!go) go = (param == BUTTON_B) && (uBit.buttonB.isPressed()) && (!uBit.buttonA.isPressed());
+  if (!go) go = (param == BUTTON_AB) && (uBit.buttonA.isPressed()) && (uBit.buttonB.isPressed());
+  return go;
+}
 
 void ledStatus() {
   for (int i=0; i<4; i++) for (int j=0; j<5; j++)
       uBit.display.image.setPixelValue(i,j,0);
 
   if (current_state == STATE_SUSCEPTIBLE) {
-    for (int i=0; i<3; i++) for (int j=0; j<5; j+=2)
-      uBit.display.image.setPixelValue(i,j,255);
-    uBit.display.image.setPixelValue(0,1,255);
-    uBit.display.image.setPixelValue(2,3,255);
+    if (param_icons == ICONS_SIR) {
+      for (int i=0; i<3; i++) for (int j=0; j<5; j+=2)
+        uBit.display.image.setPixelValue(i,j,255);
+      uBit.display.image.setPixelValue(0,1,255);
+      uBit.display.image.setPixelValue(2,3,255);
+    } else if (param_icons == ICONS_IxR) {
+      for (int i=0; i<3; i++) for (int j=0; j<5; j+=4)
+        uBit.display.image.setPixelValue(i,j,255);
+      for (int j=1; j<=3; j++) uBit.display.image.setPixelValue(1,j,255);
+    }
 
   } else if (current_state == STATE_INFECTIOUS) {
-    for (int i=0; i<3; i++) for (int j=0; j<5; j+=4)
-      uBit.display.image.setPixelValue(i,j,255);
-    for (int j=1; j<=3; j++) uBit.display.image.setPixelValue(1,j,255);
+    if (param_icons == ICONS_SIR) {
+      for (int i=0; i<3; i++) for (int j=0; j<5; j+=4)
+        uBit.display.image.setPixelValue(i,j,255);
+      for (int j=1; j<=3; j++) uBit.display.image.setPixelValue(1,j,255);
+    } else if (param_icons == ICONS_IxR) {
+      for (int j=0; j<=5; j++) uBit.display.image.setPixelValue(2,j,255);
+      uBit.display.image.setPixelValue(0,3,255);
+      uBit.display.image.setPixelValue(2,3,255);
+    }
 
   } else if (current_state == STATE_RECOVERED) {
-    for (int j=0; j<5; j++) uBit.display.image.setPixelValue(0,j,255);
-    uBit.display.image.setPixelValue(1,0,255);
-    uBit.display.image.setPixelValue(2,1,255);
-    uBit.display.image.setPixelValue(1,2,255);
-    uBit.display.image.setPixelValue(2,3,255);
-    uBit.display.image.setPixelValue(2,4,255);
+    if ((param_icons == ICONS_SIR) || (param_icons == ICONS_IxR)) {
+      for (int j=0; j<5; j++) uBit.display.image.setPixelValue(0,j,255);
+      uBit.display.image.setPixelValue(1,0,255);
+      uBit.display.image.setPixelValue(2,1,255);
+      uBit.display.image.setPixelValue(1,2,255);
+      uBit.display.image.setPixelValue(2,3,255);
+      uBit.display.image.setPixelValue(2,4,255);
+    }
   }
 }
 
@@ -169,6 +203,7 @@ void onData(MicroBitEvent) {
 
     if (ibuf[MSG_TYPE] == REG_ACK_MSG) {
       int incoming_serial;
+
       memcpy(&incoming_serial, &ibuf[REG_ACK_MINION_SERIAL], SIZE_INT);
 
       // If the incoming serial matches ours...
@@ -190,6 +225,13 @@ void onData(MicroBitEvent) {
         memcpy(&param_poimax, &ibuf[REG_ACK_POIMAX], SIZE_CHAR);
         memcpy(&param_rpower, &ibuf[REG_ACK_RPOWER], SIZE_CHAR);
         memcpy(&param_exposure, &ibuf[REG_ACK_EXPOSURE], SIZE_SHORT);
+        unsigned char bflags;
+        memcpy(&bflags, &ibuf[REG_ACK_BFLAGS], SIZE_CHAR);
+        param_btrans = bflags & 3;
+        bflags = bflags / 4;
+        param_brec = bflags & 3;
+        bflags = bflags / 4;
+        param_icons = bflags & 3;
 
         // Now moving into EPIDEMIC stage, and changing radio channel to
         // ignore the registration noise.
@@ -227,6 +269,12 @@ void onData(MicroBitEvent) {
           memcpy(&n_contacts, &ibuf[SEED_N_CONS], SIZE_CHAR);
           who_infected_me = SEED_CONTACT_ID;
           becomeInfected(n_contacts==0);
+
+          // if n_contacts==0 on the way into becomeInfected(), then it picks
+          // how many contacts using the epidemic parameters. If, awkwardly,
+          // that returns zero, then we have a boring/efficient epidemic, and
+          // instant recovery of the seed.
+
           if (n_contacts==0) recover();
         }
 
@@ -239,44 +287,46 @@ void onData(MicroBitEvent) {
     } else if (ibuf[MSG_TYPE] == INF_BCAST_MSG) {
 
       CHECK_RIGHT_EPIDEMIC(INF_BCAST_MASTER_SERIAL, INF_BCAST_EPI_ID)
-        uBit.display.image.setPixelValue(4,2,255-uBit.display.image.getPixelValue(4,2));
 
-        // Increase our exposure counter for this (potential) infector.
+        if (buttonsOk(param_brec)) {
+          uBit.display.image.setPixelValue(4,2,255-uBit.display.image.getPixelValue(4,2));
 
-        unsigned short source_id;
-        memcpy(&source_id, &ibuf[INF_BCAST_SOURCE_ID], SIZE_SHORT);
-        if (exposure_tracker[source_id] != ALREADY_CONTACTED) {
-          exposure_tracker[source_id]++;
+          // Increase our exposure counter for this (potential) infector.
 
-          if (exposure_tracker[source_id] >= param_exposure) {
-            // If we've reached the exposure threshold from a single source,
-            // we now might be one of their contacts - HOWEVER - this requres
-            // confirmation from the infector, because there may be multiple replies
-            // to the broadcast message, and we might be too late.
+          unsigned short source_id;
+          memcpy(&source_id, &ibuf[INF_BCAST_SOURCE_ID], SIZE_SHORT);
+          if (exposure_tracker[source_id] != ALREADY_CONTACTED) {
+            exposure_tracker[source_id]++;
 
-            // Using == param_exposure here, to ensure we only offer ourselves
-            // as a contact once.
+            if (exposure_tracker[source_id] >= param_exposure) {
+              // If we've reached the exposure threshold from a single source,
+              // we now might be one of their contacts - HOWEVER - this requres
+              // confirmation from the infector, because there may be multiple replies
+              // to the broadcast message, and we might be too late.
 
-            // So, we send a message back to the infector, indicating we are
-            // willing to be one of their infections.
+              // Using == param_exposure here, to ensure we only offer ourselves
+              // as a contact once.
 
-            // Broadcast a candidate infection message with:
-            // master_serial (int), epidemic id (short)
-            // the infector's id (short), my id (short)
+              // So, we send a message back to the infector, indicating we are
+              // willing to be one of their infections.
 
-            // Random pause - spread out replies a bit.
+              // Broadcast a candidate infection message with:
+              // master_serial (int), epidemic id (short)
+              // the infector's id (short), my id (short)
 
-            uBit.sleep(uBit.random(500));
-            PacketBuffer omsg(INF_CAND_MSG_SIZE);
-            uint8_t *obuf = omsg.getBytes();
-            obuf[MSG_TYPE] = INF_CAND_MSG;
-            memcpy(&obuf[INF_CAND_MASTER_SERIAL], &master_serial, SIZE_INT);
-            memcpy(&obuf[INF_CAND_EPI_ID], &epi_id, SIZE_SHORT);
-            memcpy(&obuf[INF_CAND_SOURCE_ID], &source_id, SIZE_SHORT);
-            memcpy(&obuf[INF_CAND_VICTIM_ID], &my_id, SIZE_SHORT);
-            uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
-            uBit.radio.datagram.send(omsg);
+              // Random pause - spread out replies a bit.
 
+              uBit.sleep(uBit.random(500));
+              PacketBuffer omsg(INF_CAND_MSG_SIZE);
+              uint8_t *obuf = omsg.getBytes();
+              obuf[MSG_TYPE] = INF_CAND_MSG;
+              memcpy(&obuf[INF_CAND_MASTER_SERIAL], &master_serial, SIZE_INT);
+              memcpy(&obuf[INF_CAND_EPI_ID], &epi_id, SIZE_SHORT);
+              memcpy(&obuf[INF_CAND_SOURCE_ID], &source_id, SIZE_SHORT);
+              memcpy(&obuf[INF_CAND_VICTIM_ID], &my_id, SIZE_SHORT);
+              uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
+              uBit.radio.datagram.send(omsg);
+            }
           }
         }
 
@@ -370,21 +420,25 @@ void onData(MicroBitEvent) {
   }
 }
 
+
+
 // If I'm infectious, then broadcast infection with radio power
 // set to parameter rpower, for anyone who hears it. (This is called
 // every second from main loop, if in the infectious state)
 
 void broadcastInfection() {
-  uBit.sleep(uBit.random(200));
-  uBit.display.image.setPixelValue(4,1,255-uBit.display.image.getPixelValue(4,1));
-  PacketBuffer omsg(INF_BCAST_MSG_SIZE);
-  uint8_t *obuf = omsg.getBytes();
-  obuf[MSG_TYPE] = INF_BCAST_MSG;
-  memcpy(&obuf[INF_BCAST_MASTER_SERIAL], &master_serial, SIZE_INT);
-  memcpy(&obuf[INF_BCAST_EPI_ID], &epi_id, SIZE_SHORT);
-  memcpy(&obuf[INF_BCAST_SOURCE_ID], &my_id, SIZE_SHORT);
-  uBit.radio.setTransmitPower(param_rpower);
-  uBit.radio.datagram.send(omsg);
+  if (buttonsOk(param_btrans)) {
+    uBit.sleep(uBit.random(200));
+    uBit.display.image.setPixelValue(4,1,255-uBit.display.image.getPixelValue(4,1));
+    PacketBuffer omsg(INF_BCAST_MSG_SIZE);
+    uint8_t *obuf = omsg.getBytes();
+    obuf[MSG_TYPE] = INF_BCAST_MSG;
+    memcpy(&obuf[INF_BCAST_MASTER_SERIAL], &master_serial, SIZE_INT);
+    memcpy(&obuf[INF_BCAST_EPI_ID], &epi_id, SIZE_SHORT);
+    memcpy(&obuf[INF_BCAST_SOURCE_ID], &my_id, SIZE_SHORT);
+    uBit.radio.setTransmitPower(param_rpower);
+    uBit.radio.datagram.send(omsg);
+  }
 }
 
 // Send a message to the master requesting registration
