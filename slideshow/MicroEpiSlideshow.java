@@ -1,5 +1,4 @@
 import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -7,35 +6,68 @@ import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import javax.imageio.ImageIO;
 import javax.swing.Timer;
 
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
 import javafx.application.Application;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
+import javafx.scene.paint.Color;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.stage.WindowEvent;
+
+
 
 // MicroBit Epidemic Slideshow
 // Hacked out of the Barcode Epidemic Presenter, 3.01
@@ -43,6 +75,44 @@ import javafx.stage.Stage;
 @SuppressWarnings("restriction")
 
 public class MicroEpiSlideshow extends Application {
+  /* GUI for screen control */
+  
+  public int no_events = 0;
+  boolean unsaved_changes = false;
+ 
+  final RadioButton rb_on = new RadioButton("ON");
+  final RadioButton rb_off = new RadioButton("OFF");
+  public final RadioButton nl_on = new RadioButton("ON");
+  public final RadioButton nl_off = new RadioButton("OFF");
+  final ObservableList<String> config_choices = FXCollections.observableArrayList();
+  final ChoiceBox<String> cb_configs = new ChoiceBox<String>(config_choices);
+  final Label l_display = new Label("Display");
+  final Label l_location = new Label("Location (x,y)");
+  final Label l_size = new Label("Size (w,h)");
+
+  final GridPane grid = new GridPane();
+  final TextField tf_x = new TextField();
+  final TextField tf_y = new TextField();
+  final TextField tf_w = new TextField();
+  final TextField tf_h = new TextField();
+  final HBox hb_display = new HBox();
+  final HBox hb_location = new HBox();
+  final HBox hb_size = new HBox();
+
+  final ToggleGroup tg_display = new ToggleGroup();
+  final Button b_detect = new Button("Detect Fullscreen");
+  final Label l_config = new Label("Saved Settings:");
+  final HBox hb_configs = new HBox();
+  final Button b_saveConfig = new Button("Save");
+  final Button b_saveAsConfig = new Button("Save As");
+  final Button b_delConfig = new Button("Delete");
+
+  Element configs_xml;
+  
+  Stage displayStage;
+  final StackPane displayStageSP = new StackPane();
+  Scene displayScene = null;
+
   
   //String in_file = "C:/Files/Dev/Eclipse/microepi-manager/498461975_289.csv";
   String in_file = "C:/Files/Dev/Eclipse/microepi-manager/newepi.csv";
@@ -87,9 +157,86 @@ public class MicroEpiSlideshow extends Application {
   //private static byte COL_CAT = 6;
   private static byte COL_VICTIM = 7;
   private static byte COL_NCONS = 8;
+  
 
- 
 
+  public void GUItoXML(Node tag) {
+    Tools.setAttribute(tag, "x", tf_x.getText());
+    Tools.setAttribute(tag, "y", tf_y.getText());
+    Tools.setAttribute(tag, "w", tf_w.getText());
+    Tools.setAttribute(tag, "h", tf_h.getText());
+  }
+
+  public void XMLtoGUI(Node tag) {
+    tf_x.setText(Tools.getAttribute(tag, "x"));
+    tf_y.setText(Tools.getAttribute(tag, "y"));
+    tf_w.setText(Tools.getAttribute(tag, "w"));
+    tf_h.setText(Tools.getAttribute(tag, "h"));
+    displayStage.setX(Integer.parseInt(tf_x.getText()));
+    displayStage.setY(Integer.parseInt(tf_y.getText()));
+    displayStage.setWidth(Integer.parseInt(tf_w.getText()));
+    displayStage.setHeight(Integer.parseInt(tf_h.getText()));
+  }
+
+  void changeTF() {
+    unsaved_changes = true;
+    b_saveConfig.setDisable(false);
+    displayStage.setX(Integer.parseInt(tf_x.getText()));
+    displayStage.setY(Integer.parseInt(tf_y.getText()));
+    displayStage.setWidth(Integer.parseInt(tf_w.getText()));
+    displayStage.setHeight(Integer.parseInt(tf_h.getText()));
+  }
+
+  public void createDummyXML() {
+    try {
+      PrintWriter PW = new PrintWriter(new File("configs.xml"));
+      PW.println("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>");
+      PW.println("<configs>");
+      PW.println("  <recent name=\"Default Config\"/>");
+      PW.println("    <config name=\"Default Config\" x=\"1920\" y=\"0\" w=\"1920\" h=\"1080\" b=\"\" />");
+      PW.println("</configs>");
+      PW.close();
+    } catch (Exception e) {
+    }
+  }
+
+  public void loadXML() {
+    if (!new File("configs.xml").exists()) createDummyXML();
+    configs_xml = Tools.loadDocument("configs.xml");
+    int countConfigs = Tools.countChildren(configs_xml, "config");
+    if (countConfigs == 0) {
+      createDummyXML();
+      configs_xml = Tools.loadDocument("configs.xml");
+    }
+    for (int i = 0; i < Tools.countChildren(configs_xml, "config"); i++) {
+      config_choices.add(Tools.getAttribute(Tools.getChildNo(configs_xml, "config", i), "name"));
+    }
+    FXCollections.sort(config_choices);
+    String recent = Tools.getAttribute(Tools.getTag(configs_xml, "recent"),"name");
+    if (!config_choices.contains(recent)) {
+      recent = Tools.getAttribute(Tools.getChildNo(configs_xml,"config",0),"name");
+      Tools.setAttribute(Tools.getTag(configs_xml, "recent"),"name",recent);
+      Tools.writeXML(configs_xml, "configs.xml");
+    }
+    cb_configs.getSelectionModel().select(recent);
+  }
+
+
+  
+  public void showDisplayScreen(boolean smoothly) {
+    displayStage.setWidth(Integer.parseInt(tf_w.getText()));
+    displayStage.setHeight(Integer.parseInt(tf_h.getText()));
+    displayStage.setX(Integer.parseInt(tf_x.getText()));
+    displayStage.setY(Integer.parseInt(tf_y.getText()));
+    displayStageSP.setStyle("-fx-background-color: BLACK");
+    displayScene.setFill(Color.BLACK);
+    displayStage.show();
+  }
+
+  public void hideDisplayScreen(boolean smoothly) {
+    displayStage.hide();
+  }
+  
   private void loadScript() {
     try {
       BufferedReader br = new BufferedReader(new FileReader("script.txt"));
@@ -140,8 +287,264 @@ public class MicroEpiSlideshow extends Application {
   }
   
   
+  
   public void start(Stage primaryStage) throws Exception {
+    
+    /* Control GUI */
+    int gridy = 0;
+    
+    grid.setAlignment(Pos.CENTER);
+    grid.setHgap(10);
+    grid.setVgap(10);
+    grid.setPadding(new Insets(20, 20, 20, 20));
+
+    grid.add(l_display, 0, gridy);
+    rb_on.setToggleGroup(tg_display);
+    rb_off.setToggleGroup(tg_display);
+    hb_display.getChildren().add(rb_off);
+    rb_on.setPadding(new Insets(0, 10, 0, 10));
+    rb_off.setPadding(new Insets(0, 10, 0, 10));
+    rb_off.setSelected(true);
+    hb_display.getChildren().add(rb_on);
+    grid.add(hb_display, 1, gridy++);
+
+    rb_on.setOnAction(new EventHandler<ActionEvent>() {
+      public void handle(ActionEvent e) {
+        showDisplayScreen(false);
+      }
+    });
+
+    rb_off.setOnAction(new EventHandler<ActionEvent>() {
+      public void handle(ActionEvent e) {
+        hideDisplayScreen(false);
+
+      }
+    });
+
+    grid.add(l_config, 0, gridy);
+    grid.add(cb_configs, 1, gridy++);
+    hb_configs.getChildren().add(b_saveConfig);
+    hb_configs.getChildren().add(b_saveAsConfig);
+    hb_configs.getChildren().add(b_delConfig);
+
+    grid.add(hb_configs, 1, gridy++);
+
+    // Location line
+
+    grid.add(l_location, 0, gridy);
+    tf_x.setMaxWidth(50);
+    tf_y.setMaxWidth(50);
+    hb_location.getChildren().add(tf_x);
+    hb_location.getChildren().add(tf_y);
+    grid.add(hb_location, 1, gridy++);
+
+    // Size line
+
+    grid.add(l_size, 0, gridy);
+    tf_w.setMaxWidth(50);
+    tf_h.setMaxWidth(50);
+    hb_size.getChildren().add(tf_w);
+    hb_size.getChildren().add(tf_h);
+    grid.add(hb_size, 1, gridy++);
+
+    // Detect
+
+    grid.add(b_detect, 1, gridy++);
+    b_detect.setOnAction(new EventHandler<ActionEvent>() {
+      public void handle(ActionEvent e) {
+        List<String> choices = new ArrayList<>();
+        int scr_no = 1;
+        ObservableList<Screen> screens = Screen.getScreens();
+        for (Screen scr : screens) {
+          Rectangle2D bounds = scr.getBounds();
+          choices.add(scr_no + ": " + (int) bounds.getWidth() + "x"
+              + (int) bounds.getHeight() + " at (" + (int) bounds.getMinX()
+              + "," + (int) bounds.getMinY() + ")");
+          scr_no++;
+        }
+        ChoiceDialog<String> dialog = new ChoiceDialog<>(choices.get(choices.size() - 1), choices);
+        dialog.setTitle("Screen detection");
+        dialog.setHeaderText("Screens Detected:");
+        dialog.setContentText("Choose screen: ");
+        Optional<String> result = dialog.showAndWait();
+        if (result.isPresent()) {
+          String r = result.get();
+          int pick = Integer.parseInt(r.substring(0, r.indexOf(":"))) - 1;
+          Screen scr = screens.get(pick);
+          Rectangle2D bounds = scr.getBounds();
+          tf_w.setText(String.valueOf((int) bounds.getWidth()));
+          tf_h.setText(String.valueOf((int) bounds.getHeight()));
+          tf_x.setText(String.valueOf((int) bounds.getMinX()));
+          tf_y.setText(String.valueOf((int) bounds.getMinY()));
+          unsaved_changes = true;
+          b_saveConfig.setDisable(false);
+        }
+      }
+    });
+    
+    
+    primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+      public void handle(WindowEvent we) {
+        hideDisplayScreen(false);
+        displayStage.close();
+        System.exit(0);
+      }
+    });
+    
+    b_saveConfig.setOnAction(new EventHandler<ActionEvent>() {
+      @Override
+      public void handle(ActionEvent e) {
+        Node configTag = Tools.getTagWhereAttr(configs_xml, "config", "name", cb_configs.getValue().toString());
+        GUItoXML(configTag);
+        Tools.writeXML(configs_xml, "configs.xml");
+        unsaved_changes = false;
+        b_saveConfig.setDisable(true);
+      }
+    });
+
+    b_saveAsConfig.setOnAction(new EventHandler<ActionEvent>() {
+      @Override
+      public void handle(ActionEvent e) {
+        TextInputDialog tid = new TextInputDialog();
+        tid.setTitle("Please enter name for new config");
+        tid.setHeaderText(null);
+        
+        Optional<String> result = tid.showAndWait();
+        if (result.isPresent()) {
+          String res = result.get().trim();
+          if (Tools.getTagWhereAttr(configs_xml, "config", "name", res) != null) {
+            Alert dupError = new Alert(AlertType.ERROR, "A configuration with that name already exists.", ButtonType.OK);
+            dupError.showAndWait();
+          } else {
+            Element n = Tools.addTag(configs_xml, "config");
+            Tools.setAttribute(n, "name", res);
+            GUItoXML(n);
+            Tools.setAttribute(Tools.getTag(configs_xml, "recent"), "name", res);
+            Tools.writeXML(configs_xml, "configs.xml");
+            unsaved_changes = false;
+            b_saveConfig.setDisable(true);
+            config_choices.add(res);
+            FXCollections.sort(config_choices);
+            cb_configs.getSelectionModel().select(res);
+            
+          }
+        }
+      }
+    });
+
+    b_delConfig.setOnAction(new EventHandler<ActionEvent>() {
+      @Override
+      public void handle(ActionEvent e) {
+        if (Tools.countChildren(configs_xml, "config") <= 1) {
+          Alert zeroError = new Alert(AlertType.ERROR,"Can't delete the only configuration...", ButtonType.OK);
+          zeroError.showAndWait();
+        } else {
+          Alert confirmDel = new Alert(AlertType.CONFIRMATION, "Confirm deleting this configuration...", ButtonType.OK, ButtonType.CANCEL);
+          Optional<ButtonType> result = confirmDel.showAndWait();
+          if ((result.isPresent()) && (result.get() == ButtonType.OK)) {
+            Node x = Tools.getTagWhereAttr(configs_xml, "config", "name", cb_configs.getValue().toString());
+            x.getParentNode().removeChild(x);
+            int index = config_choices.indexOf(cb_configs.getValue().toString());
+            config_choices.remove(index);
+            while (index >= config_choices.size()) index--;
+            cb_configs.getSelectionModel().select(index);
+            Tools.setAttribute(Tools.getTag(configs_xml, "recent"), "name", cb_configs.getValue().toString());
+            Tools.writeXML(configs_xml, "configs.xml");
+            unsaved_changes = false;
+            b_saveConfig.setDisable(true);
+          }
+        }
+      }
+    });
+
+    cb_configs.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
+      @Override
+      public void changed(ObservableValue<? extends String> observableValue, String number, String number2) {
+        boolean proceed = (!unsaved_changes);
+        if (unsaved_changes) {
+          Alert confirmDel = new Alert(AlertType.CONFIRMATION,
+              "There are unsaved changes to this configuration. Proceed anyway?",
+              ButtonType.OK, ButtonType.CANCEL);
+          Optional<ButtonType> result = confirmDel.showAndWait();
+          if ((result.isPresent()) && (result.get() == ButtonType.OK)) proceed = true;
+        }
+        
+        if (proceed) {
+          cb_configs.getSelectionModel().select(number2);
+          Node config = Tools.getTagWhereAttr(configs_xml, "config", "name",cb_configs.getValue().toString());
+          XMLtoGUI(config);
+          Tools.setAttribute(Tools.getTag(configs_xml, "recent"), "name", cb_configs.getValue().toString());
+          Tools.writeXML(configs_xml, "configs.xml");
+          unsaved_changes = false;
+          b_saveConfig.setDisable(true);
+        } else {
+          cb_configs.getSelectionModel().select(number);
+        }
+      }
+    });
+
+    EventHandler<ActionEvent> unsaveAndResizeEvent = new EventHandler<ActionEvent>() {
+      @Override
+      public void handle(ActionEvent e) {
+        changeTF();
+      }
+    };
+
+    tf_x.setOnAction(unsaveAndResizeEvent);
+    tf_y.setOnAction(unsaveAndResizeEvent);
+    tf_w.setOnAction(unsaveAndResizeEvent);
+    tf_h.setOnAction(unsaveAndResizeEvent);
+
+    displayStage = new Stage(StageStyle.UNDECORATED);
+    displayStage.getIcons().add(new Image("file:resources/sbscreen_icon.png"));
+    displayStage.setAlwaysOnTop(true);
+    displayScene = new Scene(displayStageSP, displayStage.getWidth(), displayStage.getHeight(), Color.BLACK);
+    displayStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
+    displayStage.setScene(displayScene);
+    displayStage.setResizable(false);
+    
+    displayStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+      public void handle(WindowEvent we) {
+        hideDisplayScreen(false);
+        rb_off.setSelected(true);
+      }
+    });
+    
+    displayScene.setOnKeyReleased(new EventHandler<KeyEvent>() {
+      @Override
+      public void handle(KeyEvent e) {
+        if (e.getCode()==KeyCode.ESCAPE) {
+          hideDisplayScreen(false);
+          rb_off.setSelected(true);
+        }
+      }
+    });
+    
+
+    
+    loadXML();
+    b_saveConfig.setDisable(true);
+    unsaved_changes = false;
+    Scene scene = new Scene(grid);
+    scene.setOnKeyReleased(new EventHandler<KeyEvent>() {
+      @Override
+      public void handle(KeyEvent e) {
+        if (e.getCode()==KeyCode.ESCAPE) {
+          hideDisplayScreen(false);
+          rb_off.setSelected(true);
+        }
+      }
+    });
+
+
+    primaryStage.setScene(scene);
+    primaryStage.sizeToScene();
+    primaryStage.setTitle("Micro:bit Epidemic Live Slideshow");
+    primaryStage.setResizable(false);
+    primaryStage.show();
+    
     loadScript();
+    
     screen = Toolkit.getDefaultToolkit().getScreenSize();
     layer = new BufferedImage(screen.width, screen.height, BufferedImage.TYPE_4BYTE_ABGR);
     fx_img = new WritableImage(screen.width, screen.height);
@@ -151,9 +554,10 @@ public class MicroEpiSlideshow extends Application {
     StackPane root = new StackPane();
     root.getChildren().add(epiImage);
     root.getChildren().add(pauseButton);
-    final Scene scene = new Scene(root, screen.width, screen.height);
-    scene.setFill(javafx.scene.paint.Color.BLACK);
-    scene.setOnKeyTyped(new EventHandler<KeyEvent>() {
+    
+    displayScene = new Scene(root, screen.width, screen.height);
+    displayScene.setFill(javafx.scene.paint.Color.BLACK);
+    displayScene.setOnKeyTyped(new EventHandler<KeyEvent>() {
       @Override
       public void handle(KeyEvent event) {
         if (event.getCharacter().toUpperCase().equals("Q"))
@@ -162,10 +566,10 @@ public class MicroEpiSlideshow extends Application {
           pause();
       }
     });
-    primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
-    primaryStage.setScene(scene);
-    primaryStage.setFullScreen(true);
-    primaryStage.show();
+    displayStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
+    displayStage.setScene(displayScene);
+    
+    displayStage.show();
     root.getChildren().add(epiMovie);
     pauseButton.setTranslateX(-50+(screen.width/2));
     pauseButton.setTranslateY(50-(screen.height/2));
@@ -179,7 +583,7 @@ public class MicroEpiSlideshow extends Application {
     width.bind(Bindings.selectDouble(epiImage.sceneProperty(), "width"));
     height.bind(Bindings.selectDouble(epiImage.sceneProperty(), "height"));
     epiMovie.setPreserveRatio(true);
-    jtimer = new Timer(10000,new ActionListener() {
+    jtimer = new Timer(10000,new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent e) {
         nextChapter();
                 
@@ -217,7 +621,7 @@ public class MicroEpiSlideshow extends Application {
     Font axisFont = new Font("Calibri", Font.PLAIN, 14);
     Graphics2D g = getNiceGraphics(bi);
     FontMetrics fm = g.getFontMetrics();
-    g.setColor(Color.WHITE);
+    g.setColor(java.awt.Color.WHITE);
     g.fillRect(0, 0, bi.getWidth(), bi.getHeight());
     g.setFont(titleFont);
     gc.setTimeInMillis(first_time);
@@ -244,7 +648,7 @@ public class MicroEpiSlideshow extends Application {
 
     int no_steps = 1+(int) ((time2 - time1) / (1000 * 60 * step));
     if (no_steps==0) no_steps=1;
-    g.setColor(Color.BLACK);
+    g.setColor(java.awt.Color.BLACK);
     int step_pix = (int) Math.floor(((bi.getWidth() - left_margin) - right_margin) / no_steps);
     g.drawLine(left_margin, (bi.getHeight() - bottom_margin) + 5, bi.getWidth() - right_margin, (bi.getHeight() - bottom_margin) + 5);
     g.drawLine(left_margin - 5, bi.getHeight() - bottom_margin, left_margin - 5, top_margin);
@@ -276,14 +680,14 @@ public class MicroEpiSlideshow extends Application {
     fm = g.getFontMetrics();
     if (include_unconfirmed) {
       bottom_of_title += 15;
-      g.setColor(Color.RED);
+      g.setColor(java.awt.Color.RED);
       g.fillRect(left_of_title, bottom_of_title, 20, 20);
-      g.setColor(Color.BLACK);
+      g.setColor(java.awt.Color.BLACK);
       g.drawRect(left_of_title, bottom_of_title, 20, 20);
       g.drawString(L.getText("ConfirmedCases"), left_of_title + 30, bottom_of_title + 18);
-      g.setColor(Color.LIGHT_GRAY);
+      g.setColor(java.awt.Color.LIGHT_GRAY);
       g.fillRect(right_of_title - 20, bottom_of_title, 20, 20);
-      g.setColor(Color.BLACK);
+      g.setColor(java.awt.Color.BLACK);
       g.drawRect(right_of_title - 20, bottom_of_title, 20, 20);
       g.drawString(L.getText("PotentialCases"), (right_of_title - 30) - fm.stringWidth(L.getText("PotentialCases")), bottom_of_title + 18);
     }
@@ -359,14 +763,14 @@ public class MicroEpiSlideshow extends Application {
         g.drawString(s2, mid - (fm.stringWidth(s2) / 2), 45 + (bi.getHeight() - bottom_margin));
         g.drawLine(left_margin + (step_no * step_pix), (bi.getHeight() - bottom_margin) + 5, left_margin + (step_no * step_pix), (bi.getHeight() - bottom_margin) + 8);
         if (include_unconfirmed) {
-          g.setColor(Color.LIGHT_GRAY);
+          g.setColor(java.awt.Color.LIGHT_GRAY);
           g.fillRect((int) (left_margin + (step_no * step_pix)), (int) (bi.getHeight() - (bottom_margin + (scale_y * (all_cases[step_no] - min_y)))), step_pix, (int) ((scale_y * (all_cases[step_no] - min_y))));
-          g.setColor(Color.BLACK);
+          g.setColor(java.awt.Color.BLACK);
           g.drawRect((int) (left_margin + (step_no * step_pix)), (int) (bi.getHeight() - (bottom_margin + (scale_y * (all_cases[step_no] - min_y)))), step_pix, (int) ((scale_y * (all_cases[step_no] - min_y))));
         }
-        g.setColor(Color.RED);
+        g.setColor(java.awt.Color.RED);
         g.fillRect((int) (left_margin + (step_no * step_pix)), (int) (bi.getHeight() - (bottom_margin + (scale_y * (confirmed_cases[step_no] - min_y)))), step_pix, (int) ((scale_y * (confirmed_cases[step_no] - min_y))));
-        g.setColor(Color.BLACK);
+        g.setColor(java.awt.Color.BLACK);
         g.drawRect((int) (left_margin + (step_no * step_pix)), (int) (bi.getHeight() - (bottom_margin + (scale_y * (confirmed_cases[step_no] - min_y)))), step_pix, (int) ((scale_y * (confirmed_cases[step_no] - min_y))));
         time1 = time2;
         step_no++;
@@ -412,13 +816,13 @@ public class MicroEpiSlideshow extends Application {
     Font axisFont = new Font("Calibri", Font.PLAIN, 14);
     Graphics2D g = getNiceGraphics(bi);
     FontMetrics fm = g.getFontMetrics();
-    g.setColor(Color.WHITE);
+    g.setColor(java.awt.Color.WHITE);
     g.fillRect(0, 0, bi.getWidth(), bi.getHeight());
     g.setFont(titleFont);
     fm = g.getFontMetrics();
     int left_of_title = (int) ((bi.getWidth() - fm.stringWidth(L.getText("GenTimeGraph")))/2);
     int bottom_of_title = (top_margin / 2) - 10;
-    g.setColor(Color.BLACK);
+    g.setColor(java.awt.Color.BLACK);
     g.drawString(L.getText("GenTimeGraph"), left_of_title, bottom_of_title);
     int ybase = bi.getHeight() - bottom_margin;
     g.drawLine(left_margin, ybase, bi.getWidth() - right_margin, ybase);
@@ -434,7 +838,7 @@ public class MicroEpiSlideshow extends Application {
     fm = grot.getFontMetrics();
     grot.drawString(L.getText("PCOfInfections"), -(bi.getHeight() / 2) - (fm.stringWidth(L.getText("PCOfInfections")) / 2), left_margin / 3);
     grot.dispose();
-    g.setColor(new Color(220, 220, 50));
+    g.setColor(new java.awt.Color(220, 220, 50));
     Polygon p = new Polygon();
     for (int i = 0; i < gts.size(); i++) {
       int ypix = (bi.getHeight() - bottom_margin) - (int) ((bi.getHeight() - (top_margin + bottom_margin)) * ((i + 1) / (double) gts.size()));
@@ -445,7 +849,7 @@ public class MicroEpiSlideshow extends Application {
     p.addPoint(left_margin + (int) ((bi.getWidth() - (right_margin + left_margin))), bi.getHeight() - bottom_margin);
     p.addPoint(left_margin, bi.getHeight() - bottom_margin);
     g.fillPolygon(p);
-    g.setColor(Color.BLUE);
+    g.setColor(java.awt.Color.BLUE);
     for (int i = 0; i < p.npoints - 2; i++) {
       g.fillOval(p.xpoints[i], p.ypoints[i], 3, 3);
     }
@@ -454,17 +858,17 @@ public class MicroEpiSlideshow extends Application {
     m = 0;
     Graphics2D g2 = (Graphics2D) g.create();
     g2.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, new float[] { 5.0f }, 0.0f));
-    g2.setColor(Color.DARK_GRAY);
+    g2.setColor(java.awt.Color.DARK_GRAY);
     while (m < largest_gt) {
       int xpix = left_margin + (int) ((m / (double) largest_gt) * (bi.getWidth() - (right_margin + left_margin)));
-      g.setColor(Color.BLACK);
+      g.setColor(java.awt.Color.BLACK);
       g.drawLine(xpix, ybase, xpix, ybase + 5);
       g.drawString(String.valueOf(m / 60), xpix - (fm.stringWidth(String.valueOf(m / 60)) / 2), ybase + 20);
       g2.drawLine(xpix, ybase, xpix, top_margin);
       m += step_size;
     }
 
-    g.setColor(Color.BLACK);
+    g.setColor(java.awt.Color.BLACK);
     g.drawLine(left_margin, bi.getHeight() - bottom_margin, left_margin, top_margin);
 
     for (int i = 0; i <= 10; i++) {
@@ -521,10 +925,10 @@ public class MicroEpiSlideshow extends Application {
     Font axisFont = new Font("Calibri", Font.PLAIN, 14);
     Graphics2D g = getNiceGraphics(bi);
     FontMetrics fm = g.getFontMetrics();
-    g.setColor(Color.WHITE);
+    g.setColor(java.awt.Color.WHITE);
     g.fillRect(0, 0, bi.getWidth(), bi.getHeight());
     g.setFont(titleFont);
-    g.setColor(Color.BLACK);
+    g.setColor(java.awt.Color.BLACK);
     g.drawLine(left_margin, (bi.getHeight() - bottom_margin) + 5, bi.getWidth() - right_margin, (bi.getHeight() - bottom_margin) + 5);
     g.drawLine(left_margin - 5, bi.getHeight() - bottom_margin, left_margin - 5, top_margin);
     int lgth = effective_r0.size();
@@ -545,14 +949,14 @@ public class MicroEpiSlideshow extends Application {
     g.drawString(L.getText("Number_infections"), (bi.getWidth() - fm.stringWidth(L.getText("Number_infections"))) / 2, bi.getHeight() - (bottom_margin / 6));
     if (include_unconfirmed) {
       bottom_of_title += 15;
-      g.setColor(Color.RED);
+      g.setColor(java.awt.Color.RED);
       g.fillRect(left_of_title, bottom_of_title, 20, 20);
-      g.setColor(Color.BLACK);
+      g.setColor(java.awt.Color.BLACK);
       g.drawRect(left_of_title, bottom_of_title, 20, 20);
       g.drawString(L.getText("Effective_R0"), left_of_title + 30, bottom_of_title + 18);
-      g.setColor(Color.LIGHT_GRAY);
+      g.setColor(java.awt.Color.LIGHT_GRAY);
       g.fillRect(right_of_title - 20, bottom_of_title, 20, 20);
-      g.setColor(Color.BLACK);
+      g.setColor(java.awt.Color.BLACK);
       g.drawRect(right_of_title - 20, bottom_of_title, 20, 20);
       g.drawString(L.getText("Theoretical_R0"), (right_of_title - 30) - fm.stringWidth(L.getText("Theoretical_R0")), bottom_of_title + 18);
     }
@@ -590,18 +994,18 @@ public class MicroEpiSlideshow extends Application {
         g.drawString(String.valueOf(i), mid - (fm.stringWidth(String.valueOf(i)) / 2), 25 + (bi.getHeight() - bottom_margin));
         g.drawLine(left_margin + (i * step_pix), (bi.getHeight() - bottom_margin) + 5, left_margin + (i * step_pix), (bi.getHeight() - bottom_margin) + 8);
         if (include_unconfirmed) {
-          g.setColor(Color.LIGHT_GRAY);
+          g.setColor(java.awt.Color.LIGHT_GRAY);
           g.fillRect((int) (left_margin + ((i + 0.5) * step_pix)), (int) (bi.getHeight() - (bottom_margin + (scale_y * (potential_r0.get(i) - min_y)))), step_pix / 4, (int) ((scale_y * (potential_r0.get(i) - min_y))));
-          g.setColor(Color.BLACK);
+          g.setColor(java.awt.Color.BLACK);
           g.drawRect((int) (left_margin + ((i + 0.5) * step_pix)), (int) (bi.getHeight() - (bottom_margin + (scale_y * (potential_r0.get(i) - min_y)))), step_pix / 4, (int) ((scale_y * (potential_r0.get(i) - min_y))));
-          g.setColor(Color.RED);
+          g.setColor(java.awt.Color.RED);
           g.fillRect((int) (left_margin + ((i + 0.25) * step_pix)), (int) (bi.getHeight() - (bottom_margin + (scale_y * (effective_r0.get(i) - min_y)))), step_pix / 4,  (int) ((scale_y * (effective_r0.get(i) - min_y))));
-          g.setColor(Color.BLACK);
+          g.setColor(java.awt.Color.BLACK);
           g.drawRect((int) (left_margin + ((i + 0.25) * step_pix)), (int) (bi.getHeight() - (bottom_margin + (scale_y * (effective_r0.get(i) - min_y)))), step_pix / 4,  (int) ((scale_y * (effective_r0.get(i) - min_y))));
         } else {
-          g.setColor(Color.RED);
+          g.setColor(java.awt.Color.RED);
           g.fillRect((int) (left_margin + (i * step_pix)), (int) (bi.getHeight() - (bottom_margin + (scale_y * (effective_r0.get(i) - min_y)))), step_pix, (int) ((scale_y * (effective_r0.get(i) - min_y))));
-          g.setColor(Color.BLACK);
+          g.setColor(java.awt.Color.BLACK);
           g.drawRect((int) (left_margin + (i * step_pix)), (int) (bi.getHeight() - (bottom_margin + (scale_y * (effective_r0.get(i) - min_y)))), step_pix, (int) ((scale_y * (effective_r0.get(i) - min_y))));
         }
       }
@@ -666,7 +1070,7 @@ public class MicroEpiSlideshow extends Application {
     w=(w-800)/2;
     int h = bi.getHeight();
     g2d.setFont(new Font("Arial",Font.PLAIN,28));
-    g2d.setColor(Color.BLACK);
+    g2d.setColor(java.awt.Color.BLACK);
     g2d.drawString(L.getText("Seed"),w+100, h-100);
     g2d.drawString(L.getText("Infector"), w+100,h-60);
     g2d.drawString(L.getText("Terminal"), w+100,h-20);
@@ -697,7 +1101,7 @@ public class MicroEpiSlideshow extends Application {
       int x = (int) ((screen.width - new_wid) / 2);
       int y = (int) ((screen.height - new_hei) / 2);
       Graphics2D g = getNiceGraphics(layer);
-      g.setColor(Color.WHITE);
+      g.setColor(java.awt.Color.WHITE);
       g.fillRect(0, 0, layer.getWidth(), layer.getHeight());
       g.drawImage(bi, x, y, x + (int) new_wid, y + (int) new_hei, 0, 0, wid, hei, null);
       bi = null;
