@@ -66,6 +66,9 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
+
 
 
 
@@ -77,6 +80,8 @@ import javafx.stage.WindowEvent;
 public class MicroEpiSlideshow extends Application {
   /* GUI for screen control */
   
+  //final String dataPath = "C:/Files/Dev/public-events-microbit-epidemic/data/";
+  final String dataPath = "../data/";
   public int no_events = 0;
   boolean unsaved_changes = false;
  
@@ -89,6 +94,8 @@ public class MicroEpiSlideshow extends Application {
   final Label l_display = new Label("Display");
   final Label l_location = new Label("Location (x,y)");
   final Label l_size = new Label("Size (w,h)");
+  final Label l_epi = new Label("None set yet");
+  final Button b_epi = new Button("Set Datafile");
 
   final GridPane grid = new GridPane();
   final TextField tf_x = new TextField();
@@ -98,6 +105,7 @@ public class MicroEpiSlideshow extends Application {
   final HBox hb_display = new HBox();
   final HBox hb_location = new HBox();
   final HBox hb_size = new HBox();
+  final HBox hb_data = new HBox();
 
   final ToggleGroup tg_display = new ToggleGroup();
   final Button b_detect = new Button("Detect Fullscreen");
@@ -115,7 +123,7 @@ public class MicroEpiSlideshow extends Application {
 
   
   //String in_file = "C:/Files/Dev/Eclipse/microepi-manager/498461975_289.csv";
-  String in_file = "C:/Files/Dev/Eclipse/microepi-manager/newepi.csv";
+  String in_file = null;
   
   
   LangSupport L = new LangSupport();
@@ -346,7 +354,8 @@ public class MicroEpiSlideshow extends Application {
     hb_size.getChildren().add(tf_w);
     hb_size.getChildren().add(tf_h);
     grid.add(hb_size, 1, gridy++);
-
+    
+    
     // Detect
 
     grid.add(b_detect, 1, gridy++);
@@ -382,6 +391,32 @@ public class MicroEpiSlideshow extends Application {
       }
     });
     
+    // Set Datafile
+    
+    
+    hb_data.getChildren().add(b_epi);
+    grid.add(hb_data,  0,  gridy);
+    grid.add(l_epi, 1, gridy++);
+    
+    final Stage _stage = primaryStage;
+    b_epi.setOnAction(new EventHandler<ActionEvent>() {
+      @Override
+      public void handle(ActionEvent e) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Choose CSV File");
+        fileChooser.getExtensionFilters().addAll(
+            new ExtensionFilter("CSV Files", "*.csv"));
+        fileChooser.setInitialDirectory(new File(dataPath));
+        File selectedFile = fileChooser.showOpenDialog(_stage);
+        if (selectedFile != null) {
+          in_file = selectedFile.getPath();
+          l_epi.setText(selectedFile.getName());
+          refreshData();
+        }
+        unsaved_changes = true;
+
+      }
+    });
     
     primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
       public void handle(WindowEvent we) {
@@ -498,6 +533,7 @@ public class MicroEpiSlideshow extends Application {
     displayStage = new Stage(StageStyle.UNDECORATED);
     displayStage.getIcons().add(new Image("file:resources/sbscreen_icon.png"));
     displayStage.setAlwaysOnTop(true);
+    
     displayScene = new Scene(displayStageSP, displayStage.getWidth(), displayStage.getHeight(), Color.BLACK);
     displayStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
     displayStage.setScene(displayScene);
@@ -516,11 +552,13 @@ public class MicroEpiSlideshow extends Application {
         if (e.getCode()==KeyCode.ESCAPE) {
           hideDisplayScreen(false);
           rb_off.setSelected(true);
+        } else if (e.getCode()==KeyCode.Q) {
+          jump();
+        } else {
+          pause();
         }
       }
     });
-    
-
     
     loadXML();
     b_saveConfig.setDisable(true);
@@ -529,9 +567,15 @@ public class MicroEpiSlideshow extends Application {
     scene.setOnKeyReleased(new EventHandler<KeyEvent>() {
       @Override
       public void handle(KeyEvent e) {
-        if (e.getCode()==KeyCode.ESCAPE) {
-          hideDisplayScreen(false);
-          rb_off.setSelected(true);
+        if (rb_on.isSelected()) {
+          if (e.getCode()==KeyCode.ESCAPE) {
+            hideDisplayScreen(false);
+            rb_off.setSelected(true);
+          } else if (e.getCode()==KeyCode.Q) {
+            jump();
+          } else {
+            pause();
+          }
         }
       }
     });
@@ -551,26 +595,16 @@ public class MicroEpiSlideshow extends Application {
     epiImage.setImage(fx_img);
     pauseButton.setImage(pauseImg);
     pauseButton.setVisible(false);
-    StackPane root = new StackPane();
-    root.getChildren().add(epiImage);
-    root.getChildren().add(pauseButton);
+    displayStageSP.getChildren().add(epiImage);
+    displayStageSP.getChildren().add(pauseButton);
     
-    displayScene = new Scene(root, screen.width, screen.height);
     displayScene.setFill(javafx.scene.paint.Color.BLACK);
-    displayScene.setOnKeyTyped(new EventHandler<KeyEvent>() {
-      @Override
-      public void handle(KeyEvent event) {
-        if (event.getCharacter().toUpperCase().equals("Q"))
-          jump();
-        else 
-          pause();
-      }
-    });
+   
     displayStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
     displayStage.setScene(displayScene);
     
     displayStage.show();
-    root.getChildren().add(epiMovie);
+    displayStageSP.getChildren().add(epiMovie);
     pauseButton.setTranslateX(-50+(screen.width/2));
     pauseButton.setTranslateY(50-(screen.height/2));
 
@@ -1160,7 +1194,7 @@ public class MicroEpiSlideshow extends Application {
       br.close();
       
     } catch (Exception ex) {
-      ex.printStackTrace();
+
     }
   }
   
@@ -1214,6 +1248,7 @@ public class MicroEpiSlideshow extends Application {
     } else if (line.toUpperCase().startsWith("NETWORKGRAPH")) {
       refreshData();
       File f = new File("staticnetworkplot.png");
+      System.out.println(f.getPath());
       if (f.length()>0) showImage("staticnetworkplot.png",true);
       Runtime rt = Runtime.getRuntime();
       bits = new String[] {RScript,RNetGraph,in_file,String.valueOf(screen.width),String.valueOf(screen.height),div_col1, div_col2, div_col3, "staticnetworkplot.png"};
