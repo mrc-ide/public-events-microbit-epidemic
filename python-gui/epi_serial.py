@@ -27,6 +27,8 @@ class EpiSerial:
     MSG_SEED_EPI = '4'
     MSG_RESET_EPI = '5#'
     MSG_POWER_OFF = '6#'
+    OUTPUT_PATH = '../data/'
+    #OUTPUT_PATH = '../../public-events-microbit-epidemic/data/'
     
     MICROBIT_PID = 516
     MICROBIT_VID = 3368
@@ -171,7 +173,7 @@ class EpiSerial:
                 #Incoming is INF:ID:VICTIM:TIME:NCONTACTS
                 bits = data.split(":")
                 self.gui_link.set_minion_status(bits[2], self.gui_link.STATUS_INFECTED)
-                fn = self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
+                fn = self.OUTPUT_PATH+self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
                 
                 if (not os.path.isfile(fn)):
                     with open(fn, "w") as f:
