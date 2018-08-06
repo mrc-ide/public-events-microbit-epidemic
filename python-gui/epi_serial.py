@@ -27,8 +27,8 @@ class EpiSerial:
     MSG_SEED_EPI = '4'
     MSG_RESET_EPI = '5#'
     MSG_POWER_OFF = '6#'
-    OUTPUT_PATH = '../data/'
-    #OUTPUT_PATH = '../../public-events-microbit-epidemic/data/'
+    #OUTPUT_PATH = '../data/'
+    OUTPUT_PATH = '../../public-events-microbit-epidemic/data/'
     
     MICROBIT_PID = 516
     MICROBIT_VID = 3368
@@ -239,10 +239,31 @@ class EpiSerial:
                str(self.gui_link.cb_btrans.current()) + "," +
                str(self.gui_link.cb_brec.current()) + "," +
                str(self.gui_link.cb_icons.current()) + ",#")
-        print msg
-              
+                      
         self.serial_port.write(msg+"\n")
         self.current_epi_t0 = time.time()
+        
+        # Also write a meta file for the viewer.
+        
+        fn = self.OUTPUT_PATH+self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".xml"
+        players = ""
+        for x in range(10):
+            for y in range(10):
+                if (self.minions[x][y]['bg'] == 'green'):
+                    if (players != ""):
+                        players = players + ","
+                    players = players + ((y * 10) + x) 
+
+        with open(fn, "w") as f:
+            f.write("<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>")
+            f.write("<meta>")
+            f.write("  <params>" + msg + "</params>")
+            f.write("  <time>" + self.current_epi_t0 + "</time>")
+            f.write("  <players>" + players + "</players>")
+            f.write("  <game>" + self.gui_link.cb_paramset.current() + "</game>")
+            f.write("</meta>")
+            
+                
     
     # Send seeding information to master, who forwards it by radio to minion.
     def seed_epidemic(self):
