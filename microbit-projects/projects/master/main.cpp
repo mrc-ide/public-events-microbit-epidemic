@@ -11,7 +11,7 @@ ManagedString END_SERIAL("#\n");
 ManagedString NEWLINE("\n");
 ManagedString REG("REG");
 ManagedString COLON(":");
-ManagedString VERSION_INFO("VER:Epi Master 1.12:");
+ManagedString VERSION_INFO("VER:Epi Master 1.13:");
 ManagedString RESTART_INFO("VER:Push reset button and rescan:");
 ManagedString INF_MSG("INF:");
 ManagedString RECOV_MSG("REC:");
@@ -320,6 +320,7 @@ void receiveSerial(MicroBitEvent) {
         PacketBuffer buf(RESET_MSG_SIZE);
         uint8_t *ibuf = buf.getBytes();
         ibuf[MSG_TYPE] = RESET_MSG;
+        memcpy(&ibuf[RESET_MSG_MASTER_SERIAL], &serial_no, SIZE_INT);
         uBit.radio.setGroup(REGISTERED_GROUP);
         uBit.radio.datagram.send(buf);
         current_stage = MASTER_STAGE_WAIT_PARAMS;
@@ -328,6 +329,7 @@ void receiveSerial(MicroBitEvent) {
         PacketBuffer buf(POWER_OFF_MSG_SIZE);
         uint8_t *ibuf = buf.getBytes();
         ibuf[MSG_TYPE] = POWER_OFF_MSG;
+        memcpy(&ibuf[POWER_OFF_MASTER_SERIAL], &serial_no, SIZE_INT);
         uBit.radio.setGroup(REGISTERED_GROUP);
         uBit.radio.datagram.send(buf);
         current_stage = MASTER_STAGE_POWER_OFF;

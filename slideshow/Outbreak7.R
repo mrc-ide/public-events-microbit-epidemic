@@ -39,8 +39,29 @@ recencytextsizes <- c(0.8,1.4)       ## sizes of text for recency
 
 ## load the data
 
-all_data <- read.csv(outbreakdatafilename)
+all_data <- read.csv(outbreakdatafilename, stringsAsFactors = FALSE)
 frame <- 0
+
+# Work out terminals
+
+# If n_contacts was zero...
+
+all_data$Seeding[all_data$Event=='I' & all_data$NoContacts==0] <- 'X'
+
+# If there's a recovery event, but no infections...
+
+recoveries = all_data$ID[all_data$Event=='R']
+
+for (recovery in recoveries) {
+  if (nrow(all_data[!is.na(all_data$Infectedby) &
+                    all_data$Infectedby == recovery, ])==0) {
+    all_data$Seeding[all_data$ID == recovery] <- 'X'
+  }
+}
+
+
+
+
 
 for (row_no in seq_len(nrow(all_data))) {
   data <- all_data[1:row_no, ]

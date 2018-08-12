@@ -34,7 +34,7 @@ class EpiSerial:
     MICROBIT_VID = 3368
     
     input_buffer = ""
-    latest_minion_buildno = '12'
+    latest_minion_buildno = '13'
     
     current_epi_t0 = 0
     

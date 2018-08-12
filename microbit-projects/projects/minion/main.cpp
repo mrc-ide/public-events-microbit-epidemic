@@ -4,8 +4,8 @@
 
 MicroBit uBit;
 
-ManagedString VERSION_INFO("VER:Epi Minion 1.12:");
-#define MINION_BUILD_NO 12
+ManagedString VERSION_INFO("VER:Epi Minion 1.13:");
+#define MINION_BUILD_NO 13
 ManagedString NEWLINE("\n");
 ManagedString END_SERIAL("#\n");
 
@@ -168,6 +168,13 @@ void recover() {
 // code, and make it look pretty, here is a macro that does it. I think macro
 // with a bit more code is better than a function call here...
 
+#define CHECK_RIGHT_SERIAL(__serial) \
+  int check_master_serial; \
+  memcpy(&check_master_serial, &ibuf[__serial], SIZE_INT); \
+  if (check_master_serial == master_serial) {
+
+#define END_CHECK_RIGHT_SERIAL }
+
 #define CHECK_RIGHT_EPIDEMIC(__serial, __epi) \
   int check_master_serial; \
   memcpy(&check_master_serial, &ibuf[__serial], SIZE_INT); \
@@ -249,15 +256,33 @@ void onData(MicroBitEvent) {
   // I receive a RESET code:-
 
     if (ibuf[MSG_TYPE] == RESET_MSG) {
-      uBit.radio.disable();
-      reset();
-      uBit.radio.enable();
+      CHECK_RIGHT_SERIAL(RESET_MSG_MASTER_SERIAL)
 
+        // Re-broadcast reset, then change channel.
+        PacketBuffer omsg(RESET_MSG_SIZE);
+        uint8_t *obuf = omsg.getBytes();
+        obuf[MSG_TYPE] = RESET_MSG;
+        memcpy(&obuf[RESET_MSG_MASTER_SERIAL], &master_serial, SIZE_INT);
+        uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
+        uBit.radio.datagram.send(omsg);
+        uBit.radio.disable();
+        reset();
+        uBit.radio.enable();
+      END_CHECK_RIGHT_SERIAL
 
     // I receive a POWER-OFF code:-
 
     } else if (ibuf[MSG_TYPE] == POWER_OFF_MSG) {
-      current_stage = MINION_STAGE_POWER_OFF;
+      CHECK_RIGHT_SERIAL(POWER_OFF_MASTER_SERIAL)
+        // Re-broadcast reset, then change channel.
+        PacketBuffer omsg(POWER_OFF_MSG_SIZE);
+        uint8_t *obuf = omsg.getBytes();
+        obuf[MSG_TYPE] = POWER_OFF_MSG;
+        memcpy(&obuf[POWER_OFF_MASTER_SERIAL], &master_serial, SIZE_INT);
+        uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
+        uBit.radio.datagram.send(omsg);
+        current_stage = MINION_STAGE_POWER_OFF;
+      END_CHECK_RIGHT_SERIAL
 
     // Here, a susceptible minion receives a message to seed an infection.
     } else if ((ibuf[MSG_TYPE] == SEED_MINION_MSG) && (current_state == STATE_SUSCEPTIBLE)) {
