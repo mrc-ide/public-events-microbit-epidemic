@@ -3,7 +3,6 @@ import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -38,8 +37,8 @@ public class MultiCopy extends JFrame {
   private int [] microbit_counter = new int[26];
   ActivityTable dtm_activity = new ActivityTable();
   JTable jt_activity = new JTable(dtm_activity);
-  
   byte[] firmware;
+  final String defaultFolder = "../microbit-binaries";
   
   public void loadFirmware(String fn) {
     File f = new File(fn);
@@ -54,7 +53,7 @@ public class MultiCopy extends JFrame {
   
   public void writeFirmware(File fn) {
     try {
-      DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(fn)));
+      DataOutputStream dos = new DataOutputStream(new FileOutputStream(fn));
       for (int i=0; i<firmware.length; i++) dos.writeByte(firmware[i]);
       dos.close();
     } catch (Exception e) { e.printStackTrace(); }
@@ -85,7 +84,14 @@ public class MultiCopy extends JFrame {
         if ((new File(f.getPath()+"DETAILS.TXT").exists()) &&
             new File(f.getPath()+"MICROBIT.HTM").exists()) {
               ok=true;
-            }
+        }
+      }
+      if (fs.length==3) {
+        if ((new File(f.getPath()+"DETAILS.TXT").exists()) &&
+            (new File(f.getPath()+"HELP_FAQ.HTM").exists()) &&
+            (new File(f.getPath()+"AUTO_RST.CFG").exists())) { 
+              ok=true;
+        }
       }
     }
     return ok;
@@ -155,7 +161,7 @@ public class MultiCopy extends JFrame {
     jfc.setAcceptAllFileFilterUsed(false);
     FileNameExtensionFilter filter = new FileNameExtensionFilter("Binary .hex files", "hex");
     jfc.addChoosableFileFilter(filter);
-    jfc.setCurrentDirectory(new File("../microbit-binaries"));
+    jfc.setCurrentDirectory(new File(defaultFolder));
     setVisible(true);
   }
   
