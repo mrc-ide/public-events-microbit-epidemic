@@ -79,9 +79,14 @@ void ledStatus() {
         uBit.display.image.setPixelValue(i,j,255);
       for (int j=1; j<=3; j++) uBit.display.image.setPixelValue(1,j,255);
     } else if (param_icons == ICONS_IxR) {
-      for (int j=0; j<=5; j++) uBit.display.image.setPixelValue(2,j,255);
+      for (int j=0; j<=4; j++) for (int i=1; i<=2; i++) uBit.display.image.setPixelValue(i,j,255);
+      uBit.display.image.setPixelValue(0,1,255);
+      uBit.display.image.setPixelValue(0,2,255);
       uBit.display.image.setPixelValue(0,3,255);
-      uBit.display.image.setPixelValue(2,3,255);
+      uBit.display.image.setPixelValue(3,1,255);
+      uBit.display.image.setPixelValue(3,2,255);
+      uBit.display.image.setPixelValue(3,3,255);
+
     }
 
   } else if (current_state == STATE_RECOVERED) {

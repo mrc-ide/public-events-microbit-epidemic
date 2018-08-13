@@ -224,6 +224,36 @@ class EpiSerial:
     def set_gui_link(self, gui_link):
         self.gui_link = gui_link
     
+    def write_xml_params(self):
+        fn = self.OUTPUT_PATH+self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".xml"
+        players = ""
+        for x in range(10):
+            for y in range(10):
+                if (self.gui_link.minions[x][y]['bg'] == 'green'):
+                    if (players != ""):
+                        players = players + ","
+                    players = players + str((y * 10) + x) 
+
+        msg = (self.gui_link.sv_epidno.get() + "," +
+               self.gui_link.sv_r0.get() + "," +
+               str(self.gui_link.cb_rtype.current()) + "," +
+               self.gui_link.cb_poimin.get() + "," +
+               self.gui_link.cb_poimax.get() + "," +
+               self.gui_link.cb_rpower.get() + "," +
+               self.gui_link.cb_exposure.get() + "," +
+               str(self.gui_link.cb_btrans.current()) + "," +
+               str(self.gui_link.cb_brec.current()) + "," +
+               str(self.gui_link.cb_icons.current()))
+
+        with open(fn, "w") as f:
+            f.write("<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>\n")
+            f.write("<meta>\n")
+            f.write("  <params>" + msg + "</params>\n")
+            f.write("  <time>" + str(self.current_epi_t0) + "</time>\n")
+            f.write("  <players>" + str(players) + "</players>\n")
+            f.write("  <game>" + str(self.gui_link.cb_paramset.current()) + "</game>\n")
+            f.write("</meta>")
+
     
     # Send the parameters to the micro:bit master.
     def send_params(self):
@@ -245,24 +275,7 @@ class EpiSerial:
         
         # Also write a meta file for the viewer.
         
-        fn = self.OUTPUT_PATH+self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".xml"
-        players = ""
-        for x in range(10):
-            for y in range(10):
-                if (self.gui_link.minions[x][y]['bg'] == 'green'):
-                    if (players != ""):
-                        players = players + ","
-                    players = players + ((y * 10) + x) 
-
-        with open(fn, "w") as f:
-            f.write("<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>")
-            f.write("<meta>")
-            f.write("  <params>" + msg + "</params>")
-            f.write("  <time>" + self.current_epi_t0 + "</time>")
-            f.write("  <players>" + players + "</players>")
-            f.write("  <game>" + self.gui_link.cb_paramset.current() + "</game>")
-            f.write("</meta>")
-            
+                    
                 
     
     # Send seeding information to master, who forwards it by radio to minion.
@@ -273,6 +286,7 @@ class EpiSerial:
 
         msg = self.MSG_SEED_EPI + self.gui_link.sv_seedid.get() + "," + str(forcer) + ",#"
         self.serial_port.write(msg+"\n")
+        self.write_xml_params()
         
     def reset_epidemic(self):
         self.serial_port.write(self.MSG_RESET_EPI+"\n")
