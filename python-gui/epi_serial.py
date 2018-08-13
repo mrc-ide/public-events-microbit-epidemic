@@ -251,7 +251,7 @@ class EpiSerial:
             f.write("  <params>" + msg + "</params>\n")
             f.write("  <time>" + str(self.current_epi_t0) + "</time>\n")
             f.write("  <players>" + str(players) + "</players>\n")
-            f.write("  <game>" + str(self.gui_link.cb_paramset.current()) + "</game>\n")
+            f.write("  <game>" + str(self.gui_link.cb_paramset.get()) + "</game>\n")
             f.write("</meta>")
 
     
