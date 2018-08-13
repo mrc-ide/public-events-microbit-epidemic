@@ -249,7 +249,7 @@ class EpiSerial:
         players = ""
         for x in range(10):
             for y in range(10):
-                if (self.minions[x][y]['bg'] == 'green'):
+                if (self.gui_link.minions[x][y]['bg'] == 'green'):
                     if (players != ""):
                         players = players + ","
                     players = players + ((y * 10) + x) 
