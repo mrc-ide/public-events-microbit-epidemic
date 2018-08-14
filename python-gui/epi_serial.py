@@ -27,9 +27,8 @@ class EpiSerial:
     MSG_SEED_EPI = '4'
     MSG_RESET_EPI = '5#'
     MSG_POWER_OFF = '6#'
-    #OUTPUT_PATH = '../data/'
-    OUTPUT_PATH = '../../public-events-microbit-epidemic/data/'
-    
+    OUTPUT_PATH = '../data/'
+        
     MICROBIT_PID = 516
     MICROBIT_VID = 3368
     
@@ -173,7 +172,7 @@ class EpiSerial:
                 #Incoming is INF:ID:VICTIM:TIME:NCONTACTS
                 bits = data.split(":")
                 self.gui_link.set_minion_status(bits[2], self.gui_link.STATUS_INFECTED)
-                fn = self.OUTPUT_PATH+self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
+                fn = self.OUTPUT_PATH + self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
                 
                 if (not os.path.isfile(fn)):
                     with open(fn, "w") as f:
@@ -199,7 +198,7 @@ class EpiSerial:
             elif (data[0:4] == self.MSG_IN_RECOV):
                 bits = data.split(":")
                 self.gui_link.set_minion_status(bits[1], self.gui_link.STATUS_RECOVERED)
-                fn = self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
+                fn = self.OUTPUT_PATH + self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
                 rec_time_epoch = self.current_epi_t0 + (float(bits[2]) / 1000.0)
                 rec_time = time.gmtime(rec_time_epoch)
                 mins = rec_time.tm_min + (rec_time.tm_sec/60.0)
@@ -225,7 +224,7 @@ class EpiSerial:
         self.gui_link = gui_link
     
     def write_xml_params(self):
-        fn = self.OUTPUT_PATH+self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".xml"
+        fn = self.OUTPUT_PATH + self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".xml"
         players = ""
         for x in range(10):
             for y in range(10):
