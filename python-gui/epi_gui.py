@@ -10,7 +10,15 @@ import os
 import tkFont
 from epi_lang import EpiLang
 from ttk import Combobox
-from tkinter.scrolledtext import ScrolledText
+
+try:
+    # For Python 2
+    import Tkinter as tk
+    import ScrolledText as tkst
+except ImportError:
+    # For Python 3
+    import tkinter as tk
+    import tkinter.scrolledtext as tkst
 
 class EpiGui:
     
@@ -464,7 +472,7 @@ class EpiGui:
         
         self.l_task = Label(self.window, text = "Current Task")
         self.st_font = tkFont.Font(family = "Calibri", size = 10)
-        self.st_instruct = ScrolledText(self.window, width = 30, height = 5, font = self.st_font,
+        self.st_instruct = tkst.ScrolledText(self.window, width = 30, height = 5, font = self.st_font,
                                         wrap = 'word', state = 'disabled')
 
 
