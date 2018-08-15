@@ -6,7 +6,13 @@ Created on 6 Jun 2018
 
 from threading import Thread
 import time
-import serial.tools.list_ports
+
+try:
+    import serial.tools.list_ports
+except ImportError, e:
+    pip.main(['install', 'pySerial'])
+    import serial.tools.list_ports
+
 import re
 import csv
 import os.path
@@ -296,6 +302,7 @@ class EpiSerial:
     # Initialise serial port listener thread
 
     def __init__(self):
+
         self.gui = 0
         self.serial_port = 0
         self.serial_port_thread = Thread(target = self.read_from_port)
