@@ -10,6 +10,7 @@ import time
 try:
     import serial.tools.list_ports
 except ImportError, e:
+    import pip
     pip.main(['install', 'pySerial'])
     import serial.tools.list_ports
 
