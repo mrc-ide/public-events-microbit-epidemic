@@ -157,7 +157,7 @@ for (row_no in seq_len(nrow(all_data))) {
       vertex.sides = seeding.shape,
       displaylabels = TRUE,
       boxed.labels = FALSE,
-      label.cex = 1.25 * label.scaling * recencytext.size,
+      label.cex = 2.00 * label.scaling * recencytext.size,
       edge.lwd = 0.005, edge.col = "black",
       label = network.vertex.names(AB_net),
       label.col = "darkgreen",
