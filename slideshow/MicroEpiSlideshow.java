@@ -69,19 +69,23 @@ import javafx.stage.WindowEvent;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 
-
-
-
 // MicroBit Epidemic Slideshow
-// Hacked out of the Barcode Epidemic Presenter, 3.01
-// It expects lang.txt and script.txt
-@SuppressWarnings("restriction")
+
+// The python-gui writes a CSV and an XML file for an epidemic.
+
+// They can be loaded into the Slideshow. One of the XML parameters
+// is the game-type, and we require script_gametype.txt to exist,
+// which determines which slides to play in which order.
+ 
+// lang.txt is also needed, and script.txt, which is the default
+// script for basic epidemics, or if no matching script_gametype.txt
+// is found. See the script files for examples.
 
 public class MicroEpiSlideshow extends Application {
   /* GUI for screen control */
   
-  //final String dataPath = "C:/Files/Dev/public-events-microbit-epidemic/data/";
-  final String dataPath = "../data/";
+  final String dataPath = "C:/Files/Dev/public-events-microbit-epidemic/data/";
+  //final String dataPath = "../data";
   public int no_events = 0;
   boolean unsaved_changes = false;
  
@@ -116,7 +120,8 @@ public class MicroEpiSlideshow extends Application {
   final Button b_delConfig = new Button("Delete");
 
   Element configs_xml;
-  
+  Element model_xml;
+  String current_script = "script_Basic_Epidemic.txt";
   Stage displayStage;
   final StackPane displayStageSP = new StackPane();
   Scene displayScene = null;
@@ -124,6 +129,11 @@ public class MicroEpiSlideshow extends Application {
   
   //String in_file = "C:/Files/Dev/Eclipse/microepi-manager/498461975_289.csv";
   String in_file = null;
+  String current_params;
+  String current_players;
+  long current_starttime;
+  String current_game;
+    
   
   
   LangSupport L = new LangSupport();
@@ -146,7 +156,6 @@ public class MicroEpiSlideshow extends Application {
   MediaPlayer epiPlayer;  
   WritableImage fx_img;
   Dimension screen;
-  String webFolder="";
   String RScript="";
   String RNetGraph="";
   String div_col1="#000000", div_col2="#000000", div_col3 = "#707070";
@@ -247,7 +256,7 @@ public class MicroEpiSlideshow extends Application {
   
   private void loadScript() {
     try {
-      BufferedReader br = new BufferedReader(new FileReader("script.txt"));
+      BufferedReader br = new BufferedReader(new FileReader(current_script));
       String s = br.readLine();
       String[] bits;
       while (s!=null) {
@@ -255,8 +264,7 @@ public class MicroEpiSlideshow extends Application {
         if ((s.length()>0) && (!s.startsWith("#"))) {
           bits=s.split(":");
           bits[0]=bits[0].toUpperCase();
-          if (bits[0].toUpperCase().equals("WEBFOLDER")) webFolder=s.substring(10);
-          else if (bits[0].toUpperCase().equals("RNETGRAPH")) RNetGraph=s.substring(10);          
+          if (bits[0].toUpperCase().equals("RNETGRAPH")) RNetGraph=s.substring(10);          
           else if (bits[0].toUpperCase().equals("RSCRIPT")) RScript=s.substring(8);
           else if (bits[0].toUpperCase().equals("TIMEZONE")) gc = new GregorianCalendar(TimeZone.getTimeZone(bits[1]));
           else if (bits[0].toUpperCase().equals("LANGUAGE")) L.setLanguage(bits[1]);
@@ -282,7 +290,6 @@ public class MicroEpiSlideshow extends Application {
         if (s!=null) s=br.readLine();
       }
       br.close();
-      if (!webFolder.endsWith(File.separator)) webFolder+=File.separator;
             
       script_indexes = new int[script.size()];
       current_script_line=0;
@@ -318,12 +325,14 @@ public class MicroEpiSlideshow extends Application {
 
     rb_on.setOnAction(new EventHandler<ActionEvent>() {
       public void handle(ActionEvent e) {
+        jtimer.start();
         showDisplayScreen(false);
       }
     });
 
     rb_off.setOnAction(new EventHandler<ActionEvent>() {
       public void handle(ActionEvent e) {
+        jtimer.stop();
         hideDisplayScreen(false);
 
       }
@@ -409,9 +418,27 @@ public class MicroEpiSlideshow extends Application {
         fileChooser.setInitialDirectory(new File(dataPath));
         File selectedFile = fileChooser.showOpenDialog(_stage);
         if (selectedFile != null) {
-          in_file = selectedFile.getPath();
-          l_epi.setText(selectedFile.getName());
-          refreshData();
+          String xmlFile = selectedFile.getPath();
+          xmlFile = xmlFile.substring(0, xmlFile.length()-4)+".xml";
+
+          if (new File(xmlFile).exists()) {
+            in_file = selectedFile.getPath();
+            l_epi.setText(selectedFile.getName());
+            model_xml = Tools.loadDocument(xmlFile);
+            current_params = Tools.getTag(model_xml,  "params").getTextContent();
+            current_players = Tools.getTag(model_xml,  "players").getTextContent();
+            current_starttime = (long) (Float.parseFloat(Tools.getTag(model_xml, "time").getTextContent()));
+            current_game = Tools.getTag(model_xml,  "game").getTextContent();
+            current_script = "script_"+current_game+".txt";
+            loadScript();
+            refreshData();  
+          } else {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText("XML not found error");
+            alert.setContentText("Couldn't find accompanying XML metadata file");
+            alert.showAndWait();
+          }
         }
         unsaved_changes = true;
 
@@ -625,7 +652,6 @@ public class MicroEpiSlideshow extends Application {
     });
     jtimer.setInitialDelay(100);
     jtimer.setRepeats(false);
-    jtimer.start();
   }
 
   public void generateCasesGraph(BufferedImage bi, boolean include_unconfirmed, boolean cumulative) {
@@ -934,6 +960,7 @@ public class MicroEpiSlideshow extends Application {
     // Calculate effective_r0 - for each infection, count actual infections made...
     
     ArrayList<Integer> effective_r0 = new ArrayList<Integer>();
+    while (effective_r0.size()<potential_r0.size()) effective_r0.add(0);
     
     for (int i=0; i<epi_csv.size(); i++) {
       if (epi_csv.get(i)[COL_EVENT].equals("I")) {
@@ -1247,17 +1274,17 @@ public class MicroEpiSlideshow extends Application {
       
     } else if (line.toUpperCase().startsWith("NETWORKGRAPH")) {
       refreshData();
-      File f = new File("staticnetworkplot.png");
-      System.out.println(f.getPath());
-      if (f.length()>0) showImage("staticnetworkplot.png",true);
-      Runtime rt = Runtime.getRuntime();
-      bits = new String[] {RScript,RNetGraph,in_file,String.valueOf(screen.width),String.valueOf(screen.height),div_col1, div_col2, div_col3, "staticnetworkplot.png"};
-      try {
-        rt.exec(bits);
-      } catch (Exception e) { e.printStackTrace(); }
+      if ((in_file!=null) && (new File(in_file).exists())) {
+        File f = new File("staticnetworkplot.png");
+        if (f.length()>0) showImage("staticnetworkplot.png",true);
+        Runtime rt = Runtime.getRuntime();
+        bits = new String[] {RScript,RNetGraph,in_file,String.valueOf(screen.width),String.valueOf(screen.height),div_col1, div_col2, div_col3, "staticnetworkplot.png"};
+        try {
+          rt.exec(bits);
+        } catch (Exception e) { e.printStackTrace(); }
+      }
       jtimer.setInitialDelay(500);
       jtimer.start();
-      
     }
     current_script_line++;
     if (current_script_line>=script.size()) current_script_line=0;
