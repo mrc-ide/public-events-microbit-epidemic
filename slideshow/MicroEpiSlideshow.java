@@ -255,7 +255,6 @@ public class MicroEpiSlideshow extends Application {
   }
   
   private void loadScript() {
-    System.out.println("Loading script");
     script.clear();
     try {
       BufferedReader br = new BufferedReader(new FileReader(current_script));
@@ -1150,7 +1149,7 @@ public class MicroEpiSlideshow extends Application {
       // Start time
       
       g2d.setFont(plain);
-      g2d.drawString("Start time :", mid - (fmPlain.stringWidth("Start time :")),y);
+      g2d.drawString("Detection time :", mid - (fmPlain.stringWidth("Start time :")),y);
       g2d.setFont(bold);
       gc.setTimeInMillis(current_starttime);
       String s = gc.get(GregorianCalendar.YEAR)+"/"+
