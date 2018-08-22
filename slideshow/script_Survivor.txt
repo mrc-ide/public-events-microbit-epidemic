@@ -61,6 +61,8 @@ Wait 10
 #Image["media/01Bearman_network.png"]
 #Wait 10
 NetworkGraph
+Wait 15
+Status Susceptible,Infected,Recovered
 Wait 10
 
 # And the end of the script. Go back to the start.

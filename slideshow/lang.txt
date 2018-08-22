@@ -109,3 +109,15 @@ FR:Infector
 __:Terminal
 EN:Terminal
 FR:Terminal
+
+__:Doctor
+EN:Doctor
+FR:Docteur
+
+__:Infected
+EN:Infected
+FR:Infecté
+
+__:Treated
+EN:Treated
+FR:Guéri

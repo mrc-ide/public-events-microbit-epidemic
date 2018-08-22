@@ -46,7 +46,7 @@ Script:
 # Image["path_to_image1.png","path_to_image2.png"]   -   Similar but with an image.
 #
 
-Image["media/saviour.png"]
+image["media/saviour.png"]
 Wait 10
 
 CasesGraph Cumulative Unconfirmed
@@ -56,9 +56,10 @@ Wait 10
 #Movie["media/04Britain.mp4","media/05planes.mp4","media/ebola_inc.mp4","media/malaria.mp4"]
 #Image["media/01Bearman_network.png"]
 #Wait 10
-NetworkGraph
+NetworkGraph Doctor,Infected,Treated
+Wait 15
+Status Infected,Doctors,Treated
 Wait 10
-
 # And the end of the script. Go back to the start.
 
 Loop

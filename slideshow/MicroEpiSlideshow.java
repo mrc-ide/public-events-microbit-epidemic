@@ -62,12 +62,12 @@ import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
-import javafx.stage.FileChooser;
-import javafx.stage.FileChooser.ExtensionFilter;
 
 // MicroBit Epidemic Slideshow
 
@@ -255,6 +255,8 @@ public class MicroEpiSlideshow extends Application {
   }
   
   private void loadScript() {
+    System.out.println("Loading script");
+    script.clear();
     try {
       BufferedReader br = new BufferedReader(new FileReader(current_script));
       String s = br.readLine();
@@ -425,11 +427,20 @@ public class MicroEpiSlideshow extends Application {
             in_file = selectedFile.getPath();
             l_epi.setText(selectedFile.getName());
             model_xml = Tools.loadDocument(xmlFile);
-            current_params = Tools.getTag(model_xml,  "params").getTextContent();
-            current_players = Tools.getTag(model_xml,  "players").getTextContent();
-            current_starttime = (long) (Float.parseFloat(Tools.getTag(model_xml, "time").getTextContent()));
-            current_game = Tools.getTag(model_xml,  "game").getTextContent();
+            current_params = Tools.getTag(model_xml, "params").getTextContent();
+            current_players = Tools.getTag(model_xml, "players").getTextContent();
+            current_starttime = (long) (1000*Float.parseFloat(Tools.getTag(model_xml, "time").getTextContent()));
+            current_game = Tools.getTag(model_xml, "game").getTextContent();
             current_script = "script_"+current_game+".txt";
+            File f = new File("staticnetworkplot.png");
+            if (f.exists()) try {
+              f.delete();
+            } catch (Exception ex) {}
+            f = new File("status.png");
+            if (f.exists()) try {
+              f.delete();
+            } catch (Exception ex) {}
+            
             loadScript();
             refreshData();  
           } else {
@@ -1125,16 +1136,143 @@ public class MicroEpiSlideshow extends Application {
     });
   }
   
-  public void addNetworkLabels(BufferedImage bi) {
+  public void showStatusPage(String[] fields) {
+    try {
+      BufferedImage bi = ImageIO.read(new File("media/template.png"));
+      Graphics2D g2d = getNiceGraphics(bi);
+      g2d.setColor(java.awt.Color.BLACK);
+      Font plain = new Font("Courier New", Font.PLAIN, 48);
+      Font bold = new Font("Courier New", Font.BOLD, 48);
+      int mid = (bi.getWidth()/2)-20;
+      FontMetrics fmPlain = g2d.getFontMetrics(plain);
+      int y = 250;
+      
+      // Start time
+      
+      g2d.setFont(plain);
+      g2d.drawString("Start time :", mid - (fmPlain.stringWidth("Start time :")),y);
+      g2d.setFont(bold);
+      gc.setTimeInMillis(current_starttime);
+      String s = gc.get(GregorianCalendar.YEAR)+"/"+
+                 (1 + gc.get(GregorianCalendar.MONTH))+"/"+
+                 gc.get(GregorianCalendar.DAY_OF_MONTH)+" "+
+                 gc.get(GregorianCalendar.HOUR_OF_DAY)+":"+
+                 gc.get(GregorianCalendar.MINUTE)+"."+
+                 gc.get(GregorianCalendar.SECOND);
+      g2d.drawString(s, mid+40, y);
+      y+=100;
+      
+      // Epi type:
+      
+      g2d.setFont(plain);
+      g2d.drawString("Scenario :", mid - (fmPlain.stringWidth("Scenario :")), y);
+      g2d.setFont(bold);
+      g2d.drawString(current_game, mid+40, y);
+      y+=100;
+      int[] totals = new int[3];
+      totals[0] = current_players.split(",").length;
+      totals[1] = 0;
+      totals[2] = 0;
+      for (int i=0; i<epi_csv.size(); i++) {
+        if (epi_csv.get(i)[0].equals("R")) {
+          totals[1]--;
+          totals[2]++;
+        } else if (epi_csv.get(i)[0].equals("I")) {
+          totals[1]++;
+          totals[0]--;
+        }
+      }
+      
+      for (int i=0; i<fields.length; i++) {
+        if (fields[i].length()>0) {
+          g2d.setFont(plain);
+          g2d.drawString(fields[i]+" :",  mid-(fmPlain.stringWidth(fields[i]+" :")),y);
+          g2d.setFont(bold);
+          g2d.drawString(String.valueOf(totals[i]),  mid+40,  y);
+          y+=100;
+        }
+      }
+      showBI(bi);
+      bi=null;
+      g2d.dispose();
+      
+    } catch (Exception e) { e.printStackTrace(); }
+  }
+  
+  public void spreaders() {
+    try {
+      BufferedImage bi = ImageIO.read(new File("media/template.png"));
+      Graphics2D g2d = getNiceGraphics(bi);
+      g2d.setColor(java.awt.Color.BLACK);
+      Font plain = new Font("Courier New", Font.PLAIN, 48);
+      Font bold = new Font("Courier New", Font.BOLD, 48);
+      int mid = (bi.getWidth()/2)-20;
+      FontMetrics fmPlain = g2d.getFontMetrics(plain);
+      int y = 250;
+      
+      // Start time
+      
+      g2d.setFont(bold);
+      g2d.drawString("-----------", (mid+ 20) - (fmPlain.stringWidth("-----------")/2),y+50);
+      g2d.drawString("LEADERBOARD", (mid+ 20) - (fmPlain.stringWidth("LEADERBOARD")/2),y);
+      y+=100;
+      g2d.setFont(plain);
+      String[] players = current_players.split(",");
+      int[] victims = new int[players.length];
+      for (int i=0; i<victims.length; i++) victims[i]=0;
+      int total=0;
+      for (int i=0; i<epi_csv.size(); i++) {
+        String[] entry = epi_csv.get(i);
+        if ((entry[0].equals("I")) && (!entry[3].equals("NA"))) {
+          for (int j=0; j<players.length; j++) {
+            if (entry[3].equals(players[j])) {
+              victims[j]++;
+              total++;
+            }
+          }
+        }
+      }
+      int rgb=0;
+      int count=0;
+      while ((total>0) && (count<10)) {
+        int max=victims[0];
+        int max_index=0;
+        for (int i=1; i<victims.length; i++) {
+          if (victims[i]>max) {
+            max=victims[i];
+            max_index=i;
+          }
+        }
+        g2d.setColor(new java.awt.Color(rgb,rgb,rgb));
+        g2d.drawString("PLAYER "+players[max_index]+" . . . . ", 20+mid - (fmPlain.stringWidth("PLAYER "+players[max_index]+" . . . . ")),y);
+        String vv = "victim"+((max==1)?"s":"");
+        g2d.drawString(max+" "+vv, 20+ mid, y);
+        y=y+45;
+        rgb+=20;
+        total-=max;
+        victims[max]=0;
+        count++;
+      }
+      
+      showBI(bi);
+      bi=null;
+      g2d.dispose();
+      
+    } catch (Exception e) { e.printStackTrace(); }
+    
+  }
+  
+  public void addNetworkLabels(BufferedImage bi, String[] labels) {
+    if (labels==null) labels = new String[] {"Seed", "Infector", "Terminal"};
     Graphics2D g2d = getNiceGraphics(bi);
     int w = bi.getWidth();
     w=(w-800)/2;
     int h = bi.getHeight();
     g2d.setFont(new Font("Arial",Font.PLAIN,28));
     g2d.setColor(java.awt.Color.BLACK);
-    g2d.drawString(L.getText("Seed"),w+100, h-100);
-    g2d.drawString(L.getText("Infector"), w+100,h-60);
-    g2d.drawString(L.getText("Terminal"), w+100,h-20);
+    g2d.drawString(L.getText(labels[0]),w+100, h-100);
+    g2d.drawString(L.getText(labels[1]), w+100,h-60);
+    g2d.drawString(L.getText(labels[2]), w+100,h-20);
     g2d.drawOval(w+45,h-120,20,20);
     g2d.drawRect(w+45,h-80,20,20);
     g2d.drawLine(w+45, h-20,w+65,h-20);
@@ -1147,32 +1285,38 @@ public class MicroEpiSlideshow extends Application {
     g2d.dispose();
   }
 
-  public void showImage(String ff, boolean network_labels) {
+  public void showBI(BufferedImage bi) {
+    int wid = bi.getWidth();
+    int hei = bi.getHeight();
+
+    double wid_ratio = screen.width / (double) wid;
+    double hei_ratio = screen.height / (double) hei;
+    double ratio = Math.min(wid_ratio, hei_ratio);
+    double new_wid = wid * ratio;
+    double new_hei = hei * ratio;
+    int x = (int) ((screen.width - new_wid) / 2);
+    int y = (int) ((screen.height - new_hei) / 2);
+    Graphics2D g = getNiceGraphics(layer);
+    g.setColor(java.awt.Color.WHITE);
+    g.fillRect(0, 0, layer.getWidth(), layer.getHeight());
+    g.drawImage(bi, x, y, x + (int) new_wid, y + (int) new_hei, 0, 0, wid, hei, null);
+    bi = null;
+    SwingFXUtils.toFXImage(layer, fx_img);
+    g.dispose();
+    epiImage.setVisible(true);
+    epiMovie.setVisible(false);
+    jtimer.setInitialDelay(500);
+    jtimer.start();
+
+  }
+
+  public void showImage(String ff, boolean network_labels, String[] labels) {
     try {
       BufferedImage bi = ImageIO.read(new File(ff));
-      if (network_labels) addNetworkLabels(bi);
-      int wid = bi.getWidth();
-      int hei = bi.getHeight();
-
-      double wid_ratio = screen.width / (double) wid;
-      double hei_ratio = screen.height / (double) hei;
-      double ratio = Math.min(wid_ratio, hei_ratio);
-      double new_wid = wid * ratio;
-      double new_hei = hei * ratio;
-      int x = (int) ((screen.width - new_wid) / 2);
-      int y = (int) ((screen.height - new_hei) / 2);
-      Graphics2D g = getNiceGraphics(layer);
-      g.setColor(java.awt.Color.WHITE);
-      g.fillRect(0, 0, layer.getWidth(), layer.getHeight());
-      g.drawImage(bi, x, y, x + (int) new_wid, y + (int) new_hei, 0, 0, wid, hei, null);
-      bi = null;
-      SwingFXUtils.toFXImage(layer, fx_img);
-
-      epiImage.setVisible(true);
-      epiMovie.setVisible(false);
-      jtimer.setInitialDelay(500);
-      jtimer.start();      
-      g.dispose();
+      if (network_labels) addNetworkLabels(bi, labels);
+      showBI(bi);
+      bi=null;
+            
      } catch (Exception e) {
       e.printStackTrace();
     }
@@ -1269,14 +1413,20 @@ public class MicroEpiSlideshow extends Application {
       if (themovie.startsWith("\"")) themovie=themovie.substring(1);
       if (themovie.endsWith("\"")) themovie=themovie.substring(0, themovie.length()-1);
       if (movie) playMovie(themovie); 
-      else showImage(themovie,false);
+      else showImage(themovie,false, null);
       
       
     } else if (line.toUpperCase().startsWith("NETWORKGRAPH")) {
       refreshData();
       if ((in_file!=null) && (new File(in_file).exists())) {
+        bits = line.split("\\s+");
+        String[] labels;
+        if (bits.length==1) {
+          labels = new String[] {"Seed","Infector","Terminal"};
+        } else labels = new String(bits[1]).split(",");
+          
         File f = new File("staticnetworkplot.png");
-        if (f.length()>0) showImage("staticnetworkplot.png",true);
+        if (f.length()>0) showImage("staticnetworkplot.png",true, labels);
         Runtime rt = Runtime.getRuntime();
         bits = new String[] {RScript,RNetGraph,in_file,String.valueOf(screen.width),String.valueOf(screen.height),div_col1, div_col2, div_col3, "staticnetworkplot.png"};
         try {
@@ -1285,7 +1435,20 @@ public class MicroEpiSlideshow extends Application {
       }
       jtimer.setInitialDelay(500);
       jtimer.start();
+    
+    } else if (line.toUpperCase().startsWith("STATUS")) {
+      refreshData();
+      bits = line.split("\\s+");
+      String[] fields = new String[] {"Susceptible","Infected","Recovered"};
+      if (bits.length>1) fields = bits[1].split(",");
+      showStatusPage(fields);
+      
+      
+    } else if (line.toUpperCase().startsWith("SPREADERS")) {
+      refreshData();
+      spreaders();
     }
+   
     current_script_line++;
     if (current_script_line>=script.size()) current_script_line=0;
     
