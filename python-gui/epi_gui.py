@@ -8,6 +8,7 @@ from Tkinter import Button, Label, Tk, PhotoImage, Entry, StringVar, IntVar, Che
 import tkMessageBox, tkSimpleDialog
 import os
 import tkFont
+import random
 from epi_lang import EpiLang
 from ttk import Combobox
 
@@ -317,9 +318,6 @@ class EpiGui:
             if (self.minions[sid % 10][sid / 10]['bg'] == self.STATUS_SUSCEPTIBLE):
                 self.b_seedEpidemic['state'] = 'active'
                 
-                
-    
-    
     def click_send_params(self):
         self.save_defaults()
         self.sv_susc.set('0')
@@ -340,6 +338,7 @@ class EpiGui:
         
         self.l_seedid.grid(column = self.LEFT, row = self.TOP, sticky = "E")
         self.l_seedid2.grid(column = 1 + self.LEFT, row = self.TOP, sticky = "W")
+        self.b_rndseed.grid(column = 2 + self.LEFT, row = self.TOP, sticky = "W")
         self.l_forcer.grid(column = self.LEFT, row = 1 + self.TOP, sticky = "E")
         self.tb_forcer.grid(column = 1 + self.LEFT, row = 1 + self.TOP, sticky = "W")
         self.l_ncons.grid(column = self.LEFT, row = 2 + self.TOP, sticky = "E")
@@ -355,8 +354,6 @@ class EpiGui:
         self.l_recov2.grid(column = 1 + self.LEFT, row = 8 + self.TOP, sticky = "E")
         
     def click_seed_epi(self):
-        # TODO: Checking here
-        
         self.serial_link.seed_epidemic()
         self.sv_seedid.set("")
         
@@ -365,7 +362,7 @@ class EpiGui:
         
         if (confirm == 'RESET') or (confirm == 'POWEROFF'):
 
-            self.grid_forget_all([self.l_seedid, self.l_seedid2, self.l_forcer, self.tb_forcer,
+            self.grid_forget_all([self.l_seedid, self.l_seedid2, self.b_rndseed, self.l_forcer, self.tb_forcer,
                 self.l_ncons, self.cb_forcer, self.b_seedEpidemic, self.b_resetEpidemic,
                 self.l_susc, self.l_susc2, self.l_inf, self.l_inf2, self.l_recov, self.l_recov2])
         
@@ -377,7 +374,7 @@ class EpiGui:
             
             elif (confirm == 'POWEROFF'):
                 self.serial_link.poweroff_minions()
-    
+
     def click_minion(self, m_id):
         m_id = int(m_id)
         if (self.serial_link.serial_port != 0):
@@ -386,7 +383,23 @@ class EpiGui:
             else:
                 self.sv_seedid.set('')
         self.update_seed_epi_button()
-            
+
+    def click_random_minion(self):
+        candidates = 0
+        for m_id in range(0, 99):
+            if (self.minions[m_id % 10][m_id / 10]['bg']=='green'):
+                candidates = candidates + 1
+
+        if (candidates>0):
+            r = random.randint(1,candidates)
+            for m_id in range(0, 99):
+                if (self.minions[m_id % 10][m_id / 10]['bg']=='green'):
+                    r = r - 1
+                    if (r == 0):
+                        self.sv_seedid.set(m_id)
+                        self.update_seed_epi_button()
+                        break
+
     def set_minion_status(self, minion_id, status):
         m_id = int(minion_id)
         if (self.minions[m_id % 10][m_id / 10]['bg'] != status):
@@ -560,6 +573,7 @@ class EpiGui:
         self.l_seedid = Label(self.window, text = "Victim:")
         self.sv_seedid = StringVar()
         self.l_seedid2 = Label(self.window, textvariable = self.sv_seedid)
+        self.b_rndseed = Button(self.window, text = 'Random', command = self.click_random_minion)
         self.l_forcer = Label(self.window, text = "Force contacts")
         self.iv_forcer = IntVar()
         self.iv_forcer.set(1)
