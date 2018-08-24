@@ -133,9 +133,10 @@ public class MicroEpiSlideshow extends Application {
   String current_players;
   long current_starttime;
   String current_game;
+  
+  final byte CASES = 1;
+  final byte TREATMENTS = 2;
     
-  
-  
   LangSupport L = new LangSupport();
 
   // Below - set the right timezone!
@@ -664,7 +665,7 @@ public class MicroEpiSlideshow extends Application {
     jtimer.setRepeats(false);
   }
 
-  public void generateCasesGraph(BufferedImage bi, boolean include_unconfirmed, boolean cumulative) {
+  public void generateCasesGraph(BufferedImage bi, boolean include_unconfirmed, boolean cumulative, byte TITLES) {
     // Work out time axis - seconds since midnight.
     
     long first_time=0;
@@ -729,21 +730,24 @@ public class MicroEpiSlideshow extends Application {
     int right_of_title;
     int bottom_of_title;
     if (!cumulative) {
-      left_of_title = (int) ((bi.getWidth() - fm.stringWidth(L.getText("CasesGraph"))) / 2);
-      right_of_title = left_of_title + fm.stringWidth(L.getText("CasesGraph"));
+      String _cg = (TITLES==CASES)?L.getText("CasesGraph"):L.getText("TreatmentsGraph");
+      left_of_title = (int) ((bi.getWidth() - fm.stringWidth(_cg)) / 2);
+      right_of_title = left_of_title + fm.stringWidth(_cg);
       bottom_of_title = (top_margin / 2) - 10;
-      g.drawString(L.getText("CasesGraph"), left_of_title, bottom_of_title);
+      g.drawString(_cg, left_of_title, bottom_of_title);
     } else {
-      left_of_title = (int) ((bi.getWidth() - fm.stringWidth(L.getText("CumulCasesGraph"))) / 2);
-      right_of_title = left_of_title + fm.stringWidth(L.getText("CumulCasesGraph"));
+      String _ccg = (TITLES==CASES)?L.getText("CumulCasesGraph"):L.getText("CumulTreatmentsGraph");
+      left_of_title = (int) ((bi.getWidth() - fm.stringWidth(_ccg)) / 2);
+      right_of_title = left_of_title + fm.stringWidth(_ccg);
       bottom_of_title = (top_margin / 2) - 10;
-      g.drawString(L.getText("CumulCasesGraph"), left_of_title, bottom_of_title);
+      g.drawString(_ccg, left_of_title, bottom_of_title);
     }
     g.setFont(subTitleFont);
     Graphics2D grot = (Graphics2D) g.create();
     grot.rotate(-Math.PI / 2);
     fm = grot.getFontMetrics();
-    grot.drawString(L.getText("TotalInfs"), -(bi.getHeight() / 2) - (fm.stringWidth(L.getText("TotalInfs")) / 2), left_margin / 3);
+    String _ti = (TITLES==CASES)?L.getText("TotalInfs"):L.getText("TotalTreatments");
+    grot.drawString(_ti, -(bi.getHeight() / 2) - (fm.stringWidth(_ti) / 2), left_margin / 3);
     grot.dispose();
     g.drawString(L.getText("TimeAxis"), (bi.getWidth() - fm.stringWidth(L.getText("TimeAxis"))) / 2, bi.getHeight() - (bottom_margin / 6));
 
@@ -1149,7 +1153,7 @@ public class MicroEpiSlideshow extends Application {
       // Start time
       
       g2d.setFont(plain);
-      g2d.drawString("Detection time :", mid - (fmPlain.stringWidth("Start time :")),y);
+      g2d.drawString("Detection time :", mid - (fmPlain.stringWidth("Detection time :")),y);
       g2d.setFont(bold);
       gc.setTimeInMillis(current_starttime);
       String s = gc.get(GregorianCalendar.YEAR)+"/"+
@@ -1207,13 +1211,13 @@ public class MicroEpiSlideshow extends Application {
       Font bold = new Font("Courier New", Font.BOLD, 48);
       int mid = (bi.getWidth()/2)-20;
       FontMetrics fmPlain = g2d.getFontMetrics(plain);
-      int y = 250;
+      int y = 200;
       
       // Start time
       
       g2d.setFont(bold);
-      g2d.drawString("-----------", (mid+ 20) - (fmPlain.stringWidth("-----------")/2),y+50);
       g2d.drawString("LEADERBOARD", (mid+ 20) - (fmPlain.stringWidth("LEADERBOARD")/2),y);
+      g2d.drawString("-----------", (mid+ 20) - (fmPlain.stringWidth("-----------")/2),y+35);
       y+=100;
       g2d.setFont(plain);
       String[] players = current_players.split(",");
@@ -1222,9 +1226,9 @@ public class MicroEpiSlideshow extends Application {
       int total=0;
       for (int i=0; i<epi_csv.size(); i++) {
         String[] entry = epi_csv.get(i);
-        if ((entry[0].equals("I")) && (!entry[3].equals("NA"))) {
+        if ((entry[COL_EVENT].equals("I")) && (!entry[COL_INFBY].equals("NA"))) {
           for (int j=0; j<players.length; j++) {
-            if (entry[3].equals(players[j])) {
+            if (entry[COL_INFBY].equals(players[j])) {
               victims[j]++;
               total++;
             }
@@ -1243,13 +1247,14 @@ public class MicroEpiSlideshow extends Application {
           }
         }
         g2d.setColor(new java.awt.Color(rgb,rgb,rgb));
-        g2d.drawString("PLAYER "+players[max_index]+" . . . . ", 20+mid - (fmPlain.stringWidth("PLAYER "+players[max_index]+" . . . . ")),y);
-        String vv = "victim"+((max==1)?"s":"");
-        g2d.drawString(max+" "+vv, 20+ mid, y);
+        g2d.drawString("PLAYER "+players[max_index]+" :", 
+            (30 + mid) - (fmPlain.stringWidth("PLAYER "+players[max_index]+" : ")),y);
+        String vv = "victim"+((max==1)?"":"s");
+        g2d.drawString(max+" "+vv, 30+ mid, y);
         y=y+45;
         rgb+=20;
         total-=max;
-        victims[max]=0;
+        victims[max_index]=0;
         count++;
       }
       
@@ -1260,6 +1265,78 @@ public class MicroEpiSlideshow extends Application {
     } catch (Exception e) { e.printStackTrace(); }
     
   }
+  
+  public void survivors() {
+    try {
+      BufferedImage bi = ImageIO.read(new File("media/template.png"));
+      Graphics2D g2d = getNiceGraphics(bi);
+      g2d.setColor(java.awt.Color.BLACK);
+      Font plain = new Font("Courier New", Font.PLAIN, 48);
+      Font bold = new Font("Courier New", Font.BOLD, 48);
+      Font big = new Font("Courier New", Font.BOLD,60);
+      int mid = (bi.getWidth()/2);
+      FontMetrics fmPlain = g2d.getFontMetrics(plain);
+      FontMetrics fmBig = g2d.getFontMetrics(big);
+      int y = 200;
+      
+      // Start time
+      
+      g2d.setFont(bold);
+      g2d.drawString("SURVIVOR WATCH", mid - (fmPlain.stringWidth("SURVIVOR WATCH")/2),y);
+      g2d.drawString("--------------", mid - (fmPlain.stringWidth("--------------")/2),y+35);
+      y+=150;
+      g2d.setFont(plain);
+      ArrayList<Integer> players = new ArrayList<Integer>();
+      String[] splayers = current_players.split(",");
+      for (int i=0; i<splayers.length; i++) players.add(Integer.parseInt(splayers[i]));
+      Collections.sort(players);
+      
+      for (int i=0; i<epi_csv.size(); i++) {
+        String[] entry = epi_csv.get(i);
+        if (entry[COL_EVENT].equals("I")) {
+          players.remove(players.indexOf(Integer.parseInt(entry[COL_VICTIM])));
+        }
+      }
+      String winner="";
+      if (players.size()==1) winner = String.valueOf(players.get(0));
+      else if (players.size()==0) {
+        float time=0;
+        for (int i=0; i<epi_csv.size(); i++) {
+          String[] entry = epi_csv.get(i);
+          if (entry[COL_EVENT].equals("I")) {
+            float t2 = (Float.parseFloat(entry[COL_TIMEH])*60.0f)+Float.parseFloat(entry[COL_TIMEM]);
+            if (t2>time) {
+              time=t2;
+              winner = entry[COL_VICTIM];
+            }
+          }
+        }
+      }
+      g2d.setColor(java.awt.Color.BLACK);
+      g2d.setFont(big);
+      g2d.drawString("SURVIVORS",  mid - (fmBig.stringWidth("SURVIVORS")/2),y);
+      y+=75;
+      String ps = String.valueOf(players.size());
+      g2d.setColor(java.awt.Color.RED);
+      g2d.drawString(ps, mid - (fmBig.stringWidth(ps)/2),y);
+      y+=150;
+      g2d.setColor(java.awt.Color.BLACK);
+      if (players.size()<=1) {
+        g2d.drawString("WINNER",  mid - (fmBig.stringWidth("WINNER")/2),y);
+        y+=75;
+        g2d.setColor(java.awt.Color.RED);
+        g2d.drawString(winner, mid - (fmBig.stringWidth(winner)/2), y);
+      }
+      
+            
+      showBI(bi);
+      bi=null;
+      g2d.dispose();
+      
+    } catch (Exception e) { e.printStackTrace(); }
+    
+  }
+  
   
   public void addNetworkLabels(BufferedImage bi, String[] labels) {
     if (labels==null) labels = new String[] {"Seed", "Infector", "Terminal"};
@@ -1380,11 +1457,16 @@ public class MicroEpiSlideshow extends Application {
         jtimer.setInitialDelay((int)(1000*Float.parseFloat(bits[1])));
         jtimer.start();
       }
-    } else if (line.toUpperCase().startsWith("CASESGRAPH")) {
+    } else if (line.toUpperCase().startsWith("CASESGRAPH") || 
+               line.toUpperCase().startsWith("TREATMENTSGRAPH")) {
       refreshData();
       boolean unconfirmed = (line.toUpperCase().indexOf("UNCONFIRMED")>1);
       boolean cumulative = (line.toUpperCase().indexOf("CUMULATIVE")>1);
-      generateCasesGraph(layer, unconfirmed, cumulative);
+      if (line.toUpperCase().startsWith("CASESGRAPH")) {
+        generateCasesGraph(layer, unconfirmed, cumulative, CASES);
+      } else {
+        generateCasesGraph(layer, unconfirmed, cumulative, TREATMENTS);
+      }
       jtimer.setInitialDelay(500);
       jtimer.start();
       
@@ -1446,6 +1528,10 @@ public class MicroEpiSlideshow extends Application {
     } else if (line.toUpperCase().startsWith("SPREADERS")) {
       refreshData();
       spreaders();
+
+    } else if (line.toUpperCase().startsWith("SURVIVORS")) {
+      refreshData();
+      survivors();
     }
    
     current_script_line++;

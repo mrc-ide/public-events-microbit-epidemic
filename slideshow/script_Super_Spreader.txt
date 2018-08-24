@@ -49,11 +49,11 @@ Script:
 Image["media/superspreader.png"]
 Wait 10
 
-CasesGraph Cumulative Unconfirmed
+CasesGraph Cumulative
 Wait 10
-CasesGraph Unconfirmed
+CasesGraph
 Wait 10
-R0Graph Unconfirmed
+R0Graph
 Wait 10
 GenTimeGraph
 Wait 10
@@ -64,7 +64,8 @@ NetworkGraph
 Wait 15
 Status Susceptible,Infected,Recovered
 Wait 10
-
+Spreaders
+Wait 10
 
 # And the end of the script. Go back to the start.
 

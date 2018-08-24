@@ -9,12 +9,12 @@ col2 <- args[5]
 col3 <- args[6]
 fout <- args[7]
 
-outbreakdatafilename <- "../data/498461975_325.csv"
-screen.width <- 1366
-screen.height <- 768
-col1 <- "#000000"
-col2 <- "#000000"
-col3 <- "#707070"
+#outbreakdatafilename <- "../data/498461975_325.csv"
+#screen.width <- 1366
+#screen.height <- 768
+#col1 <- "#000000"
+#col2 <- "#000000"
+#col3 <- "#707070"
 
 
 #############################

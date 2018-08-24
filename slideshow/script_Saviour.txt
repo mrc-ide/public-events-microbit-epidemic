@@ -32,6 +32,9 @@ Script:
 #              Optionally, you can add       Cumulative  - for a cumulative graph
 #                               and/or       Unconfirmed - to also show unconfirmed cases (ie, barcode not yet returned on the graph).
 #                                                          unreturned barcodes are either lost, or the owner is already immune.
+#
+# TreatmentsGraph - as CasesGraph, but titles indicate people have been cured, rather than infected.
+#
 # R0Graph    - plot an R0 graph.
 #              Optinally, you can add        Unconfirmed - to also show unconfirmed cases (ie, worst-case R0 if all barcodes cause cases)
 #
@@ -49,9 +52,9 @@ Script:
 image["media/saviour.png"]
 Wait 10
 
-CasesGraph Cumulative Unconfirmed
+TreatmentsGraph Cumulative
 Wait 10
-CasesGraph Unconfirmed
+TreatmentsGraph
 Wait 10
 #Movie["media/04Britain.mp4","media/05planes.mp4","media/ebola_inc.mp4","media/malaria.mp4"]
 #Image["media/01Bearman_network.png"]

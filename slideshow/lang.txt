@@ -46,9 +46,21 @@ __:CumulCasesGraph
 EN:Total Infections Over Time
 FR:Nombre total d'infections au cours du temps
 
+__:TreatmentsGraph
+EN:Treated People Over Time
+FR:Les gens guéris au cours du temps
+
+__:CumulTreatmentsGraph
+EN:Total Treated People Over Time
+FR:Nombre total des gens guéris au cours du temps
+
 __:TotalInfs
 EN:Total Infections
 FR:Nombre total d'infections
+
+__:TotalTreatments
+EN:Total Treatments
+FR:Nombre total des gens guéris
 
 __:TimeAxis
 EN:Time
