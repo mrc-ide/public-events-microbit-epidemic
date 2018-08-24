@@ -63,7 +63,7 @@ class EpiGui:
                 elif (len(s)==10):
                     self.paramsets.append(s[0].replace('"', ''))
                     self.p_r0.append(s[1])
-                    self.p_rtype.append(s[2].replace('"', ''))
+                    self.p_rtype.append(s[2])
                     self.p_poimin.append(s[3])
                     self.p_poimax.append(s[4])
                     self.p_rpower.append(s[5])
@@ -83,7 +83,7 @@ class EpiGui:
         out_file = open("defaults.ini", "w")
         out_file.write("epid,{0}\n".format(self.CURRENT_EPI_ID))
         for i in range(0, len(self.paramsets)):
-            out_file.write('"{0}",{1},"{2}",{3},{4},{5},{6},{7},{8},{9}\n'.format(
+            out_file.write('"{0}",{1},{2},{3},{4},{5},{6},{7},{8},{9}\n'.format(
                 self.paramsets[i],
                 self.p_r0[i], 
                 self.p_rtype[i],
@@ -104,7 +104,7 @@ class EpiGui:
         if (self.remember_paramset != i):
             resp = False
             if (self.b_save_pset['state'] == 'active'):
-                resp = tkMessageBox.askyesnocancel("Save First", "Do you want to save changes to parameter set?")
+                resp = tkMessageBox.askyesnocancel(self.lang.save_first, self.lang.save_first_q)
             if (resp == True):
                 self.save_params(index = self.remember_paramset)
                 resp = False
@@ -119,7 +119,7 @@ class EpiGui:
     def select_parameterset(self):
         i = self.cb_paramset.current()
         self.sv_r0.set(self.p_r0[i])
-        self.cb_rtype.current(self.cb_rtype['values'].index(self.p_rtype[i]))
+        self.cb_rtype.current(int(self.p_rtype[i]))
         self.cb_poimin.current(self.cb_poimin['values'].index(self.p_poimin[i]))
         self.cb_poimax.current(self.cb_poimax['values'].index(self.p_poimax[i]))
         self.cb_rpower.current(self.cb_rpower['values'].index(self.p_rpower[i]))
@@ -137,7 +137,7 @@ class EpiGui:
     # Delete a parameter set
     
     def del_params(self):
-        if tkMessageBox.askokcancel("Delete", "Really delete parameter set?"):
+        if tkMessageBox.askokcancel(self.lang.delete, self.lang.delete_conf):
             i = self.cb_paramset.current()
             del self.p_r0.remove[i]
             del self.p_rtype[i]
@@ -164,13 +164,13 @@ class EpiGui:
         try:
             float(self.sv_r0.get())
         except:
-            tkMessageBox.showerror("Error", "R0 must be numerical (e.g. 2.4)")
+            tkMessageBox.showerror(self.lang.error, self.lang.err_r0)
             valid = False
         
         try:
             int(self.sv_epidno.get())
         except:
-            tkMessageBox.showerror("Error", "Epidemic ID must be an integer")
+            tkMessageBox.showerror(self.lang.error, self.lang.epi_id_err)
             valid = False
             
         return valid
@@ -189,7 +189,7 @@ class EpiGui:
                 index = self.cb_paramset.current()
             
             self.p_r0[index] = self.sv_r0.get()
-            self.p_rtype[index] = self.cb_rtype.get()
+            self.p_rtype[index] = self.cb_rtype.current()
             self.p_poimin[index] = self.cb_poimin.get()
             self.p_poimax[index] = self.cb_poimax.get()
             self.p_rpower[index] = self.cb_rpower.get()
@@ -203,7 +203,7 @@ class EpiGui:
     # Save current settings as a new parameter set
     
     def saveas_params(self):
-        new_name = tkSimpleDialog.askstring("Name", "Name of new parameter set?")
+        new_name = tkSimpleDialog.askstring(self.lang.name, self.lang.name_pset)
         
         # Handle cancel / empty string
         
@@ -217,7 +217,7 @@ class EpiGui:
         if new_name is not None:
             try:
                 self.paramsets.index(new_name)
-                tkMessageBox.showerror("Error", "Another parameter set has that name.")
+                tkMessageBox.showerror(self.lang.error, self.lang.dup_pset)
                 new_name = None
             except:
                 pass
@@ -228,7 +228,7 @@ class EpiGui:
             self.p_rpower.append(self.cb_rpower.get())
             self.p_poimin.append(self.cb_poimin.get())
             self.p_poimax.append(self.cb_poimax.get())
-            self.p_rtype.append(self.cb_rtype.get())
+            self.p_rtype.append(self.cb_rtype.current())
             self.p_r0.append(self.sv_r0.get())
             self.p_btrans.append(self.cb_btrans.current())
             self.p_brec.append(self.cb_brec.current())
@@ -242,9 +242,6 @@ class EpiGui:
         
     # Events where parameters are changed.
     
-    def change_epidno(self, event):
-        print("Change epid no")
-
     def set_params_unsaved(self, event):
         self.b_save_pset['state'] = 'active'
         
@@ -263,14 +260,14 @@ class EpiGui:
     # Exit confirmation dialogue
     
     def ask_quit(self):
-        if tkMessageBox.askokcancel("Exit", "Really exit?"):
+        if tkMessageBox.askokcancel(self.lang.exit, self.lang.really_exit):
             self.window.destroy()
             
     
     def click_set_master(self):
         proceed = False
         if (self.sv_software.get() != self.REQ_MASTER_VERSION):
-            tkMessageBox.showerror("Error", "Micro:Bit master is absent, wrong version, or needs restarting")
+            tkMessageBox.showerror(self.lang.error, self.lang.mb_master_err)
         else:
             self.set_task_text(self.lang.instructions_2)
             proceed = True
@@ -318,6 +315,7 @@ class EpiGui:
             if (self.minions[sid % 10][sid / 10]['bg'] == self.STATUS_SUSCEPTIBLE):
                 self.b_seedEpidemic['state'] = 'active'
                 
+                
     def click_send_params(self):
         self.save_defaults()
         self.sv_susc.set('0')
@@ -354,11 +352,16 @@ class EpiGui:
         self.l_recov2.grid(column = 1 + self.LEFT, row = 8 + self.TOP, sticky = "E")
         
     def click_seed_epi(self):
-        self.serial_link.seed_epidemic()
-        self.sv_seedid.set("")
+        m_id = self.sv_seedid.get()
+        if (self.minions[m_id % 10][m_id / 10]['bg']==self.STATUS_SUSCEPTIBLE):
+            self.serial_link.seed_epidemic()
+            self.sv_seedid.set("")
+        else:
+            tkMessageBox.showerror(self.lang.too_slow, self.lang.no_longer_susc)
+    
         
     def click_reset_epi(self):
-        confirm = tkSimpleDialog.askstring("End Epidemic", "Type RESET for a new epidemic, or POWEROFF to kill the minions")
+        confirm = tkSimpleDialog.askstring(self.lang.end_epi, self.lang.reset_or_power_off)
         
         if (confirm == 'RESET') or (confirm == 'POWEROFF'):
 
@@ -378,7 +381,7 @@ class EpiGui:
     def click_minion(self, m_id):
         m_id = int(m_id)
         if (self.serial_link.serial_port != 0):
-            if (self.minions[m_id % 10][m_id / 10]['bg']=='green'):
+            if (self.minions[m_id % 10][m_id / 10]['bg']==self.STATUS_SUSCEPTIBLE):
                 self.sv_seedid.set(m_id)
             else:
                 self.sv_seedid.set('')
@@ -387,13 +390,13 @@ class EpiGui:
     def click_random_minion(self):
         candidates = 0
         for m_id in range(0, 99):
-            if (self.minions[m_id % 10][m_id / 10]['bg']=='green'):
+            if (self.minions[m_id % 10][m_id / 10]['bg']==self.STATUS_SUSCEPTIBLE):
                 candidates = candidates + 1
 
         if (candidates>0):
             r = random.randint(1,candidates)
             for m_id in range(0, 99):
-                if (self.minions[m_id % 10][m_id / 10]['bg']=='green'):
+                if (self.minions[m_id % 10][m_id / 10]['bg']==self.STATUS_SUSCEPTIBLE):
                     r = r - 1
                     if (r == 0):
                         self.sv_seedid.set(m_id)
@@ -478,12 +481,12 @@ class EpiGui:
                     command = lambda n1 = n: self.click_minion(n1))
                 self.minions[x][y].grid(column = x, row = y)
 
-        self.b_setMaster = Button(self.window, text = 'Set Master Micro:Bit', command = self.click_set_master)
-        self.b_sendParams = Button(self.window, text = 'Send Parameters', command = self.click_send_params)
-        self.b_seedEpidemic = Button(self.window, text='Seed Epidemic', command = self.click_seed_epi)
-        self.b_resetEpidemic = Button(self.window, text='Reset Epidemic', command = self.click_reset_epi)
+        self.b_setMaster = Button(self.window, text = self.lang.set_master_mb, command = self.click_set_master)
+        self.b_sendParams = Button(self.window, text = self.lang.send_params, command = self.click_send_params)
+        self.b_seedEpidemic = Button(self.window, text = self.lang.seed_epi, command = self.click_seed_epi)
+        self.b_resetEpidemic = Button(self.window, text = self.lang.reset_epi, command = self.click_reset_epi)
         
-        self.l_task = Label(self.window, text = "Current Task")
+        self.l_task = Label(self.window, text = self.lang.current_task)
         self.st_font = tkFont.Font(family = "Calibri", size = 10)
         self.st_instruct = tkst.ScrolledText(self.window, width = 30, height = 5, font = self.st_font,
                                         wrap = 'word', state = 'disabled')
@@ -495,58 +498,58 @@ class EpiGui:
         
         # GUI elements for the Micro:Bit master selection page
         
-        self.l_port = Label(self.window, text = "Using port:")
+        self.l_port = Label(self.window, text = self.lang.using_port)
         self.cb_masters = Combobox(self.window, state = 'readonly')
         self.cb_masters.bind("<<ComboboxSelected>>", self.serial_link.get_master_info)
         self.cb_masters_double_click = 0
-        self.b_rescan = Button(self.window, text = "Rescan", 
+        self.b_rescan = Button(self.window, text = self.lang.rescan, 
             command = self.serial_link.refresh_microbit_comports)
-        self.l_software = Label(self.window, text = "Software:")
+        self.l_software = Label(self.window, text = self.lang.software)
         self.sv_software = StringVar()
         self.sv_software.set("")
         self.l_software2 = Label(self.window, textvariable = self.sv_software)
         
-        self.l_serialno = Label(self.window, text = "Serial No:")
+        self.l_serialno = Label(self.window, text = self.lang.serial_no)
         self.sv_serialno = StringVar()
         self.l_serialno2 = Label(self.window, textvariable = self.sv_serialno)
-        self.l_mbitver = Label(self.window, text = "micro:bit version:")
+        self.l_mbitver = Label(self.window, text = self.lang.mb_version)
         self.sv_mbitver = StringVar()
         self.l_mbitver2 = Label(self.window, textvariable = self.sv_mbitver)
                 
         # GUI elements for the parameter settings page
                 
-        self.l_epidno = Label(self.window, text = "Epidemic ID:")
+        self.l_epidno = Label(self.window, text = self.lang.epi_id)
         self.sv_epidno = StringVar()
         self.e_epidno = Entry(self.window, textvariable = self.sv_epidno)
         
-        self.l_paramset = Label(self.window, text = "Saved Params:")
+        self.l_paramset = Label(self.window, text = self.lang.saved_params)
         self.cb_paramset = Combobox(self.window, state = 'readonly')
-        self.b_save_pset = Button(self.window, text = "Save", command = self.save_params)
-        self.b_del_pset = Button(self.window, text = "Delete", command = self.del_params)
-        self.b_saveas_pset = Button(self.window, text = "Save As", command = self.saveas_params)
+        self.b_save_pset = Button(self.window, text = self.lang.save, command = self.save_params)
+        self.b_del_pset = Button(self.window, text = self.lang.delete, command = self.del_params)
+        self.b_saveas_pset = Button(self.window, text = self.lang.save_as, command = self.saveas_params)
         
-        self.l_r0 = Label(self.window, text = "R0:")
+        self.l_r0 = Label(self.window, text = self.lang.R0)
         self.sv_r0 = StringVar()
         self.e_r0 = Entry(self.window, textvariable = self.sv_r0)
-        self.l_rtype = Label(self.window, text = "R type")
+        self.l_rtype = Label(self.window, text = self.lang.R_type)
         self.cb_rtype = Combobox(self.window, state = 'readonly')
-        self.l_poimin = Label(self.window, text = "Poi minimum");
+        self.l_poimin = Label(self.window, text = self.lang.poi_min);
         self.cb_poimin = Combobox(self.window, state = 'readonly')
-        self.l_poimax = Label(self.window, text = "Poi maximum");
+        self.l_poimax = Label(self.window, text = self.lang.poi_max);
         self.cb_poimax = Combobox(self.window, state = 'readonly')
         
-        self.l_rpower = Label(self.window, text = "Transmit Range:")
+        self.l_rpower = Label(self.window, text = self.lang.transmit_range)
         self.cb_rpower = Combobox(self.window, state = 'readonly')
-        self.l_exposure = Label(self.window, text = "Exposure (s):")
+        self.l_exposure = Label(self.window, text = self.lang.exposure)
         self.cb_exposure = Combobox(self.window, state = 'readonly')
-        self.l_btrans = Label(self.window, text='Transmit button')
+        self.l_btrans = Label(self.window, text = self.lang.transmit_button)
         self.cb_btrans = Combobox(self.window, state = 'readonly')
-        self.l_brec = Label(self.window, text='Receive button')
+        self.l_brec = Label(self.window, text = self.lang.receive_button)
         self.cb_brec = Combobox(self.window, state = 'readonly')
-        self.l_icons = Label(self.window, text='Icon set')
+        self.l_icons = Label(self.window, text = self.lang.icon_set)
         self.cb_icons = Combobox(self.window, state = 'readonly')
         
-        self.cb_rtype['values'] = ['Constant', 'Poisson']
+        self.cb_rtype['values'] = [self.lang.constant, self.lang.poisson]
         self.cb_rpower['values'] = range(0, 8)
         self.cb_exposure['values'] = [1, 5, 10, 20, 30, 40, 50, 60, 90, 120, 150, 180, 210, 240, 270, 300, 360, 420, 480, 540, 600]
         self.cb_poimin['values'] = range(0, 99)
@@ -566,7 +569,6 @@ class EpiGui:
         self.cb_brec.bind("<<ComboboxSelected>>", self.set_params_unsaved)
         self.cb_icons.bind("<<ComboboxSelected>>", self.set_params_unsaved)
         self.e_r0.bind("<Key>", self.set_params_unsaved)
-        self.e_epidno.bind("<Key>", self.change_epidno)
 
         # Gui Elements for the Seeding / Progress Page
 
@@ -614,7 +616,7 @@ class EpiGui:
         # Set the size, title, and application icon for the window.
         
         self.window.protocol("WM_DELETE_WINDOW", self.ask_quit)
-        self.window.title("Epidemic on micro:bit")
+        self.window.title(self.lang.title)
         self.window.geometry("640x480")
         imgicon = PhotoImage(file = os.path.join('microepi.gif'))
         self.window.tk.call('wm', 'iconphoto', self.window._w, imgicon)

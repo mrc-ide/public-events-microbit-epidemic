@@ -145,7 +145,7 @@ class EpiSerial:
             self.serial_port.write(self.MSG_IDENTIFY_YOURSELF+"\n")
         
         except SerialException:
-            self.gui_link.sv_software.set("Can't open serial port. Already in use?")
+            self.gui_link.sv_software.set(self.gui_link.lang.serial_error)
         
     # Process incoming serial data    
         
@@ -165,11 +165,11 @@ class EpiSerial:
                 buildno = data.split(":")[2]
                 friendlyid = self.get_friendly_id(serialno)
                 if (buildno != self.latest_minion_buildno):
-                    print "Warning: micro:bit {} ({}) build {} is out of date. Update to {}".format(serialno, 
+                    print self.gui_link.lang.mb_ood.format(serialno, 
                         friendlyid, buildno, self.latest_minion_buildno)
 
                 if (friendlyid == '-1'):
-                    print "Warning: No space in serials.csv file for micro:bit serial no. {}".format(serialno)
+                    print self.gui_link.lang.serial_lookup_err.format(serialno)
                 else:
                     msg = "{}{},{},#".format(self.MSG_REG, serialno, friendlyid)
                     self.serial_port.write(msg+"\n")
@@ -195,7 +195,7 @@ class EpiSerial:
                         bits[1] = 'NA'
                     recency = 'Old'
                     if (time.time() - inf_time_epoch < self.RECENT_TIME_S):
-                        recency = 'Recent'
+                        recency = 'New'
                                             
                     f.write("I,{},{},{},{},{},{},{},{}\n".format(
                         inf_time.tm_hour, mins, bits[1], seeding, recency, 0, bits[2], bits[4]))
@@ -216,12 +216,12 @@ class EpiSerial:
                 print data
                 
             else:
-                self.gui_link.sv_software.set("Unrecognised serial device")
+                self.gui_link.sv_software.set(self.gui_link.lang.unrecog_serial)
                 self.gui_link.sv_serialno.set("")
                 self.gui_link.sv_mbitver.set("")
                 
         else:
-            self.gui_link.sv_software.set("Unrecognised serial device")
+            self.gui_link.sv_software.set(self.gui_link.lang.unrecog_serial)
             self.gui_link.sv_serialno.set("")
             self.gui_link.sv_mbitver.set("")
             
