@@ -195,7 +195,7 @@ class EpiSerial:
                         bits[1] = 'NA'
                     recency = 'Old'
                     if (time.time() - inf_time_epoch < self.RECENT_TIME_S):
-                        recency = 'New'
+                        recency = 'Recent'
                                             
                     f.write("I,{},{},{},{},{},{},{},{}\n".format(
                         inf_time.tm_hour, mins, bits[1], seeding, recency, 0, bits[2], bits[4]))
