@@ -19,13 +19,22 @@ public class MakeStickers {
     int start = 0;
     int end = 99;
     String sticker = "sticker.png";
+    String output = "page";
+    
     if (args.length==3) {
       try {
         start = Integer.parseInt(args[0]);
         end = Integer.parseInt(args[1]);
         sticker = args[2];
       } catch (Exception e) { argsMsg(); }
-    } else if (args.length!=0) argsMsg();
+    } else {
+      System.out.println("Example Usage: java MakeStickers 0 99 sticker.png output");
+      System.out.println();
+      System.out.println("  This will write numbers 0-99 onto the sticker.png background");
+      System.out.println("  and write output1.png, output2.png etc - page of 7*3 stickers");
+      System.out.println("  ready to be printed\n");
+      System.exit(1);
+    }
 
     BufferedImage bi = new BufferedImage(4960, 7008, BufferedImage.TYPE_3BYTE_BGR);
     Graphics2D g = (Graphics2D) bi.getGraphics();
@@ -53,10 +62,6 @@ public class MakeStickers {
       page++;
       g.setColor(Color.WHITE);
       g.fillRect(0, 0, 4960, 7008);
-      
-      
     }
-    
   }
-
 }
