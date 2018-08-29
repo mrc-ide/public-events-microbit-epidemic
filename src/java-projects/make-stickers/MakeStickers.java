@@ -21,13 +21,14 @@ public class MakeStickers {
     String sticker = "sticker.png";
     String output = "page";
     
-    if (args.length==3) {
+    if (args.length==4) {
       try {
         start = Integer.parseInt(args[0]);
         end = Integer.parseInt(args[1]);
         sticker = args[2];
+        output = args[3];
       } catch (Exception e) { argsMsg(); }
-    } else {
+    } else if (args.length!=0) {
       System.out.println("Example Usage: java MakeStickers 0 99 sticker.png output");
       System.out.println();
       System.out.println("  This will write numbers 0-99 onto the sticker.png background");

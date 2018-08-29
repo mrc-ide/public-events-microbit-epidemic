@@ -55,7 +55,41 @@ they'll be automatically flashed.
 
 * Remmeber to disable/close the program before plugging in any more micro:bits.
 
+### Stickers
+
+* We chose to print a sticker for each micro:bit, which would give its id number, and
+a little message of where to send it, should it get lost and found. A little utility is
+included to make some images you can print, which prepares some pages for 2.5" x 1.5" sheets
+of labels - 21 per page.
+
+* Having installed java, for the default behaviour, run [bin/make-stickers/MakeStickers.jar](../bin/make-stickers/),
+either by double-clicking it in Windows, or `java -jar MakeStickers.jar` from a command-prompt
+or terminal. By default, it will create 5 PNG files, which when printed as full A4-size pages
+will land nicely on the stickers.
+
+* To customise the image, make an edit of [bin/make-stickers/sticker.png](../bin/make-stickers/sticker.png).
+
+* The default behaviour is the same as running `java -jar MakeStickers.jar 0 99 sticker.png page` - the arguments are
+the first and last number to print, the background image, and the stub for the output filenames.
+
 ### Serial numbers
 
-* NExt, 
+* Next, attach the master micro:bit to the serial port, and run the epidemic management 
+utility from [bin/python-gui/run.bat](../bin/python-gui) - the batch file simply runs
+`python epi_manager.py`. The code was developed with Python 2.7 in mind, although it
+may well run on more recent pythons. Get your ~~albatross~~ Python 2.7 installer [here](https://www.python.org/downloads/release/python-2715/) - 
+I used the Windows 64-bit installer.
 
+* More detail on this utility in the [usage](use.MD) document. For now, the utility should
+detect the micro:bit master which you plugged in - or click rescan to have another look on
+the USB ports. And you can then click the _Set Master micro:bit_ button in the bottom left.
+
+* The next page shows all the parameters for the epidemic. Ignore them and click _Send Parameters_
+
+* Switch on your minion micro:bits one at a time. The serial number of the micro:bit is recorded in [bin/python-gui/serials.csv](../bin/python-gui/serials.csv), and
+links a long micro:bit serial number with an id (0-99). This relationship persists until you delete the serials.csv file. When you power up a micro:bit, a square
+on the grid will turn green, revealing the id number (either newly assigned, or remembered) forthat micro:bit.
+
+* Note that micro:bit serial numbers are not *perfectly* unique, technically speaking, but should be amply close enough unless you're
+extraordinarily unlucky. See [here](https://support.microbit.org/support/solutions/articles/19000070728-how-to-read-the-device-serial-number). 
+I haven't coded any specific provision for duplicate serial numbers.
