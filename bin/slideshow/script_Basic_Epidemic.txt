@@ -1,6 +1,8 @@
 # Script file for micro:bit epidemic.
 # First version. July 2018, Wes.
 #
+DataPath:../../data
+
 # Blank lines and # lines ignored. 
 #
 # The language we want is:

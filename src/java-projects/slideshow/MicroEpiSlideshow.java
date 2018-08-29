@@ -76,19 +76,20 @@ import javafx.stage.WindowEvent;
 // They can be loaded into the Slideshow. One of the XML parameters
 // is the game-type, and we require script_gametype.txt to exist,
 // which determines which slides to play in which order.
- 
+
 // lang.txt is also needed, and script.txt, which is the default
 // script for basic epidemics, or if no matching script_gametype.txt
 // is found. See the script files for examples.
 
 public class MicroEpiSlideshow extends Application {
   /* GUI for screen control */
-  
-  final String dataPath = "C:/Files/Dev/public-events-microbit-epidemic/data/";
-  //final String dataPath = "../data";
+
+  // final String dataPath = "C:/Files/Dev/public-events-microbit-epidemic/data/";
+  // Parameterise this later...
+  String dataPath = "../../data";
   public int no_events = 0;
   boolean unsaved_changes = false;
- 
+
   final RadioButton rb_on = new RadioButton("ON");
   final RadioButton rb_off = new RadioButton("OFF");
   public final RadioButton nl_on = new RadioButton("ON");
@@ -126,21 +127,21 @@ public class MicroEpiSlideshow extends Application {
   final StackPane displayStageSP = new StackPane();
   Scene displayScene = null;
 
-  
+
   //String in_file = "C:/Files/Dev/Eclipse/microepi-manager/498461975_289.csv";
   String in_file = null;
   String current_params;
   String current_players;
   long current_starttime;
   String current_game;
-  
+
   final byte CASES = 1;
   final byte TREATMENTS = 2;
-    
+
   LangSupport L = new LangSupport();
 
   // Below - set the right timezone!
-  
+
   GregorianCalendar gc = null;
   int left_margin = 100;
   int right_margin = 100;
@@ -149,12 +150,12 @@ public class MicroEpiSlideshow extends Application {
 
   BufferedImage layer;
   Timer jtimer;
-  
+
   Image pauseImg = new Image("media/pause.png");
   ImageView pauseButton = new ImageView();
   ImageView epiImage = new ImageView();
   MediaView epiMovie = new MediaView();
-  MediaPlayer epiPlayer;  
+  MediaPlayer epiPlayer;
   WritableImage fx_img;
   Dimension screen;
   String RScript="";
@@ -163,9 +164,9 @@ public class MicroEpiSlideshow extends Application {
   ArrayList<String> script = new ArrayList<String>();
   int[] script_indexes;
   int current_script_line;
-  
+
   ArrayList<String[]> epi_csv = new ArrayList<String[]>(); // The main data file.
-  
+
   private static byte COL_EVENT = 0;
   private static byte COL_TIMEH = 1;
   private static byte COL_TIMEM = 2;
@@ -175,7 +176,7 @@ public class MicroEpiSlideshow extends Application {
   //private static byte COL_CAT = 6;
   private static byte COL_VICTIM = 7;
   private static byte COL_NCONS = 8;
-  
+
 
 
   public void GUItoXML(Node tag) {
@@ -240,7 +241,7 @@ public class MicroEpiSlideshow extends Application {
   }
 
 
-  
+
   public void showDisplayScreen(boolean smoothly) {
     displayStage.setWidth(Integer.parseInt(tf_w.getText()));
     displayStage.setHeight(Integer.parseInt(tf_h.getText()));
@@ -254,7 +255,7 @@ public class MicroEpiSlideshow extends Application {
   public void hideDisplayScreen(boolean smoothly) {
     displayStage.hide();
   }
-  
+
   private void loadScript() {
     script.clear();
     try {
@@ -266,10 +267,11 @@ public class MicroEpiSlideshow extends Application {
         if ((s.length()>0) && (!s.startsWith("#"))) {
           bits=s.split(":");
           bits[0]=bits[0].toUpperCase();
-          if (bits[0].toUpperCase().equals("RNETGRAPH")) RNetGraph=s.substring(10);          
+          if (bits[0].toUpperCase().equals("RNETGRAPH")) RNetGraph=s.substring(10);
           else if (bits[0].toUpperCase().equals("RSCRIPT")) RScript=s.substring(8);
           else if (bits[0].toUpperCase().equals("TIMEZONE")) gc = new GregorianCalendar(TimeZone.getTimeZone(bits[1]));
           else if (bits[0].toUpperCase().equals("LANGUAGE")) L.setLanguage(bits[1]);
+          else if (bits[0].toUpperCase().equals("DATAPATH")) dataPath=s.substring(9);
           else if (bits[0].toUpperCase().equals("SCRIPT")) {
             s=br.readLine();
             boolean done=false;
@@ -292,7 +294,7 @@ public class MicroEpiSlideshow extends Application {
         if (s!=null) s=br.readLine();
       }
       br.close();
-            
+
       script_indexes = new int[script.size()];
       current_script_line=0;
       if (gc==null) gc = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
@@ -302,14 +304,14 @@ public class MicroEpiSlideshow extends Application {
       System.exit(1);
     }
   }
-  
-  
-  
+
+
+
   public void start(Stage primaryStage) throws Exception {
-    
+
     /* Control GUI */
     int gridy = 0;
-    
+
     grid.setAlignment(Pos.CENTER);
     grid.setHgap(10);
     grid.setVgap(10);
@@ -365,8 +367,8 @@ public class MicroEpiSlideshow extends Application {
     hb_size.getChildren().add(tf_w);
     hb_size.getChildren().add(tf_h);
     grid.add(hb_size, 1, gridy++);
-    
-    
+
+
     // Detect
 
     grid.add(b_detect, 1, gridy++);
@@ -401,14 +403,14 @@ public class MicroEpiSlideshow extends Application {
         }
       }
     });
-    
+
     // Set Datafile
-    
-    
+
+
     hb_data.getChildren().add(b_epi);
     grid.add(hb_data,  0,  gridy);
     grid.add(l_epi, 1, gridy++);
-    
+
     final Stage _stage = primaryStage;
     b_epi.setOnAction(new EventHandler<ActionEvent>() {
       @Override
@@ -440,9 +442,9 @@ public class MicroEpiSlideshow extends Application {
             if (f.exists()) try {
               f.delete();
             } catch (Exception ex) {}
-            
+
             loadScript();
-            refreshData();  
+            refreshData();
           } else {
             Alert alert = new Alert(AlertType.ERROR);
             alert.setTitle("Error");
@@ -455,7 +457,7 @@ public class MicroEpiSlideshow extends Application {
 
       }
     });
-    
+
     primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
       public void handle(WindowEvent we) {
         hideDisplayScreen(false);
@@ -463,7 +465,7 @@ public class MicroEpiSlideshow extends Application {
         System.exit(0);
       }
     });
-    
+
     b_saveConfig.setOnAction(new EventHandler<ActionEvent>() {
       @Override
       public void handle(ActionEvent e) {
@@ -481,7 +483,7 @@ public class MicroEpiSlideshow extends Application {
         TextInputDialog tid = new TextInputDialog();
         tid.setTitle("Please enter name for new config");
         tid.setHeaderText(null);
-        
+
         Optional<String> result = tid.showAndWait();
         if (result.isPresent()) {
           String res = result.get().trim();
@@ -499,7 +501,7 @@ public class MicroEpiSlideshow extends Application {
             config_choices.add(res);
             FXCollections.sort(config_choices);
             cb_configs.getSelectionModel().select(res);
-            
+
           }
         }
       }
@@ -541,7 +543,7 @@ public class MicroEpiSlideshow extends Application {
           Optional<ButtonType> result = confirmDel.showAndWait();
           if ((result.isPresent()) && (result.get() == ButtonType.OK)) proceed = true;
         }
-        
+
         if (proceed) {
           cb_configs.getSelectionModel().select(number2);
           Node config = Tools.getTagWhereAttr(configs_xml, "config", "name",cb_configs.getValue().toString());
@@ -571,19 +573,19 @@ public class MicroEpiSlideshow extends Application {
     displayStage = new Stage(StageStyle.UNDECORATED);
     displayStage.getIcons().add(new Image("file:resources/sbscreen_icon.png"));
     displayStage.setAlwaysOnTop(true);
-    
+
     displayScene = new Scene(displayStageSP, displayStage.getWidth(), displayStage.getHeight(), Color.BLACK);
     displayStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
     displayStage.setScene(displayScene);
     displayStage.setResizable(false);
-    
+
     displayStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
       public void handle(WindowEvent we) {
         hideDisplayScreen(false);
         rb_off.setSelected(true);
       }
     });
-    
+
     displayScene.setOnKeyReleased(new EventHandler<KeyEvent>() {
       @Override
       public void handle(KeyEvent e) {
@@ -597,7 +599,7 @@ public class MicroEpiSlideshow extends Application {
         }
       }
     });
-    
+
     loadXML();
     b_saveConfig.setDisable(true);
     unsaved_changes = false;
@@ -624,9 +626,9 @@ public class MicroEpiSlideshow extends Application {
     primaryStage.setTitle("Micro:bit Epidemic Live Slideshow");
     primaryStage.setResizable(false);
     primaryStage.show();
-    
+
     loadScript();
-    
+
     screen = Toolkit.getDefaultToolkit().getScreenSize();
     layer = new BufferedImage(screen.width, screen.height, BufferedImage.TYPE_4BYTE_ABGR);
     fx_img = new WritableImage(screen.width, screen.height);
@@ -635,12 +637,12 @@ public class MicroEpiSlideshow extends Application {
     pauseButton.setVisible(false);
     displayStageSP.getChildren().add(epiImage);
     displayStageSP.getChildren().add(pauseButton);
-    
+
     displayScene.setFill(javafx.scene.paint.Color.BLACK);
-   
+
     displayStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
     displayStage.setScene(displayScene);
-    
+
     displayStage.show();
     displayStageSP.getChildren().add(epiMovie);
     pauseButton.setTranslateX(-50+(screen.width/2));
@@ -658,7 +660,7 @@ public class MicroEpiSlideshow extends Application {
     jtimer = new Timer(10000,new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent e) {
         nextChapter();
-                
+
       }
     });
     jtimer.setInitialDelay(100);
@@ -667,7 +669,7 @@ public class MicroEpiSlideshow extends Application {
 
   public void generateCasesGraph(BufferedImage bi, boolean include_unconfirmed, boolean cumulative, byte TITLES) {
     // Work out time axis - seconds since midnight.
-    
+
     long first_time=0;
     long last_time=0;
     int min_time=Integer.MAX_VALUE, max_time = Integer.MIN_VALUE;
@@ -686,7 +688,7 @@ public class MicroEpiSlideshow extends Application {
     long start_of_day = gc.getTimeInMillis();
     first_time = start_of_day + (1000*min_time);
     last_time = start_of_day + (1000*max_time);
-        
+
     Font titleFont = new Font("Calibri", Font.BOLD, 32);
     Font subTitleFont = new Font("Calibri", Font.PLAIN, 20);
     Font axisFont = new Font("Calibri", Font.PLAIN, 14);
@@ -776,7 +778,7 @@ public class MicroEpiSlideshow extends Application {
         int time_s = Integer.parseInt(epi_csv.get(i)[COL_TIMEH])*3600;
         time_s += Float.parseFloat(epi_csv.get(i)[COL_TIMEM])*60;
         long event_time = (start_of_day+(time_s*1000))/1000;
-        
+
         int index = (int) (((event_time - (time1/1000)) / 60) / step);
         all_cases[index] += Integer.parseInt(epi_csv.get(i)[COL_NCONS]);
         for (int j = 0; j < epi_csv.size(); j++) {
@@ -959,9 +961,9 @@ public class MicroEpiSlideshow extends Application {
   }
 
   public void generateR0Graph(BufferedImage bi, boolean include_unconfirmed) {
-    
+
     // Calculate potential_r0 - assume every contact results in an infection...
-    
+
     ArrayList<Integer> potential_r0 = new ArrayList<Integer>();
     for (int i=0; i<epi_csv.size(); i++) {
       if (epi_csv.get(i)[COL_EVENT].equals("I")) {
@@ -970,12 +972,12 @@ public class MicroEpiSlideshow extends Application {
         potential_r0.set(cons, potential_r0.get(cons)+1);
       }
     }
-    
+
     // Calculate effective_r0 - for each infection, count actual infections made...
-    
+
     ArrayList<Integer> effective_r0 = new ArrayList<Integer>();
     while (effective_r0.size()<potential_r0.size()) effective_r0.add(0);
-    
+
     for (int i=0; i<epi_csv.size(); i++) {
       if (epi_csv.get(i)[COL_EVENT].equals("I")) {
         int count_infs = 0;
@@ -992,9 +994,9 @@ public class MicroEpiSlideshow extends Application {
         while (effective_r0.size()<(1+count_infs)) effective_r0.add(0);
         effective_r0.set(count_infs, effective_r0.get(count_infs)+1);
       }
-      
+
     }
-    
+
     Font titleFont = new Font("Calibri", Font.BOLD, 32);
     Font subTitleFont = new Font("Calibri", Font.PLAIN, 20);
     Font axisFont = new Font("Calibri", Font.PLAIN, 14);
@@ -1125,7 +1127,7 @@ public class MicroEpiSlideshow extends Application {
     File f = new File(ff);
     Media epiMedia = new Media(f.toURI().toString());
     epiPlayer = new MediaPlayer(epiMedia);
-    
+
     epiMovie.setMediaPlayer(epiPlayer);
     epiImage.setVisible(false);
     epiMovie.setVisible(true);
@@ -1138,7 +1140,7 @@ public class MicroEpiSlideshow extends Application {
       }
     });
   }
-  
+
   public void showStatusPage(String[] fields) {
     try {
       BufferedImage bi = ImageIO.read(new File("media/template.png"));
@@ -1149,9 +1151,9 @@ public class MicroEpiSlideshow extends Application {
       int mid = (bi.getWidth()/2)-20;
       FontMetrics fmPlain = g2d.getFontMetrics(plain);
       int y = 250;
-      
+
       // Start time
-      
+
       g2d.setFont(plain);
       g2d.drawString("Detection time :", mid - (fmPlain.stringWidth("Detection time :")),y);
       g2d.setFont(bold);
@@ -1164,9 +1166,9 @@ public class MicroEpiSlideshow extends Application {
                  gc.get(GregorianCalendar.SECOND);
       g2d.drawString(s, mid+40, y);
       y+=100;
-      
+
       // Epi type:
-      
+
       g2d.setFont(plain);
       g2d.drawString("Scenario :", mid - (fmPlain.stringWidth("Scenario :")), y);
       g2d.setFont(bold);
@@ -1185,7 +1187,7 @@ public class MicroEpiSlideshow extends Application {
           totals[0]--;
         }
       }
-      
+
       for (int i=0; i<fields.length; i++) {
         if (fields[i].length()>0) {
           g2d.setFont(plain);
@@ -1198,10 +1200,10 @@ public class MicroEpiSlideshow extends Application {
       showBI(bi);
       bi=null;
       g2d.dispose();
-      
+
     } catch (Exception e) { e.printStackTrace(); }
   }
-  
+
   public void spreaders() {
     try {
       BufferedImage bi = ImageIO.read(new File("media/template.png"));
@@ -1212,9 +1214,9 @@ public class MicroEpiSlideshow extends Application {
       int mid = (bi.getWidth()/2)-20;
       FontMetrics fmPlain = g2d.getFontMetrics(plain);
       int y = 200;
-      
+
       // Start time
-      
+
       g2d.setFont(bold);
       g2d.drawString("LEADERBOARD", (mid+ 20) - (fmPlain.stringWidth("LEADERBOARD")/2),y);
       g2d.drawString("-----------", (mid+ 20) - (fmPlain.stringWidth("-----------")/2),y+35);
@@ -1247,7 +1249,7 @@ public class MicroEpiSlideshow extends Application {
           }
         }
         g2d.setColor(new java.awt.Color(rgb,rgb,rgb));
-        g2d.drawString("PLAYER "+players[max_index]+" :", 
+        g2d.drawString("PLAYER "+players[max_index]+" :",
             (30 + mid) - (fmPlain.stringWidth("PLAYER "+players[max_index]+" : ")),y);
         String vv = "victim"+((max==1)?"":"s");
         g2d.drawString(max+" "+vv, 30+ mid, y);
@@ -1257,15 +1259,15 @@ public class MicroEpiSlideshow extends Application {
         victims[max_index]=0;
         count++;
       }
-      
+
       showBI(bi);
       bi=null;
       g2d.dispose();
-      
+
     } catch (Exception e) { e.printStackTrace(); }
-    
+
   }
-  
+
   public void survivors() {
     try {
       BufferedImage bi = ImageIO.read(new File("media/template.png"));
@@ -1278,9 +1280,9 @@ public class MicroEpiSlideshow extends Application {
       FontMetrics fmPlain = g2d.getFontMetrics(plain);
       FontMetrics fmBig = g2d.getFontMetrics(big);
       int y = 200;
-      
+
       // Start time
-      
+
       g2d.setFont(bold);
       g2d.drawString("SURVIVOR WATCH", mid - (fmPlain.stringWidth("SURVIVOR WATCH")/2),y);
       g2d.drawString("--------------", mid - (fmPlain.stringWidth("--------------")/2),y+35);
@@ -1290,7 +1292,7 @@ public class MicroEpiSlideshow extends Application {
       String[] splayers = current_players.split(",");
       for (int i=0; i<splayers.length; i++) players.add(Integer.parseInt(splayers[i]));
       Collections.sort(players);
-      
+
       for (int i=0; i<epi_csv.size(); i++) {
         String[] entry = epi_csv.get(i);
         if (entry[COL_EVENT].equals("I")) {
@@ -1327,17 +1329,17 @@ public class MicroEpiSlideshow extends Application {
         g2d.setColor(java.awt.Color.RED);
         g2d.drawString(winner, mid - (fmBig.stringWidth(winner)/2), y);
       }
-      
-            
+
+
       showBI(bi);
       bi=null;
       g2d.dispose();
-      
+
     } catch (Exception e) { e.printStackTrace(); }
-    
+
   }
-  
-  
+
+
   public void addNetworkLabels(BufferedImage bi, String[] labels) {
     if (labels==null) labels = new String[] {"Seed", "Infector", "Terminal"};
     Graphics2D g2d = getNiceGraphics(bi);
@@ -1392,12 +1394,12 @@ public class MicroEpiSlideshow extends Application {
       if (network_labels) addNetworkLabels(bi, labels);
       showBI(bi);
       bi=null;
-            
+
      } catch (Exception e) {
       e.printStackTrace();
     }
   }
-  
+
 
   public void pause() {
     if (!epiMovie.isVisible()) {
@@ -1417,7 +1419,7 @@ public class MicroEpiSlideshow extends Application {
     }
   }
 
-  
+
   public void jump() {
     if (!epiMovie.isVisible()) {
       jtimer.stop();
@@ -1427,8 +1429,8 @@ public class MicroEpiSlideshow extends Application {
       nextChapter();
     }
   }
-   
-  
+
+
   public void refreshData() {
     epi_csv.clear();
     try {
@@ -1439,25 +1441,25 @@ public class MicroEpiSlideshow extends Application {
         s=br.readLine();
       }
       br.close();
-      
+
     } catch (Exception ex) {
 
     }
   }
-  
+
   public void nextChapter() {
     jtimer.stop();
-  
+
     String[] bits;
     String line = script.get(current_script_line).trim();
-  
+
     if (line.toUpperCase().startsWith("WAIT")) {
       bits = line.split("\\s+");
       if (!pauseButton.isVisible()) {
         jtimer.setInitialDelay((int)(1000*Float.parseFloat(bits[1])));
         jtimer.start();
       }
-    } else if (line.toUpperCase().startsWith("CASESGRAPH") || 
+    } else if (line.toUpperCase().startsWith("CASESGRAPH") ||
                line.toUpperCase().startsWith("TREATMENTSGRAPH")) {
       refreshData();
       boolean unconfirmed = (line.toUpperCase().indexOf("UNCONFIRMED")>1);
@@ -1469,20 +1471,20 @@ public class MicroEpiSlideshow extends Application {
       }
       jtimer.setInitialDelay(500);
       jtimer.start();
-      
+
     } else if (line.toUpperCase().startsWith("R0GRAPH")) {
       refreshData();
       boolean unconfirmed = (line.toUpperCase().indexOf("UNCONFIRMED")>1);
-      generateR0Graph(layer, unconfirmed);      
+      generateR0Graph(layer, unconfirmed);
       jtimer.setInitialDelay(500);
       jtimer.start();
-      
+
     } else if (line.toUpperCase().equals("GENTIMEGRAPH")) {
       refreshData();
       generateGenTimeGraph(layer);
       jtimer.setInitialDelay(500);
       jtimer.start();
-      
+
     } else if ((line.toUpperCase().startsWith("MOVIE[")) || (line.toUpperCase().startsWith("IMAGE["))) {
       boolean movie = line.toUpperCase().startsWith("MOVIE[");
       line=line.substring(6);
@@ -1493,10 +1495,10 @@ public class MicroEpiSlideshow extends Application {
       if (script_indexes[current_script_line]>=bits.length) script_indexes[current_script_line]=0;
       if (themovie.startsWith("\"")) themovie=themovie.substring(1);
       if (themovie.endsWith("\"")) themovie=themovie.substring(0, themovie.length()-1);
-      if (movie) playMovie(themovie); 
+      if (movie) playMovie(themovie);
       else showImage(themovie,false, null);
-      
-      
+
+
     } else if (line.toUpperCase().startsWith("NETWORKGRAPH")) {
       refreshData();
       if ((in_file!=null) && (new File(in_file).exists())) {
@@ -1505,7 +1507,7 @@ public class MicroEpiSlideshow extends Application {
         if (bits.length==1) {
           labels = new String[] {"Seed","Infector","Terminal"};
         } else labels = new String(bits[1]).split(",");
-          
+
         File f = new File("staticnetworkplot.png");
         if (f.length()>0) showImage("staticnetworkplot.png",true, labels);
         Runtime rt = Runtime.getRuntime();
@@ -1516,15 +1518,15 @@ public class MicroEpiSlideshow extends Application {
       }
       jtimer.setInitialDelay(500);
       jtimer.start();
-    
+
     } else if (line.toUpperCase().startsWith("STATUS")) {
       refreshData();
       bits = line.split("\\s+");
       String[] fields = new String[] {"Susceptible","Infected","Recovered"};
       if (bits.length>1) fields = bits[1].split(",");
       showStatusPage(fields);
-      
-      
+
+
     } else if (line.toUpperCase().startsWith("SPREADERS")) {
       refreshData();
       spreaders();
@@ -1533,12 +1535,12 @@ public class MicroEpiSlideshow extends Application {
       refreshData();
       survivors();
     }
-   
+
     current_script_line++;
     if (current_script_line>=script.size()) current_script_line=0;
-    
+
   }
- 
+
   public static void main(String[] args) {
     launch(args);
   }
