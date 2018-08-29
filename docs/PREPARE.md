@@ -26,7 +26,7 @@ that _Interface Version_ matches what you upgraded.
 ### Installing the epidemic software
 
 * The process of flashing code onto the micro:bit is similar, but can be made
-much less tedious. The compiled binaries are in the _microbit-binaries_ folder of
+much less tedious. The compiled binaries are in the [_bin/microbit-firmware_](bin/microbit-firmware) folder of
 this repo. Updating a single micro:bit is easy enough - attach the micro:bit by USB cable to
 your computer, (don't hold the _RESET_ button, as you want it in normal flashing mode), and
 copy the appropriate HEX file to the drive. You want one master, and many minions. 
@@ -37,10 +37,11 @@ copy the appropriate HEX file to the drive. You want one master, and many minion
 
 * You'll need Java installed to run this. I use the Java Development Kit, I suggest at
 present a version 8 (currently I use Java SE 8u181, Windows 64-bit version). Download
-from (here)[http://www.oracle.com/technetwork/java/javase/downloads/index.html]. 
+from [here](http://www.oracle.com/technetwork/java/javase/downloads/index.html). 
 
-* Run _MultiCopy.jar_ file in _microbit-binaries_ - in Windows you can double-click on it
-if you've got a Java 8 installed, or from a command-line, _java -jar MultiCopy.jar_
+* Run _MultiCopy.jar_ file in [bin/multi-copy/](bin/multi-copy) - in Windows you can double-click on it
+if you've got a Java 8 installed. On other platforms, or from a Windows
+command-prompt, something like _java -jar MultiCopy.jar_
 
 * This basically detects a micro:bit plugged in, copies a specific firmware to it, waits
 for the micro:bit to reboot, and then lets you unplug it. It works by detecting the drives
