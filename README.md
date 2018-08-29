@@ -2,20 +2,25 @@
 
 Documentation is split into these parts:-
 
-* [The Hardware Guide](docs/KIT.md) - regarding
-the hardware we bought, how we put it together, and 
-any particular experiences we had with it.
+* [Hardware Guide](docs/KIT.md) - regarding
+the hardware, assembly, and 
+any particular experiences with it.
 
-* [The User Guide](docs/USE.md) - how to run a micro:bit
-epidemic in the wild.
+* [Preparation](docs/PREPARE.md) - basically about 
+getting the software onto the microbits, and getting 
+serial numbers and ids sorted out.
+
+* [The User Guide](docs/USE.md) - how to run micro:bit
+epidemic games in the wild.
 
 * [The Implementation](docs/IMPLEMENTATION.md) - how it all
-works, including the message protocols we use over the serial
-port, and using the simple radio on the micro:bit.
+works, including the message protocols over the serial
+port, and the simple micro:bit radio.
 
-* [The Compilation Guide](docs/COMPILING.md) - regarding how
-to compile C code and flash a micro:bit with it on Windows. You
-don't need to do this, as binaries are in this repo, but if you
-want to change the code, or understand (or suggest improvements)
-on how we did things, this is what we did.
+* [The Compilation Guide](docs/COMPILING.md) - The
+micro:bit code is written in C, the management interface is in
+Python, the slideshow, sticker printer, and multi-flashing tool
+are in Java, and the network graph is generated in R. Compilation
+details are in here, if you want to change the code, or understand 
+(or suggest improvements) on how I did things.
 
