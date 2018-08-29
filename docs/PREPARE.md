@@ -18,15 +18,15 @@ micro:bit firmware, which in this case is named _0247_kl26z_microbit_0x8000.hex_
 * For each micro:bit, I suggest insert USB cable _carefully_ into the
 micro:bit, then hold the _RESET_ button (the one next to the USB port), at the same
 time as you plug the USB cable into a desktop or laptop. 
-** On Windows: The micro:bit attaches as a drive called _MAINTENANCE_. Copy the hex file on to that drive. 
+* On Windows: The micro:bit attaches as a drive called _MAINTENANCE_. Copy the hex file on to that drive. 
 The micro:bit will upgrade and reboot itself in non-maintenance mode.
-** If you want to verify, examine the _DETAILS.TXT_ file on the micro:bit, and check
+* If you want to verify, examine the _DETAILS.TXT_ file on the micro:bit, and check
 that _Interface Version_ matches what you upgraded.
 
 ### Installing the epidemic software
 
 * The process of flashing code onto the micro:bit is similar, but can be made
-much less tedious. The compiled binaries are in the [_bin/microbit-firmware_](bin/microbit-firmware) folder of
+much less tedious. The compiled binaries are in the [_bin/microbit-firmware/_](../bin/microbit-firmware/) folder of
 this repo. Updating a single micro:bit is easy enough - attach the micro:bit by USB cable to
 your computer, (don't hold the _RESET_ button, as you want it in normal flashing mode), and
 copy the appropriate HEX file to the drive. You want one master, and many minions. 
@@ -39,7 +39,7 @@ copy the appropriate HEX file to the drive. You want one master, and many minion
 present a version 8 (currently I use Java SE 8u181, Windows 64-bit version). Download
 from [here](http://www.oracle.com/technetwork/java/javase/downloads/index.html). 
 
-* Run _MultiCopy.jar_ file in [bin/multi-copy/](bin/multi-copy) - in Windows you can double-click on it
+* Run _MultiCopy.jar_ file in [bin/multi-copy/](../bin/multi-copy/) - in Windows you can double-click on it
 if you've got a Java 8 installed. On other platforms, or from a Windows
 command-prompt, something like _java -jar MultiCopy.jar_
 
