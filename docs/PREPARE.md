@@ -3,7 +3,10 @@
 Assuming that you now have 100 or so micro:bits, assembled and glued,
 this part of the guide deals with getting the software onto the 
 micro:bits, collecting their serial numbers and labelling the 
-labelled, and ready to wear
+labelled, and ready to wear. I'm going to assume that you've
+cloned this repo, and are familiar with navigating around wherever
+you cloned it to, either through a command-prompt, or through an
+explorer GUI of some kind.
 
 ### Flashing the micro:bit Mbed firmware
 
@@ -41,7 +44,7 @@ from [here](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 
 * Run _MultiCopy.jar_ file in [bin/multi-copy/](../bin/multi-copy/) - in Windows you can double-click on it
 if you've got a Java 8 installed. On other platforms, or from a Windows
-command-prompt, something like _java -jar MultiCopy.jar_
+command-prompt, something like `java -jar MultiCopy.jar`.
 
 * This basically detects a micro:bit plugged in, copies a specific firmware to it, waits
 for the micro:bit to reboot, and then lets you unplug it. It works by detecting the drives
@@ -74,6 +77,10 @@ the first and last number to print, the background image, and the stub for the o
 
 ### Serial numbers
 
+* We're now going to attach the master micro:bit to the serial port. This, on Windows, will require a driver.
+See [this page](https://os.mbed.com/handbook/Windows-serial-configuration), which recommends you close all explorer windows,
+plug in a micro:bit, and then install [this driver](https://os.mbed.com/media/downloads/drivers/mbedWinSerial_16466.exe).
+
 * Next, attach the master micro:bit to the serial port, and run the epidemic management 
 utility from [bin/python-gui/run.bat](../bin/python-gui) - the batch file simply runs
 `python epi_manager.py`. The code was developed with Python 2.7 in mind, although it
@@ -81,10 +88,13 @@ may well run on more recent pythons. Get your ~~albatross~~ Python 2.7 installer
 I used the Windows 64-bit installer.
 
 * More detail on this utility in the [usage](USE.md) document. For now, the utility should
-detect the micro:bit master which you plugged in - or click rescan to have another look on
-the USB ports. And you can then click the _Set Master micro:bit_ button in the bottom left.
+detect the micro:bit master which you plugged in. If it doesn't, check the connection, change the cable,
+clicking Rescan each time. If it still doesn't, recopy the master binary to it and Rescan. Or pursue the
+troubleshooting on the Serial Driver page. If it does detect the master, then you can 
+click the _Set Master micro:bit_ button in the bottom left.
 
-* The next page shows all the parameters for the epidemic. Ignore them and click _Send Parameters_
+* The next page shows all the parameters for the epidemic. Ignore them and click _Send Parameters_ - it doesn't
+matter for now.
 
 * Switch on your minion micro:bits one at a time. The serial number of the micro:bit is recorded in [bin/python-gui/serials.csv](../bin/python-gui/serials.csv), and
 links a long micro:bit serial number with an id (0-99). This relationship persists until you delete the serials.csv file. When you power up a micro:bit, a square
@@ -93,3 +103,10 @@ on the grid will turn green, revealing the id number (either newly assigned, or 
 * Note that micro:bit serial numbers are not *perfectly* unique, technically speaking, but should be amply close enough unless you're
 extraordinarily unlucky. See [here](https://support.microbit.org/support/solutions/articles/19000070728-how-to-read-the-device-serial-number). 
 I haven't coded any specific provision for duplicate serial numbers.
+
+### Last Online Installation.
+
+* Finally, make sure you have R installed. The Java slideshow depends on it for creating network graphs. Click [here](https://cran.r-project.org/mirrors.html), 
+choose a mirror near you.
+
+* _Recommended_: especially if you're likely to be offline when you first run an epidemic; Load R, and `install.packages('statnet')`.

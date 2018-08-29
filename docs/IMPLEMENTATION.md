@@ -1,10 +1,10 @@
 # public-events-microbit-epdemic: Implementation
 
 Here, we describe the "infrastructure" and methods used to
-make the epidemic work. There are three components: one
-manager written in python on a laptop, which talks through
-the serial port to one micro:bit master, which talks by 
-radio to 100 micro:bit minions.
+make the epidemic work. As you've seen, there are three components: 
+a manager GUI written in python, which talks through
+the serial port to a single micro:bit master, which talks by 
+radio to up to 100 micro:bit minions.
 
 ### Introduction to the micro:bit capabilities:-
 
@@ -19,9 +19,9 @@ if the message concerns them.
 need 100k to 250k micro:bits in one place to expect a duplicate.
 * They have a 5x5 LED screen that can scroll or print messages; you can set individual brightness per pixel to 255 levels.
 * They have an accelerometer, a compass, and a light sensor, but we don't uses all these (yet). Extensions to our work here 
-could include vaccination properties that vary with light, or direction, or motion...
-* They have a relative clock that counts the number of milliseconds since the minion is powered on. (Hence, we have to 
-manually synchronise this).
+could include vaccination properties that vary with light, direction, or motion.
+* They have a clock that counts the number of milliseconds since the minion is powered on, but no real-time clock. Hence, we 
+have to manually synchronise.
 
 ### What's an epidemic?
 
