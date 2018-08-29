@@ -80,7 +80,7 @@ utility from [bin/python-gui/run.bat](../bin/python-gui) - the batch file simply
 may well run on more recent pythons. Get your ~~albatross~~ Python 2.7 installer [here](https://www.python.org/downloads/release/python-2715/) - 
 I used the Windows 64-bit installer.
 
-* More detail on this utility in the [usage](use.MD) document. For now, the utility should
+* More detail on this utility in the [usage](USE.md) document. For now, the utility should
 detect the micro:bit master which you plugged in - or click rescan to have another look on
 the USB ports. And you can then click the _Set Master micro:bit_ button in the bottom left.
 
