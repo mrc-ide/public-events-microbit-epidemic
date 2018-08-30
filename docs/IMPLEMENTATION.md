@@ -6,7 +6,9 @@ a manager GUI written in python, which talks through
 the serial port to a single micro:bit master, which talks by 
 radio to up to 100 micro:bit minions.
 
-### Introduction to the micro:bit capabilities:-
+## Introduction to the micro:bit capabilities:-
+
+The architecture is determined mostly by the capabilities of micro:bits:-
 
 * They can broadcast radio messages, which all micro:bits can read with a listen event.
 * There is no built-in point-to-point message method, nor a built-in method of deriving the source of a message. 
@@ -23,7 +25,57 @@ could include vaccination properties that vary with light, direction, or motion.
 * They have a clock that counts the number of milliseconds since the minion is powered on, but no real-time clock. Hence, we 
 have to manually synchronise.
 
-### What's an epidemic?
+## The Components
+
+The components and communication are shown below.
+
+<pre>  
+                                                     -------------
+                                              |------| minion 0  |-----|
+                                              |      -------------     |
+                                              |                        |
+ ----------   serial     ----------   radio   |      -------------     |   radio
+ | Laptop |--------------| master |-----------|------| minion 1  |-----|
+ ----------              ----------           |      -------------     |
+                                              |                        |
+                                              |      -------------     |
+                                              |------| minion 99 |-----|
+                                                     -------------
+
+</pre>
+
+Additionally, if a minion is plugged into the laptop by USB/serial, it will
+communicate to tell the laptop that it's a minion, and display its serial
+number and software version. But this is for diagnostic/convenience only,
+and serves no further purpose.
+
+## Serial messages.
+
+Messages over serial seemed to be interrupted at times by spurious new lines. The best solution
+seemed to be to ignore new-lines, and introduce a standard end-of-message character: _#_.
+
+### Identification
+
+<pre>
+
+ ----------              -----------          ----------   
+ | Laptop |------------->| 1#      |--------->| master |
+ |        |              -----------          |   or   |
+ |        |                                   | minion |
+ |        |     -----------------------|      |        |
+ |        |     | <epi_version>:       |      |        |
+ |        |<----| <serial_no>:         |<-----|        |
+ |--------|     | <System Version>#    |      ----------
+                ------------------------
+
+</pre>
+
+* `<epi_version>` is currently `VER:Epi Master 1.13` or `VER:Epi Minion 1.13`
+* `<serial_no>` is the serial number of the micro:bit - `microbit_serial_number();`
+* `<System Version>` is returned by `uBit.systemVersion()`
+
+### 
+
 
 * In this game, the properties (parameters) of an epidemic are:-
   * Epidemic number. A simple numerical id, which distinguishes one epidemic from another. 

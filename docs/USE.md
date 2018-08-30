@@ -1,4 +1,4 @@
-# public-events-microbit-epdemic: Usage - running an epidemic!
+# public-events-microbit-epdemic: Common Usage
 
 So far, you've bought, built and glued the hardware, installed Python, Java and R,
 possibly upgraded the Mbed firmware in the micro:bits, flashed 100 or so with the 
@@ -24,8 +24,10 @@ start them both together, and most of the time let them run.
 switch on. The micro:bits will display _U_, meaning they are unattached to an epidemic at the moment.
 
 ### Screen 1: Select master
+
 * On the first screen, you select which COM port the master is connected to; the manager detects all available 
 options, which must be a master micro:bit of a software version it likes.
+
 * You can, incidentally, run multiple epidemic games at the same time, even from the same laptop, but you need one
 master per epidemic, and one micro:bit manager instance per epidemic. And a good ability to multitask. 
 An epidemic is defined by the serial number of the master micro:bit, and a user-set epidemic number.
@@ -140,7 +142,7 @@ case sensitive.
 | This is a comment - ignored.
 | **DataPath:../../data** |
 | Set the default place to find the CSV and XML files. |
-| **Language:EN **|
+| **Language:EN**|
 | The slideshow allows multi-language support... |
 | **Loop** |
 | Start the script again from the top |
@@ -173,7 +175,7 @@ case sensitive.
 | Display stats on how many players are in the three states - and label them as above. |
 | **Survivors** |
 | Display a dramatic page about who the last survivor is, or how many are left. |
-| **TreatmentsGraph** (optionally add: **Cumulative** and/or **Unconfirmed** |
+| **TreatmentsGraph** (optionally add: **Cumulative** and/or **Unconfirmed**) |
 | As _CasesGraph_ but with labels that work with the _Saviour_ game - see below |
 
 * The Spreaders, Status and Survivors pages were specifically hacked for the micro:bit epidemic,
@@ -202,11 +204,12 @@ they mean. So only use it if those are the sort of discussions you want to have.
 
 * See [src/r-projects/NetworkGraph](src/r-projects/NetworkGraph] - the script is then copied into 
 [bin/slideshow](bin/slideshow) for convenience in writing the scripts.
+
 * If you want to rewrite or improve the script, it takes seven arguments:-
 
 | No | Description | Example |
 | -- | ----------- | ------- |
-| 1 | The data file (csv) to read. | ../data/
+| 1 | The data file (csv) to read. | ../data/498461974_1.csv |
 | 2 | The width of png file to create. | 1024 |
 | 3 | The height of png file to create | 768 |
 | 4 | The colour of category 1* | #000000 |
@@ -214,7 +217,7 @@ they mean. So only use it if those are the sort of discussions you want to have.
 | 6 | The colour of category 3* | #000000 |
 | 7 | The filename to produce | staticnetworkplot.png |
 
-* The categories aren't used in micro:bit 
+* The categories are legacy and aren't used in the micro:bit epidemic at present.
 
 * The Slideshow software then pastes a key onto this graph, since this was fiddly to do in R in a screen-ready way.
 
@@ -230,7 +233,7 @@ they mean. So only use it if those are the sort of discussions you want to have.
 | InfectedBy | Id who infected me (for Infection event. **NA** for recoveries) |
 | Seeding | **S** for a seeded infection, N for normal infection, **NA** for recoveries |
 | Recency | **Recent** means an infection was recent. Anything else old. **NA** for recoveries.  |
-| Category | **1**, **2** or **3** - categories of people. But *ignored** for micro:bit | 
+| Category | **1**, **2** or **3** - categories of people. But *ignored* for micro:bit epidemic.| 
 | ID | ID of the infected/recovered player |
 | NoContacts | Number of contacts to be made for infection; NA for recovery |
 
