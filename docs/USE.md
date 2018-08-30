@@ -92,6 +92,10 @@ be the best way to end, since it's not easy to see whether micro:bits are on or 
 
 ### The Java Slideshow
 
+This is a Java and JavaFX based slideshow, that shows potentially interesting graphs and displays while the epidemic
+is running. It was originally written for a slightly different epidemic game with different rules, hence a few artefacts
+survive here that are not specifically useful for the micro:bit epidemic, but are described here anyway.
+
 #### Getting started
 
 * Launch by double-clicking on [bin/slideshow/run.bat](bin/slideshow) - or from a command-prompt or
@@ -172,13 +176,148 @@ case sensitive.
 | **TreatmentsGraph** (optionally add: **Cumulative** and/or **Unconfirmed** |
 | As _CasesGraph_ but with labels that work with the _Saviour_ game - see below |
 
+* The Spreaders, Status and Survivors pages were specifically hacked for the micro:bit epidemic,
+and rely on [bin/slideshow/media/template.png](bin/slideshow/media/template.png) as a backdrop. 
+
+* The _Unconfirmed_ flag. This includes in the figures contacts that are not necessarily infections,
+thus providing a sort of _worst case_. The epidemic works by deciding how many unique contacts an infected
+player will make at the beginning of their 'infectious period'. The contacts are chosen in the micro:bit
+epidemic, based on their exposure reaching a certain threshold. At that time, the contact could be in any
+of the three states; susceptible, infected, or recovered, since they may have been infected at any previous 
+moment by some other infector. In that case, they still count as a _contact_, but they don't get _infected_
+again. (Essentially, this is the herd immunity principle in action).
+
+* So.. **CasesGraph Unconfirmed** will plot incidence, but will also include the _worst-case_ scenario; we 
+know how many contacts will be made by the currently infected people, so the _worst-case_ is what happens if
+every one of those contacts is a susceptible who thus becomes infected.
+
+* Similarly: **R0Graph Unconfirmed** will include on the graph the _worst-case_ - how many people will
+make 'n' infections, assuming that every contact made results in an infection.
+
+* In practise... the difference between the _worst-case_ and the actual outcomes of the epidemic are 
+interesting academically, but they can make the graphs complicated, and take some time to explain what
+they mean. So only use it if those are the sort of discussions you want to have.
+
+#### The R Network Script
+
+* See [src/r-projects/NetworkGraph](src/r-projects/NetworkGraph] - the script is then copied into 
+[bin/slideshow](bin/slideshow) for convenience in writing the scripts.
+* If you want to rewrite or improve the script, it takes seven arguments:-
+
+| No | Description | Example |
+| -- | ----------- | ------- |
+| 1 | The data file (csv) to read. | ../data/
+| 2 | The width of png file to create. | 1024 |
+| 3 | The height of png file to create | 768 |
+| 4 | The colour of category 1* | #000000 |
+| 5 | The colour of category 2* | #000000 |
+| 6 | The colour of category 3* | #000000 |
+| 7 | The filename to produce | staticnetworkplot.png |
+
+* The categories aren't used in micro:bit 
+
+* The Slideshow software then pastes a key onto this graph, since this was fiddly to do in R in a screen-ready way.
+
+#### The CSV File Format
+
+* The CSV file has one row of headers, and a number of lines afterwards. It records a list of infections and recoveries.
+
+| Column | Meaning |
+| ------ | ------- |
+| Event | **I** or **R**, for infection or recovery |
+| TimeH | Time of day (hours) of event | 
+| Mins | Minutes of day (floating point) of event |
+| InfectedBy | Id who infected me (for Infection event. NA for recoveries) |
+| Seeding | **S** for a seeded infection, N for normal infection, NA for recoveries |
+| Recency | **Recent** means an infection was recent. Anything else old. NA for recoveries.  |
+| Category | *1*, *2* or *3* - categories of people. But ignore for micro:bit | 
+| ID | ID of the infected/recovered player |
+| NoContacts | Number of contacts to be made for infection; NA for recovery |
+
 ### Sample Epidemic games
+
+* This repo 'ships' with four epidemic games which we've used. There are four accompanying
+scripts for the Slideshow to use, and various images in [bin/slideshow/media](bin/slideshow/media) that
+support the 
 
 #### Basic epidemic
 
-#### Saviour
+| Parameter       | Value   |
+| --------------- | ------- |
+| R0              | 2.4     |
+| R Type          | Poisson |
+| Poi minimum     | 1       |
+| Poi maximum     | 5       |
+| Transmit range  | 4 or 5  |
+| Exposure (s)    | 120     |
+| Transmit button | Auto    |
+| Receive button  | Auto    |
+| Icon Set        | SIR     |
+
+* This is the basic epidemic, with a medium range infection, taking a couple of minutes of accumulated contact to 
+cause an infection. In a social gathering, it will probably take around 15-20 minutes.
+
+* Seeding: Single seed, and allow to pick number of contacts from poisson. Reseed as necessary to keep things moving.
 
 #### Survivor
 
+* This is the same as the basic epidemic, but the Slideshow will show an extra page showing how many
+survivors are left, and if there is one (or less), then who was the last player to be susceptible.
+
+* Seeding: similar to the basic epidemic, but if it seems to have died out, reseed again.
+
+* Note that this is entirely unfair, as games go, and in the latter stages of seeding is probably dictated by chance...
+
+#### Saviour
+
+| Parameter       | Value   |
+| --------------- | ------- |
+| R0              | 0       |
+| R Type          | Constant|
+| Poi minimum     | 0       |
+| Poi maximum     | 1       |
+| Transmit range  | 0       |
+| Exposure (s)    | 1       |
+| Transmit button | A       |
+| Receive button  | B       |
+| Icon Set        | I+R     |
+
+* This game is a bit of a variation, using all the same internal mechanics, but with some creative labelling, we can 
+make a different sort of game. The _Icon Set_ is particularly interesting (and confusing!) here; it allows us to label
+susceptibles, infected, and recovered people with whatever letter we like, even though internally, the same S-I-R sort
+of rules are applying.
+
+* Everyone in this game begins with an infection, and their micro:bits say _I_. One person discovers a cure, and becomes
+a doctor - a _+_ symbol appears on their micro:bit. A doctor (_+_) can treat an "infected" (_I_) if the two stand close
+together, the doctor presses the 'A' button, and the patient presses the 'B' button, for a second, simultaneously. The
+_I_ then becomes an _R_ signalling instant recovery.
+
+* So the game works with somer bizarre mapping of what is displayed, to what is understood internally by the software.
+What the micro:bits call _I_ is represented internally by susceptibles; the doctor is actually the one-and-only-infected
+host, and recoveries are indeed recovered. As R0 is zero, the only way to become a doctor, is by seeding. And when the
+doctor passes on the "infection", the "victim" immediately recovers, for the same reason.
+
+* So to run the game, you just need to **Seed** the doctor - pick a green micro:bit, and seed them, forcing them to make 
+99 contacts, which effectively means the doctor never runs out. 
+
+* (For varieties on this game, you could limit the number of "vaccines" a doctor has, by changing how many contacts you force
+them to make to a smaller number. Then you could seed more doctors later on in the epidemic).
+
 #### Super-Spreader
 
+| Parameter       | Value   |
+| --------------- | ------- |
+| R0              | 99      |
+| R Type          | Constant|
+| Poi minimum     | 98      |
+| Poi maximum     | 99      |
+| Transmit range  | 2       |
+| Exposure (s)    | 30      |
+| Transmit button | Auto    |
+| Receive button  | Auto    |
+| Icon Set        | SIR     |
+
+* This one is like the basic epidemic, except no-one ever recovers, and there is no limit on how many infections you can make.
+
+* This is another quite unfair game! Those seeded or infected earlier have an extreme advantage that probably cannot be
+overcome even by the most social people in the room. But fairness is probably not the main objective of these games.

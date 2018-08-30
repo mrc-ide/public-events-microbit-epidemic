@@ -118,6 +118,7 @@ if (n_AB > 0) {
   category.col <- rep(categorycolours[3], n_AB)
   category.col[which(sorted[,4] == "1")] <- categorycolours[1]
   category.col[which(sorted[,4] == "2")] <- categorycolours[2]
+  category.col[which(sorted[,4] == "3")] <- categorycolours[3]
 
   recency.size <- rep(recencysizes[1], n_AB)
   recency.size[which(sorted[,3] == "Recent")] <- recencysizes[2]
