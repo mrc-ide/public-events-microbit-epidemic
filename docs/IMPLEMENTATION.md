@@ -63,16 +63,16 @@ seemed to be to ignore new-lines, and introduce a standard end-of-message charac
  |        |              -----------          |   or   |
  |        |                                   | minion |
  |        |     -----------------------|      |        |
- |        |     | <epi_version>:       |      |        |
- |        |<----| <serial_no>:         |<-----|        |
- |--------|     | <System Version>#    |      ----------
+ |        |     | [epi_version]:       |      |        |
+ |        |<----| [serial_no]:         |<-----|        |
+ |--------|     | [system_version]#    |      ----------
                 ------------------------
 
 </pre>
 
-* `<epi_version>` is currently `VER:Epi Master 1.13` or `VER:Epi Minion 1.13`
-* `<serial_no>` is the serial number of the micro:bit - `microbit_serial_number();`
-* `<System Version>` is returned by `uBit.systemVersion()`
+* `[epi_version]` is currently `VER:Epi Master 1.13` or `VER:Epi Minion 1.13`
+* `[serial_no]` is the serial number of the micro:bit - `microbit_serial_number()`
+* `[System Version]` is returned by `uBit.systemVersion()`
 
 ### 
 
