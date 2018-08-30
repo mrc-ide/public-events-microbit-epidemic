@@ -72,9 +72,32 @@ seemed to be to ignore new-lines, and introduce a standard end-of-message charac
 
 * `[epi_version]` is currently `VER:Epi Master 1.13` or `VER:Epi Minion 1.13`
 * `[serial_no]` is the serial number of the micro:bit - `microbit_serial_number()`
-* `[System Version]` is returned by `uBit.systemVersion()`
+* `[system_version]` is returned by `uBit.systemVersion()`
 
-### 
+### Send Parameters
+
+ ----------              -----------------------       ----------   
+ | Laptop |              | 3[epid],[R0],       |       |        |
+ |        |              | [rtype],[poimin],   |       |        |
+ |        |------------->| [poimax],[rpower],  |------>| master |
+ |        |              | [exposure],[btrans],|       |        |
+ |        |              | [brec],[icons],#    |       |        |
+ |--------|              -----------------------       ----------
+
+* `[epid]` : unsigned short - epidemic id.
+* `[R0]` : float - R0 parameter.
+* `[rtype]` : unsigned char. 0 = Constant, 1 = Poisson
+* `[poimin]` : unsigned char. Minimum permitted R.
+* `[poimax]` : unsigned char. Maximum permitted R.
+* `[rpower]` : unsigned char. Transmit power (0-7)
+* `[exposure]` : unsigned short. Exposure threshold for infection (seconds)
+* `[btrans]` : unsigned char. Button to enable transmit. (0,1,2,3) = (Auto, A, B, A+B)
+* `[brec]` : unsigned char. Button to enable recovery. (0,1,2,3) = (Auto, A, B, A+B)
+* `[icons]` : unsigned char Icon set. (0,1,2) = (SIR,I+R,-I-)
+
+The serial port is assumed reliable, and the master doesn't acknowledge or reply to this
+message. It changed mode into `MASTER_STAGE_RECRUITMENT`, and now listens to radio requests
+for minions to join the game.
 
 
 * In this game, the properties (parameters) of an epidemic are:-
