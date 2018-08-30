@@ -49,12 +49,24 @@ communicate to tell the laptop that it's a minion, and display its serial
 number and software version. But this is for diagnostic/convenience only,
 and serves no further purpose.
 
-## Serial messages.
+## Messages
 
-Messages over serial seemed to be interrupted at times by spurious new lines. The best solution
-seemed to be to ignore new-lines, and introduce a standard end-of-message character: _#_.
+* Messages over serial are supposed to be sent from buffers when a new-line is sent. However, spurious 
+new-lines seemed to be commonly inserted. The best solution
+seemed to be to send serial messages ending with a new-line, but also to include our own end-of-message character: _#_. New lines
+are then used purely to trigger a buffer flush and send; they are stripped from incoming messages, and buffered until a _#_ is read,
+which indicates the message has been received completely. Any non-newline left-over after the _#_ is buffered as the start of the
+next message.
 
-### Identification
+* Messages over radio appear to be limited to 28 bytes - not the 32 that the micro:bit documentation reports. 
+
+* Chars are a byte long, shorts are 2 bytes long, and int and floats are 4 bytes long.
+
+* See [src/microbit-projects/include/microepi.h](src/microbit-projects/include) for code that represents all of these messages.
+
+### Identification of master
+
+Here, the laptop sends a requst to a connected micro:bit, asking it to identify itself in various ways.
 
 <pre>
 
@@ -74,12 +86,18 @@ seemed to be to ignore new-lines, and introduce a standard end-of-message charac
 * `[serial_no]` is the serial number of the micro:bit - `microbit_serial_number()`
 * `[system_version]` is returned by `uBit.systemVersion()`
 
-### Send Parameters
+### Send Parameters to Master
+
+Here, the laptop sends the set of parameters for the epidemic, to the master. After our
+new-line hack, the serial is assumed reliable (and no further issues have been observered).
+The master therefore doesn't acknowledge or reply to this message explicitly. It changes 
+mode into `MASTER_STAGE_RECRUITMENT`, and now listens to radio requests for minions who
+want to join the game.
 
 <pre>
  ----------              -----------------------       ----------   
  | Laptop |              | 3[epid],[R0],       |       |        |
- |        |              | [rtype],[poimin],   |       |        |
+ |        |   serial     | [rtype],[poimin],   |       |        |
  |        |------------->| [poimax],[rpower],  |------>| master |
  |        |              | [exposure],[btrans],|       |        |
  |        |              | [brec],[icons],#    |       |        |
@@ -93,13 +111,38 @@ seemed to be to ignore new-lines, and introduce a standard end-of-message charac
 * `[poimax]` : unsigned char. Maximum permitted R.
 * `[rpower]` : unsigned char. Transmit power (0-7)
 * `[exposure]` : unsigned short. Exposure threshold for infection (seconds)
-* `[btrans]` : unsigned char. Button to enable transmit. (0,1,2,3) = (Auto, A, B, A+B)
-* `[brec]` : unsigned char. Button to enable recovery. (0,1,2,3) = (Auto, A, B, A+B)
-* `[icons]` : unsigned char Icon set. (0,1,2) = (SIR,I+R,-I-)
+* `[btrans]` : unsigned char. Button to enable transmit. (0, 1, 2, 3) = (Auto, A, B, A+B)
+* `[brec]` : unsigned char. Button to enable recovery. (0, 1, 2, 3) = (Auto, A, B, A+B)
+* `[icons]` : unsigned char. Icon set. (0, 1, 2) = (SIR, I+R, -I-)
 
-The serial port is assumed reliable, and the master doesn't acknowledge or reply to this
-message. It changed mode into `MASTER_STAGE_RECRUITMENT`, and now listens to radio requests
-for minions to join the game.
+### Reset the epidemic
+
+Here, the laptop sends a message to the master, telling it to reset the micro:bits and
+start another epidemic. The master broadcasts this to the micro:bits, and the micro:bits re-broadcast the message.
+
+<pre>
+ ----------              -----------------------       ----------
+ | Laptop |   serial     | 5#                  |       | master |
+ |        |------------->|                     |------>|        |
+ |--------|              -----------------------       ----------
+</pre>
+
+
+### Power-off the micro:bits.
+
+Here, the laptop sends a message to the master, telling it to reset the micro:bits and
+start another epidemic. The master broadcasts this to the micro:bits, and the micro:bits re-broadcast the message.
+
+<pre>
+ ----------              -----------------------       ----------
+ | Laptop |   serial     | 6#                  |       | master |
+ |        |------------->|                     |------>|        |
+ |--------|              -----------------------       ----------
+</pre>
+
+
+
+
 
 
 * In this game, the properties (parameters) of an epidemic are:-
