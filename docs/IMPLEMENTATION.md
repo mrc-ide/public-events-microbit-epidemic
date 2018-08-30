@@ -64,21 +64,21 @@ next message.
 
 * See [src/microbit-projects/include/microepi.h](src/microbit-projects/include) for code that represents all of these messages.
 
-### Identification of master
+### Identification of micro:bit
 
 Here, the laptop sends a requst to a connected micro:bit, asking it to identify itself in various ways.
 
 <pre>
 
- ----------              -----------          ----------   
+ ----------              |---------|          ----------   
  | Laptop |------------->| 1#      |--------->| master |
- |        |              -----------          |   or   |
+ |        |              |---------|          |   or   |
  |        |                                   | minion |
- |        |     -----------------------|      |        |
+ |        |     |----------------------|      |        |
  |        |     | [epi_version]:       |      |        |
  |        |<----| [serial_no]:         |<-----|        |
  |--------|     | [system_version]#    |      ----------
-                ------------------------
+                |----------------------|
 
 </pre>
 
@@ -95,13 +95,13 @@ mode into `MASTER_STAGE_RECRUITMENT`, and now listens to radio requests for mini
 want to join the game.
 
 <pre>
- ----------              -----------------------       ----------   
+ ----------              |---------------------|       ----------   
  | Laptop |              | 3[epid],[R0],       |       |        |
  |        |   serial     | [rtype],[poimin],   |       |        |
  |        |------------->| [poimax],[rpower],  |------>| master |
  |        |              | [exposure],[btrans],|       |        |
  |        |              | [brec],[icons],#    |       |        |
- |--------|              -----------------------       ----------
+ ----------              |---------------------|       ----------
 </pre>
 
 * `[epid]` : unsigned short - epidemic id.
@@ -114,6 +114,58 @@ want to join the game.
 * `[btrans]` : unsigned char. Button to enable transmit. (0, 1, 2, 3) = (Auto, A, B, A+B)
 * `[brec]` : unsigned char. Button to enable recovery. (0, 1, 2, 3) = (Auto, A, B, A+B)
 * `[icons]` : unsigned char. Icon set. (0, 1, 2) = (SIR, I+R, -I-)
+
+### Registration of a minion
+
+Minions, on startup, broadcast their willingness to play the epidemic game.
+These all get ignored, until the master is in the `MASTER_STAGE_RECRUITMENT`
+stage, and it alone will then respond to this message. It asks the laptop
+for the friendly-id for this minion. The laptop replies by repeating the
+minion's serial number, and returning the friendly id to the master. The
+master then broadcasts the minion's serial number (so the minion knows the
+message is intended for it), the friendly id, the master's serial number, the
+current time on the master, and the parameters of the epidemic.
+
+The minion is now registered, becomes susceptible, changes message channel to
+help ignore other minion's registration radio noise, and waits to be infected
+or seeded.
+
+<pre>
+ ----------  radio   |---------------------|          ----------       |------------------|        |---------
+ | Minion |  bcast   | [REG_MSG]   : char  |          |        |       | REG:[serial_no]: | serial | Laptop |
+ |        |          | [serial_no] : int   |          |        |       | [build_no]#      |        |        |
+ |        |- - - - ->| [build_no]  : char  |- - - - ->| master |------>|                  |------->|        |
+ |        |          |                     |          |        |       |------------------|        |        |
+ |        |          |---------------------|  radio   |        |                                   |        |
+ |        |<- -                               bcast   |        |       |------------------|        |        |
+ |        |   |    |-----------------------|          |        |<------| 2[serial_no],    |<-------|        |
+ ----------        | [REG_ACK_MSG] : char  |<- - - - -|        |       | [friendly_id],#  |        ----------
+                   | [serial_no]   : int   |          ----------       |------------------|
+              |    | [friendly_id] : short |
+              |    | [master_ser]  : int   |
+                   | [master_time] : int   |
+              |    | [epid]        : short |
+              - - -| [R0]          : float |
+                   | [rtype]       : char  |
+                   | [poimin]      : char  |
+                   | [poimax]      : char  |
+                   | [rpower]      : char  |
+                   | [exposure]    : short |
+                   | [bcombine]    : char  |
+                   |-----------------------|
+
+</pre>
+
+* `[serial_no]` (for the minion) is obtained with `microbit_serial_number()`.
+* `[build_no]` is a char representing the epidemic software version of the minion. The manager on the laptop will print
+a warning if the minion's software version is out of date.
+* `[friendly_id]` is the id in the 0..99 range, looked up from serials.csv on the laptop, and added if necessary and possible.
+* `[master_ser]` is the master micro:bit's serial number, which it sends to the minion. (Recall that an epidemic is identified by
+the master's serial number, and the epidemic id.
+* `[master_time]` is the master micro:bit's current time, measured in milliseconds since the master received the parameters from the laptop.
+* `[epid]`, `[R0]`, `[rtype]`, `[poimin]`, `[poimax]`, `[rpower]`, and `[exposure]` are the parameters the master previously received - see above.
+* The message size so far is 27 bytes. Anecdotally we discovered 28-bytes is the maximum radio message size; above this, and the last bytes
+are ignored. Therefore, the last three flags are combined into one byte; `[bcombine] = [btrans] + (4 * [brec]) + (16 * [icons])`.
 
 ### Reset the epidemic
 
