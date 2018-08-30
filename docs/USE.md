@@ -7,7 +7,7 @@ minion firmware, and another one with the master firmware. You've got a serial p
 between 0 and 99. It's been quite an emotional and character building experience, but 
 you're now ready at last to run some epidemic games.
 
-### The GUI tools
+## The GUI tools
 
 Connect to a projector or second screen, and run in Extended Desktop mode. We'll be running two graphical things at once:
 (1) the micro:bit epidemic manager, which stays on the private screen, and (2) the Java slideshow,
@@ -15,7 +15,7 @@ which has a little control window on the private screen, and shows graphs full-s
 extended desktop. We'll describe them separately to preserve sanity, but in reality, you'll probably
 start them both together, and most of the time let them run.
 
-### The micro:bit manager
+## The micro:bit manager
 
 * Attach the master micro:bit to the host, and start the gui by running [bin/python-gui/run.bat](../bin/python-gui) 
 (or `python epi_manager.py` from that folder).
@@ -23,14 +23,14 @@ start them both together, and most of the time let them run.
 * At this point (or earlier), ask the players to wear their micro:bit lanyards, fit the batteries as necessary, and
 switch on. The micro:bits will display _U_, meaning they are unattached to an epidemic at the moment.
 
-#### Screen 1: Select master
+### Screen 1: Select master
 * On the first screen, you select which COM port the master is connected to; the manager detects all available 
 options, which must be a master micro:bit of a software version it likes.
 * You can, incidentally, run multiple epidemic games at the same time, even from the same laptop, but you need one
 master per epidemic, and one micro:bit manager instance per epidemic. And a good ability to multitask. 
 An epidemic is defined by the serial number of the master micro:bit, and a user-set epidemic number.
 
-#### Screen 2: Define parameters
+### Screen 2: Define parameters
 
 * On the next page, the parameters are set for a specific epidemic. The set of parameters can be saved and
 recalled later. Some of them may become more clear when we talk later about the epidemic games we've made so far.
@@ -62,7 +62,7 @@ run multiple epidemics in the same space with different master micro:bits, and t
 each other. Similar, the incremental epidemic id makes sure that one game is isolated from the following game - 
 this prevents issues where for example a player takes their minion out of radio range, and returns during the following game.
 
-#### Screen 3: Seed the epidemic
+### Screen 3: Seed the epidemic
 
 * Seeding causes a susceptible player to suddenly become infected. Choose the victim by clicking on a green 
 square in the grid, or click the _Random_ button to pick a random susceptible. 
@@ -78,7 +78,7 @@ from the parameters of the epidemic.
 * But note that as soon as the first seed is made, the players in the game are fixed, and no new micro:bits
 can added themselves. They'll have to wait for the next game.
 
-#### Ending the epidemic
+### Ending the epidemic
 
 * Click the _Reset_ button to end an epidemic game and start a new one. To confirm, you must type exactly _RESET_ or _POWEROFF_. 
 
@@ -90,13 +90,13 @@ state which is the most battery-efficient thing to do while still being switched
 it will need its own reset button pushed, or its power cycled, so do this at the end of the day. (Arguably, this might not
 be the best way to end, since it's not easy to see whether micro:bits are on or off, when their screen is blank. Up to you!)
 
-### The Java Slideshow
+## The Java Slideshow
 
 This is a Java and JavaFX based slideshow, that shows potentially interesting graphs and displays while the epidemic
 is running. It was originally written for a slightly different epidemic game with different rules, hence a few artefacts
 survive here that are not specifically useful for the micro:bit epidemic, but are described here anyway.
 
-#### Getting started
+### Getting started
 
 * Launch by double-clicking on [bin/slideshow/run.bat](bin/slideshow) - or from a command-prompt or
 terminal, `java MicroEpiSlideshow` in that folder. (Sorry it's a mess of class files; there seem to be issues
@@ -121,7 +121,7 @@ and an XML file gives meta-data about the run.
 to skip through the slideshow pages, ignoring any delays, or any other key will pause or unpause the slideshow, displaying a 
 paused icon in the top-right.
 
-#### The Script File
+### The Script File
 
 If you want to make your own epidemic games, or your own slideshow sequences, this section is how...
 
@@ -198,7 +198,7 @@ make 'n' infections, assuming that every contact made results in an infection.
 interesting academically, but they can make the graphs complicated, and take some time to explain what
 they mean. So only use it if those are the sort of discussions you want to have.
 
-#### The R Network Script
+### The R Network Script
 
 * See [src/r-projects/NetworkGraph](src/r-projects/NetworkGraph] - the script is then copied into 
 [bin/slideshow](bin/slideshow) for convenience in writing the scripts.
@@ -218,7 +218,7 @@ they mean. So only use it if those are the sort of discussions you want to have.
 
 * The Slideshow software then pastes a key onto this graph, since this was fiddly to do in R in a screen-ready way.
 
-#### The CSV File Format
+### The CSV File Format
 
 * The CSV file has one row of headers, and a number of lines afterwards. It records a list of infections and recoveries.
 
@@ -227,20 +227,20 @@ they mean. So only use it if those are the sort of discussions you want to have.
 | Event | **I** or **R**, for infection or recovery |
 | TimeH | Time of day (hours) of event | 
 | Mins | Minutes of day (floating point) of event |
-| InfectedBy | Id who infected me (for Infection event. NA for recoveries) |
-| Seeding | **S** for a seeded infection, N for normal infection, NA for recoveries |
-| Recency | **Recent** means an infection was recent. Anything else old. NA for recoveries.  |
-| Category | *1*, *2* or *3* - categories of people. But ignore for micro:bit | 
+| InfectedBy | Id who infected me (for Infection event. **NA** for recoveries) |
+| Seeding | **S** for a seeded infection, N for normal infection, **NA** for recoveries |
+| Recency | **Recent** means an infection was recent. Anything else old. **NA** for recoveries.  |
+| Category | **1**, **2** or **3** - categories of people. But *ignored** for micro:bit | 
 | ID | ID of the infected/recovered player |
 | NoContacts | Number of contacts to be made for infection; NA for recovery |
 
-### Sample Epidemic games
+## Sample Epidemic games
 
 * This repo 'ships' with four epidemic games which we've used. There are four accompanying
-scripts for the Slideshow to use, and various images in [bin/slideshow/media](bin/slideshow/media) that
-support the 
+scripts for the Slideshow to use, and various images in [../bin/slideshow/media](../bin/slideshow/media) 
+support the four games.
 
-#### Basic epidemic
+### Basic epidemic
 
 | Parameter       | Value   |
 | --------------- | ------- |
@@ -259,7 +259,7 @@ cause an infection. In a social gathering, it will probably take around 15-20 mi
 
 * Seeding: Single seed, and allow to pick number of contacts from poisson. Reseed as necessary to keep things moving.
 
-#### Survivor
+### Survivor
 
 * This is the same as the basic epidemic, but the Slideshow will show an extra page showing how many
 survivors are left, and if there is one (or less), then who was the last player to be susceptible.
@@ -268,7 +268,7 @@ survivors are left, and if there is one (or less), then who was the last player 
 
 * Note that this is entirely unfair, as games go, and in the latter stages of seeding is probably dictated by chance...
 
-#### Saviour
+### Saviour
 
 | Parameter       | Value   |
 | --------------- | ------- |
@@ -303,7 +303,7 @@ doctor passes on the "infection", the "victim" immediately recovers, for the sam
 * (For varieties on this game, you could limit the number of "vaccines" a doctor has, by changing how many contacts you force
 them to make to a smaller number. Then you could seed more doctors later on in the epidemic).
 
-#### Super-Spreader
+### Super-Spreader
 
 | Parameter       | Value   |
 | --------------- | ------- |
