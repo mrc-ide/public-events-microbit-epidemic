@@ -76,6 +76,7 @@ seemed to be to ignore new-lines, and introduce a standard end-of-message charac
 
 ### Send Parameters
 
+<pre>
  ----------              -----------------------       ----------   
  | Laptop |              | 3[epid],[R0],       |       |        |
  |        |              | [rtype],[poimin],   |       |        |
@@ -83,6 +84,7 @@ seemed to be to ignore new-lines, and introduce a standard end-of-message charac
  |        |              | [exposure],[btrans],|       |        |
  |        |              | [brec],[icons],#    |       |        |
  |--------|              -----------------------       ----------
+</pre>
 
 * `[epid]` : unsigned short - epidemic id.
 * `[R0]` : float - R0 parameter.
