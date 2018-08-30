@@ -58,6 +58,11 @@ are then used purely to trigger a buffer flush and send; they are stripped from 
 which indicates the message has been received completely. Any non-newline left-over after the _#_ is buffered as the start of the
 next message.
 
+* Messages over radio are broadcast at a certain power, and on a certain group. Groups are designed to separate messages so that
+they are only received by those interested in them. We use two groups, one for _REGISTERED_ micro:bits, and another for _UNREGISTERED_ - which
+group messages are being sent in will be shown on each diagram. Radio power is assumed to be maximum, unless otherwise specified; the 
+infection broadcast is the message where the power level is a parameter of the epidemic.
+
 * Messages over radio appear to be limited to 28 bytes - not the 32 that the micro:bit documentation reports. 
 
 * Chars are a byte long, shorts are 2 bytes long, and int and floats are 4 bytes long.
@@ -90,9 +95,8 @@ Here, the laptop sends a requst to a connected micro:bit, asking it to identify 
 
 Here, the laptop sends the set of parameters for the epidemic, to the master. After our
 new-line hack, the serial is assumed reliable (and no further issues have been observered).
-The master therefore doesn't acknowledge or reply to this message explicitly. It changes 
-mode into `MASTER_STAGE_RECRUITMENT`, and now listens to radio requests for minions who
-want to join the game.
+The master therefore doesn't acknowledge or reply to this message explicitly. It now listens 
+(on the UNREGISTERED group) to radio requests for minions who want to join the game.
 
 <pre>
  ----------              |---------------------|       ----------   
@@ -117,12 +121,13 @@ want to join the game.
 
 ### Registration of a minion
 
-Minions, on startup, broadcast their willingness to play the epidemic game.
-These all get ignored, until the master is in the `MASTER_STAGE_RECRUITMENT`
-stage, and it alone will then respond to this message. It asks the laptop
-for the friendly-id for this minion. The laptop replies by repeating the
+Minions, on startup, are in the UNREGISTERED radio group, and they broadcast their 
+willingness to play the epidemic game, sending their serial number and software version
+to all who listen. But no-one listenes, until the master is ready. It then listens on the
+same gruop, and on receiving a message, asks the laptop
+for the friendly-id for this minion's (longer) serial number. The laptop replies, repeating the
 minion's serial number, and returning the friendly id to the master. The
-master then broadcasts the minion's serial number (so the minion knows the
+master broadcasts the minion's serial number (so the minion knows the
 message is intended for it), the friendly id, the master's serial number, the
 current time on the master, and the parameters of the epidemic.
 
@@ -131,17 +136,17 @@ help ignore other minion's registration radio noise, and waits to be infected
 or seeded.
 
 <pre>
- ----------  radio   |---------------------|          ----------       |------------------|        |---------
- | Minion |  bcast   | [REG_MSG]   : char  |          |        |       | REG:[serial_no]: | serial | Laptop |
- |        |          | [serial_no] : int   |          |        |       | [build_no]#      |        |        |
+ ----------  radio   |---------------------|  radio   ----------       |------------------|        ----------
+ | Minion |  bcast   | [REG_MSG]   : char  |  bcast   |        |       | REG:[serial_no]: | serial | Laptop |
+ |        |   on     | [serial_no] : int   |   on     |        |       | [build_no]#      |        |        |
  |        |- - - - ->| [build_no]  : char  |- - - - ->| master |------>|                  |------->|        |
- |        |          |                     |          |        |       |------------------|        |        |
- |        |          |---------------------|  radio   |        |                                   |        |
- |        |<- -                               bcast   |        |       |------------------|        |        |
- |        |   |    |-----------------------|          |        |<------| 2[serial_no],    |<-------|        |
+ |        |  UNREG   |                     |  UNREG   |        |       |------------------|        |        |
+ |        |  group   |---------------------|  group   |        |                                   |        |
+ |        |                                           |        |       |------------------|        |        |
+ |        |<- |    |-----------------------|          |        |<------| 2[serial_no],    |<-------|        |
  ----------        | [REG_ACK_MSG] : char  |<- - - - -|        |       | [friendly_id],#  |        ----------
-                   | [serial_no]   : int   |          ----------       |------------------|
-              |    | [friendly_id] : short |
+              |    | [serial_no]   : int   |          ----------       |------------------|
+                   | [friendly_id] : short |
               |    | [master_ser]  : int   |
                    | [master_time] : int   |
               |    | [epid]        : short |
@@ -167,108 +172,68 @@ the master's serial number, and the epidemic id.
 * The message size so far is 27 bytes. Anecdotally we discovered 28-bytes is the maximum radio message size; above this, and the last bytes
 are ignored. Therefore, the last three flags are combined into one byte; `[bcombine] = [btrans] + (4 * [brec]) + (16 * [icons])`.
 
+### Seeding the epidemic
+
+An infection is seeded from the laptop, which sends via serial to the master a message containing the victim id, and an indication 
+of how the victim should make their contacts. The master then broadcasts this on the radio (REGISTERED group), and the susceptible
+victim (who by definition is also listening on the REGISTERD group) hears the message, matches
+their id with the id in the message, and acts accordingly.
+
+<pre>
+ ----------              |------------|     ----------  radio  |----------------------------|         ----------
+ | Laptop |   serial     | 4[id],     |     | master |  bcast  | [SEED_MINION_MSG] : char   |         | minion |
+ |        |------------->| [forcer],# |---->|        |- - - - >| [master_serial]   : int    |- - - - >|        |
+ ----------              |------------|     ----------   on    | [epid]            : short  |         ----------
+                                                         REG   | [id]              : short  |
+                                                        group  | [n_contacts]      : char   |
+                                                               |----------------------------|
+
+</pre>
+
+* `[id]` Refers to the friendly minion id (0.99) throughout
+* `[master_serial]` and `[epid`] are serial number of the master, and the epidemic id as usual.
+* `[n_contacts]` is either 0, meaning use the epidemic parameters to decide, or non-zero forces the victim to attemp a set number of contacts.
+* On receiving and matching this message, the minion becomes infectious, 
+
+### Infection
+
+When a minion is infected, it broadcasts a message every second
+
+### Recovery
+
+
 ### Reset the epidemic
 
 Here, the laptop sends a message to the master, telling it to reset the micro:bits and
-start another epidemic. The master broadcasts this to the micro:bits, and the micro:bits re-broadcast the message.
+start another epidemic. The master broadcasts this to the micro:bits, and the micro:bits re-broadcast the message once, before
+reseting, and returning to the _UNREGISTERED_ radio group. They start broadcasting their willingness to be part of the next
+epidemic game.
 
-<pre>
- ----------              -----------------------       ----------
- | Laptop |   serial     | 5#                  |       | master |
- |        |------------->|                     |------>|        |
- |--------|              -----------------------       ----------
+<pre>                                                                                       repeat message once
+                                                                                      | - - - - - - < - - - - - - - - - -|
+ ----------              |-----|     ----------  radio   |-----------------------|    |               radio  |-----------------------|
+ | Laptop |   serial     | 5#  |     | master |  bcast   | [RESET_MSG] : char    |    |   ----------  bcast  | [RESET_MSG] : char    |
+ |        |------------->|     |---->|        |- - - - ->| [master_serial] : int |- - - ->| minion |- - - - >| [master_serial] : int |
+ ----------              |-----|     ----------   REG    |-----------------------|        ----------   REG   |-----------------------|
+                                                 group                                                group
 </pre>
 
+* As before, `[master_serial`] is the master's serial number, which identifies the epidemic; but this time, the RESET message will
+be received also by any stragglers from a previous epidemic id, and they too will reset and be able to join the next game.
 
 ### Power-off the micro:bits.
 
-Here, the laptop sends a message to the master, telling it to reset the micro:bits and
-start another epidemic. The master broadcasts this to the micro:bits, and the micro:bits re-broadcast the message.
+Here, the laptop sends a message to the master, telling it to power-off the micro:bits. The master broadcasts this to the micro:bits, and the micro:bits re-broadcast the message.
 
-<pre>
- ----------              -----------------------       ----------
- | Laptop |   serial     | 6#                  |       | master |
- |        |------------->|                     |------>|        |
- |--------|              -----------------------       ----------
+
+<pre>                                                                                       repeat message once
+                                                                                      | - - - - - - < - - - - - - - - - -|
+ ----------              |-----|     ----------  radio   |-----------------------|    |               radio  |-----------------------|
+ | Laptop |   serial     | 6#  |     | master |  bcast   | [POWEROFF_MSG] : char |    |   ----------  bcast  | [RESET_MSG] : char    |
+ |        |------------->|     |---->|        |- - - - ->| [master_serial] : int |- - - ->| minion |- - - - >| [master_serial] : int |
+ ----------              |-----|     ----------   REG    |-----------------------|        ----------   REG   |-----------------------|
+                                                 group                                                group
 </pre>
 
-
-
-
-
-
-* In this game, the properties (parameters) of an epidemic are:-
-  * Epidemic number. A simple numerical id, which distinguishes one epidemic from another. 
-    This, coupled with the serial number of the master, allows multiple epidemics to be run close together
-    without interference across epidemics run by different managers/masters, and ensures there is no straggling of
-    minions from the previous epidemic, if you run more than once.
-  * R0 - the number of new contacts made per victim. This can be set to a constant, or a poisson-distributed number; each 
-    infected minion will make that many unique contacts. But a contact is not the same as a new infection; an infectious minion
-    may have a contact who is recovered, so this counts as a contact, but the recovered, contacted minion won't make any further
-    infections.
-  * Exposure - the number of seconds of accumulate proximity required for a potential transmission to occur. These do not have to
-    be contiguous.
-  * Transmit power - effectively, this is how loudly the infected radio shouts to its neighbours that it is infected. This is a 
-    number between 0 and 7 (-30dbm, to +4dbm), where 0dbm is rated at 20m range; -30dbm seems to be about a foot or so.
-
-### The Manager
-
-The manager is a GUI written in python, running on a laptop. It provides a nice front-end 
-for setting the parameters and behaviour of the micro:bits and handling top-level communications 
-so that the progress of the epidemic can be visualised. It performs these functions, in this order:-
-
-* Locate Master micro:bit on the serial port, that is ready to start an epidemic.
-* Configure the epidemic parameters and send to the master.
-* Record which minions the master says are part of the epidemic.
-* Choose the first victim (seed), and send to the master.
-* Collect data on infections and recoveries from the master.
-* Handle end of epidemic and restart, or power-off.
-
-### The Master
-
-The master micro:bit talks to the Manager via the serial port, and talks to the
-minions over the simple radio. It performs these functions, in this order:-
-
-* Identifies itself, on request, to the manager.
-* Receives configuration parameters from the manager.
-* Once it has parameters, it distributes those to minions who join
-the game, and tells the manager who has joined. An epidemic is defined by the 
-master's serial number, and a manager-set epidemic number.
-* Receives seeding information for the epidemic via serial. It changes radio group (thus no more minions get added),
-and broadcasts the seeding information over the radio.
-* Receives radio information from minions who start making contacts, or recover, and forwards to manager.
-* At any time, if it receives a reset/power-off message from the manager, it forwards to the minions, and enters a permanent sleep, until
-it is physically rebooted.
-
-### The Minions
-
-The minions are the agents of the epidemic, and are attached to humans with a lanyard. They remember the parameters of the
-epidemic, and also have an array of counters, one for each of the (potential) 100 minions in our epidemic, which count how many
-infection messages they have received from each other minion. They perform these functions, in this order:-
-
-* Periodically broadcast their presence (ie, their serial number) to the master, who either ignores or responds.
-* Listen for a personal response from the master, giving them the parameters for the epidemic, and the ID. It also receives what the
-  master micro:bit thinks the time is, so it can synchronise its clock.
-* At this point, the minion changes radio group, and waits to be seeded or infected.
-* A susceptible has a state, which is one of S,I or R - Susceptible (waiting for an infection), 
-Infectious (making infections), or Recovered (it still receives infection requests, but doesn't make new ones of its own) 
-* A __susceptible__ minion listens for a seeding message containing its ID, or a general infection message.
-  * A seeding message is immediately responded to; the minion broadcasts an "I was infected" message (which the master hears),
-    and enters the Infectious state.
-  * An infection message increases the exposure counter for the source minion. If it reaches the parameterised threshold, then the
-    minion broadcasts a message to the "infector", offering to be a contact. The infector may or may not confirm that...
-  * If the susceptible hears an "infection confirmation" message targetted for itself, it changes state and becomes infectious, and
-    broadcasts a message to the master telling it 
-* An __infectious__ minion:
-  * Broadcasts "I am infected", at the epidemic's radio strength, for anyone to hear.
-  * It listens for replies from minions who have been sufficiently exposed, and reply with an offer to be a contact. When it
-    receives them, it reduces the number of contacts left to make, and if that reaches zero, it ignores all future offers of contact,
-    and enters the __recovered_ state, broadcasting a message to the master to say it has recovered.
-  * It also continues to do the things a susceptible does - it listens for infection messages and offers to be a contact; the only
-    difference is that it doesn't change state or behaviour if it receives the "infection confirmation" message.
-* A __recovered__ minion:
-  * Does the same things as a susceptible and infectious minion, regarding listening for infection messages and offering to be a contact,
-    but it doesn't change state or behaviour if it receives the "infection confirmation" message.
-* In __any__ stage:
-  * If it receives a reset message, which resets the counters, and returns to the very start of the registry algorithm.
-  * If it receives a power-off message, it enters a permanent sleep until it is physically rebooted.
+* As before, `[master_serial`] is the master's serial number, which identifies the epidemic; but this time, the POWER-OFF message will
+be received also by any stragglers from a previous epidemic id, and they too will go to sleep, until manually restartd.
