@@ -132,44 +132,44 @@ case sensitive.
 
 | Setup/misc commands |
 | ------------------- |
-| *# Comment*         |
+| **# Comment**         |
 | This is a comment - ignored.
-| *DataPath:../../data* |
+| **DataPath:../../data** |
 | Set the default place to find the CSV and XML files. |
-| *Language:EN *|
+| **Language:EN **|
 | The slideshow allows multi-language support... |
-| *Loop* |
+| **Loop** |
 | Start the script again from the top |
-| *RnetGraph:Outbreak7.R* |
+| **RnetGraph:Outbreak7.R** |
 | Sets the R script to call, to create the network image, (called staticnetworkgraph.png). |
-| *RScript:C:/Program Files/R/R-3.5.1/bin/RScript.exe* |
+| **RScript:C:/Program Files/R/R-3.5.1/bin/RScript.exe** |
 | Where is RScript.exe? The above is typical (and necessary) for Windows; on Mac/Linux, Rscript:Rscript is fine.|
-| *Timezone:GMT+1* |
+| **Timezone:GMT+1** |
 | What timezone to use for interpreting universal timestamps  |
-| *Wait 10* |
+| **Wait 10** |
 | Pause for a number of seconds |
 
 | Display commands |
 | ---------------- |
-| *CasesGraph* (optionally add: *Cumulative* and/or *Unconfirmed* |
+| **CasesGraph** (optionally add: **Cumulative** and/or **Unconfirmed** |
 | Plot incidence, optionally cumulative. See below regarding _Unconfirmed_ |
-| *GenTimeGraph* |
+| **GenTimeGraph** |
 | Plot a graph showing the distribution of times from being infected to making an infection |
-| *Image["image1.png","image2,png"]* - as many images as you like |
+| **Image["image1.png","image2,png"]** - as many images as you like |
 | Display one image. Next iteration, play the subsequent image in the list |
-| *Movie["movie1.mp4","movie2.mp4"]* - as many movies as you like |
+| **Movie["movie1.mp4","movie2.mp4"]** - as many movies as you like |
 | Play one movie. Next iteration, play the subsequent movie in the list |
-| *NetworkGraph* |
+| **NetworkGraph** |
 | Refresh/display the network graph of the epidemic. |
-| *R0Graph* (optionally add: *Unconfirmed*)
+| **R0Graph** (optionally add: **Unconfirmed**)
 | Plot a graph of how many people made _x_ contacts. See below regarding _Unconfirmed_ |
-| *Spreaders* |
+| **Spreaders** |
 | Display a leaderboard of who has made the most victims |
-| *Status Susctible,Infected,Recovered* |
+| **Status Susctible,Infected,Recovered** |
 | Display stats on how many players are in the three states - and label them as above. |
-| *Survivors* |
+| **Survivors** |
 | Display a dramatic page about who the last survivor is, or how many are left. |
-| *TreatmentsGraph* (optionally add: *Cumulative* and/or *Unconfirmed* |
+| **TreatmentsGraph** (optionally add: **Cumulative** and/or **Unconfirmed** |
 | As _CasesGraph_ but with labels that work with the _Saviour_ game - see below |
 
 ### Sample Epidemic games
