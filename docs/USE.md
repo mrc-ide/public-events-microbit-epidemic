@@ -102,18 +102,75 @@ I'll figure it out at some point and tidy this up)
 
 * A small window appears, which lets you choose the location and size of the main display window, and
 switch it on and off.
+
 * Click _Detect Fullsreen_, to choose a monitor to display the fullscreen page onto.
+
 * You can save this configuration for quick recall if you like.
+
 * Click _Set Datafile_ to pick what file you want the slideshow app to monitor. These live in the [data/](data/) folder,
 and are written by the micro:bit manager when epidemic games are running. The files will be named masterserial_epidemicid.csv,
 and an XML file gives meta-data about the run.
+
 * Click ON/OFF to turn the display window on and off!
+
+* While the slideshow is running, and if either the player window, or the Slideshow interface are in focus, you can press _Q_ 
+to skip through the slideshow pages, ignoring any delays, or any other key will pause or unpause the slideshow, displaying a 
+paused icon in the top-right.
 
 #### The Script File
 
 If you want to make your own epidemic games, or your own slideshow sequences, this section is how...
 
-* 
+* The name of a parameter set is important; the micro:bit manager writes it to the XML meta-data for a particular
+epidemic, and the Java Slideshow loads that meta-data, and looks for a script file called script_paramset.txt - where _paramset_
+is the name of the parameter set.
+
+* So for each parameter set (ie, each game type), you should write a script file in a text editor. Scripts are simple text, read
+line by line sequentially, and will end with a _LOOP_ command, which restarts the sequence. Here are the commands that are 
+understood by the Slideshow interpreter. Commands are case-insensitive, although file names and paths on Mac/Linux platforms will be
+case sensitive.
+
+| Setup/misc commands |
+| ------------------- |
+| _# Comment_         |
+| This is a comment - ignored.
+| _DataPath:../../data |
+| Set the default place to find the CSV and XML files. |
+| _Language:EN _|
+| The slideshow allows multi-language support... |
+| _Loop_ |
+| Start the script again from the top |
+| _RnetGraph:Outbreak7.R_ |
+| Sets the R script to call, to create the network image, (called staticnetworkgraph.png). |
+| _RScript:C:/Program Files/R/R-3.5.1/bin/RScript.exe_ |
+| Where is RScript.exe? The above is typical (and necessary) for Windows; on Mac/Linux, Rscript:Rscript is fine.|
+| _Timezone:GMT+1 |
+| What timezone to use for interpreting universal timestamps  |
+| _Wait 10_ |
+| Pause for a number of seconds |
+
+| Display commands |
+| ---------------- |
+| _CasesGraph_ (optionally add: _Cumulative_ and/or _Unconfirmed_ |
+| Plot incidence, optionally cumulative. See below regarding _Unconfirmed_ |
+| _GenTimeGraph_ |
+| Plot a graph showing the distribution of times from being infected to making an infection |
+| _Image["image1.png","image2,png"]_ - as many images as you like |
+| Display one image. Next iteration, play the subsequent image in the list |
+| _Movie["movie1.mp4","movie2.mp4"]_ - as many movies as you like |
+| Play one movie. Next iteration, play the subsequent movie in the list |
+| _NetworkGraph |
+| Refresh/display the network graph of the epidemic. |
+| _R0Graph_ (optionally add: _Unconfirmed_)
+| Plot a graph of how many people made _x_ contacts. See below regarding _Unconfirmed_ |
+| _Spreaders_ |
+| Display a leaderboard of who has made the most victims |
+| _Status Susctible,Infected,Recovered_ |
+| Display stats on how many players are in the three states - and label them as above. |
+| _Survivors_ |
+| Display a dramatic page about who the last survivor is, or how many are left. |
+| _TreatmentsGraph_ (optionally add: _CUmulative_ and/or _Unconfirmed_ |
+| As _CasesGraph_ but with labels that work with the _Saviour_ game - see below |
 
 ### Sample Epidemic games
 
