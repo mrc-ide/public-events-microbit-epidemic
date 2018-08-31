@@ -51,27 +51,30 @@ and serves no further purpose.
 
 ## Messages
 
-* Messages over serial are supposed to be sent from buffers when a new-line is sent. However, spurious 
-new-lines seemed to be commonly inserted. The best solution
-seemed to be to send serial messages ending with a new-line, but also to include our own end-of-message character: _#_. New lines
-are then used purely to trigger a buffer flush and send; they are stripped from incoming messages, and buffered until a _#_ is read,
+### Serial
+
+Messages over serial are supposed to be sent from buffers when a new-line is sent. However, spurious 
+new-lines seemed to be commonly inserted. The best solution seemed to be to send serial messages ending with 
+a new-line, but also to include our own end-of-message character: _#_. New lines are then used purely to trigger 
+a buffer flush and send; they are stripped from incoming messages, and buffered until a _#_ is read,
 which indicates the message has been received completely. Any non-newline left-over after the _#_ is buffered as the start of the
 next message.
 
-* Messages over radio are broadcast at a certain power, and on a certain group. Groups are designed to separate messages so that
-they are only received by those interested in them. We use two groups, one for _REGISTERED_ micro:bits, and another for _UNREGISTERED_ - which
-group messages are being sent in will be shown on each diagram. Radio power is assumed to be maximum, unless otherwise specified; the 
-infection broadcast is the message where the power level is a parameter of the epidemic.
+### Radio
 
-* As message over radio are all broadcasts, rather than point-to-point, the links between masters and minions in the message diagrams below
-are all somewhat implied. Broadcasts are received by all micro:bits in range, but what each micro:bit does when it hears the message is
-decided by decoding the contents, and seeing from that context whether the broadcast is relevant for that micro:bit at that time.
+* All messages over radio are broadcasts, rather than point-to-point messages. The links between masters and minions in 
+the message diagrams below are therefore somewhat implied; all micro:bits in range hear the message, and at least partially
+unpack it, but whether they do anything more depends on the message content.
 
-* Messages over radio appear to be limited to 28 bytes - not the 32 that the micro:bit documentation reports. 
+* Messages over radio are broadcast with a customisable transmit power. Generally, we transmit at maximum power, except for
+the infection broadcast message, which we sent at a power level defined as an epidemic parameter.
 
-* Chars are a byte long, shorts are 2 bytes long, and int and floats are 4 bytes long.
+* The micro:bits listen, and broadcast on a certain group - a bit like a channel; they can be members of one group at a time.
+Groups are designed to separate messages so that they are only received by those interested in them. We use two groups, one 
+for _REGISTERED_ micro:bits, and another for _UNREGISTERED_. Thus messages requesting registration are ignored all the while
+the epidemic is in progress, and are only noticed in the registration window at the start of the epidemic.
 
-* See [src/microbit-projects/include/microepi.h](src/microbit-projects/include) for code that represents all of these messages.
+* Messages over radio appear to be limited to 28 bytes in length - not the 32 that the micro:bit documentation reports. 
 
 ### Identification of micro:bit
 
