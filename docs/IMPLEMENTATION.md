@@ -82,7 +82,7 @@ Here, the laptop sends a requst to a connected micro:bit, asking it to identify 
 
 <pre>
 
- ----------              |---------|          ----------   
+ ----------   serial     |---------|          ----------   
  | Laptop |------------->| 1#      |--------->| master |
  |        |              |---------|          |   or   |
  |        |                                   | minion |
