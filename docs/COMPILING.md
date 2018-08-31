@@ -95,7 +95,7 @@ laptop and disconnect from WiFi.
 ## Compiling Java code
 
 * Assuming that you've installed a Java JDK from somewhere like [here](http://www.oracle.com/technetwork/java/javase/downloads/index.html), 
-and you have `javac.exe` and `jar.exe` in your path, (perhaps by adding `C:\Program Files\Java\jdk1.8.0_182\bin` in Control Panel, System,
+and you have `javac.exe` and `jar.exe` in your path, (perhaps by adding something like `C:\Program Files\Java\jdk1.8.0_181\bin` in Control Panel, System,
 Advanced System Settings, Environment Variables, Path, and re-opening a command-window...)
 * ... then each of the Java folders within [src/java-projects](../src/java-projects) has a `compile.bat` which you run to compile the code. 
 * For the [make-stickers](../src/java-projects/make-stickers) and [multi-copy](../src/java-projects/multi-copy), the result is an executable JAR
