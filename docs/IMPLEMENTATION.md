@@ -63,6 +63,10 @@ they are only received by those interested in them. We use two groups, one for _
 group messages are being sent in will be shown on each diagram. Radio power is assumed to be maximum, unless otherwise specified; the 
 infection broadcast is the message where the power level is a parameter of the epidemic.
 
+* As message over radio are all broadcasts, rather than point-to-point, the links between masters and minions in the message diagrams below
+are all somewhat implied. Broadcasts are received by all micro:bits in range, but what each micro:bit does when it hears the message is
+decided by decoding the contents, and seeing from that context whether the broadcast is relevant for that micro:bit at that time.
+
 * Messages over radio appear to be limited to 28 bytes - not the 32 that the micro:bit documentation reports. 
 
 * Chars are a byte long, shorts are 2 bytes long, and int and floats are 4 bytes long.
@@ -148,7 +152,7 @@ or seeded.
               |    | [serial_no]   : int   |          ----------       |------------------|
                    | [friendly_id] : short |
               |    | [master_ser]  : int   |
-                   | [master_time] : int   |
+                   | [master_time0]: int   |
               |    | [epid]        : short |
               - - -| [R0]          : float |
                    | [rtype]       : char  |
@@ -167,7 +171,10 @@ a warning if the minion's software version is out of date.
 * `[friendly_id]` is the id in the 0..99 range, looked up from serials.csv on the laptop, and added if necessary and possible.
 * `[master_ser]` is the master micro:bit's serial number, which it sends to the minion. (Recall that an epidemic is identified by
 the master's serial number, and the epidemic id.
-* `[master_time]` is the master micro:bit's current time, measured in milliseconds since the master received the parameters from the laptop.
+* `[master_time0]` is the master micro:bit's time, measured in milliseconds since the master received the parameters from the laptop.
+On receiving this message, the minion also notes their current system time, hence future timestamps can be reported as elapsed epidemic time 
+by calculating `(uBit.systemTime() - my_time0) + master_time0`.
+
 * `[epid]`, `[R0]`, `[rtype]`, `[poimin]`, `[poimax]`, `[rpower]`, and `[exposure]` are the parameters the master previously received - see above.
 * The message size so far is 27 bytes. Anecdotally we discovered 28-bytes is the maximum radio message size; above this, and the last bytes
 are ignored. Therefore, the last three flags are combined into one byte; `[bcombine] = [btrans] + (4 * [brec]) + (16 * [icons])`.
@@ -197,10 +204,97 @@ their id with the id in the message, and acts accordingly.
 
 ### Infection
 
-When a minion is infected, it broadcasts a message every second
+When a minion is infected, it broadcasts a message every second to anyone who listens, at the transmision power set in the parameters offering to contact (and if susceptible, infect) them. 
+Minions keep a count of the number of infection offers they have received from each potential victim, and once the exposure threshold is reached, 
+the "contact" replies to the potential infector accepting their offer. It is very possible that the infector will receive more replies from 
+potential victims than it wants, so therefore it replies to confirm contact with each victim. Having made all its contacts, the infector recovers,
+and the contacts it made who were susceptible becoming infected.
+
+<pre>
+
+Contact Negotiation:
+
+           power:rpower                                            power:MAX
+ ----------   radio      |------------------------|      ----------  radio   |------------------------|
+ | Minion |   bcast      | [INF_BCAST_MSG] : char |      | Minion |  bcast   | [INF_CAND_MSG] : char  |
+ |        |- - - - - - ->| [master_serial] : int  |- - ->|        |- - - - ->| [master_serial] : int  |
+ |        |    REG       | [epid]          : short|      ----------   REG    | [epid]          : short|
+ |        |   group      | [inf_id]        : short|                  group   | [inf_id]        : short|
+ |        |              |------------------------|                          | [victim_id]     : short|
+ |        |<- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|                        |
+ ----------                                                                  |------------------------|
+
+Contact Confirmation:
+
+            power:MAX
+ ----------   radio      |------------------------|      ----------
+ | Minion |   bcast      | [INF_CONF_MSG]  : char |      | Minion |
+ |        |- - - - - - ->| [master_serial] : int  |- - ->|        |
+ |        |    REG       | [epid]          : short|      ----------
+ |        |   group      | [inf_id]        : short|
+ |        |              | [victim_id]     : short|
+ |        |              |------------------------|
+ ----------
+
+</pre>
+
+* `[master_serial]` and `[epid]` are the master serial number, and epidemic number as usual.
+* `[inf_id]` is the friendly id of the infector (0..99), and `[victim_id]` the friendly id of a potential contact.
+
+### Reporting Infection Status
+
+When a susceptible minion becomes infected, it broadcasts the relevant data to the master every second until the master 
+replies with an acknowledgement. The master forwards the infection data over serial to the laptop; a CSV file gets
+appended to, and the Slideshow visualisations are updated.
+
+<pre>
+
+ ----------   radio      |------------------------|      ----------
+ | Minion |   bcast      | [REP_INF_MSG]   : char |      |        |
+ |        |- - - - - - ->| [master_serial] : int  |- - ->|        |
+ | (new   |    REG       | [epid]          : short|      |        |        |---------------|
+ | victim)|   group      | [inf_id]        : short|      |        | serial | INF:[inf_id]: |     ----------
+ |        |              | [victim_id]     : short|      |        |------->| [victim_id]:  |---->| Laptop |
+ |        |              | [inf_time]      : int  |      | Master |        | [inf_time]:   |     ----------
+ |        |              | [n_contacts]    : char |      |        |        | [n_contacts]# |
+ |        |              |------------------------|      |        |        |---------------|
+ |        |                                              |        |
+ |        |           |---------------------------|      |        |
+ |        |           | [CONF_REP_INF_MSG] : char |      |        |
+ |        |           | [master_serial]    : int  |<- - -|        |
+ |        |< - - - - -| [epid]             : short|      ----------
+ ----------           | [victim_id]        : short|
+                      |---------------------------|
+</pre>
 
 ### Recovery
 
+When an infected minion has made all its contacts, it recovers: it stops broadcasting offers to
+infect other minions, and ignores any further victim offers that it receives. It broadcasts
+its recovery to the master, until it receives an acknowledgement, and the master forwards it
+to the laptop for updating the CSV file, and the Slideshow visualisations.
+
+<pre>
+
+ ----------   radio      |------------------------|      ----------
+ | Minion |   bcast      | [REP_RECOV_MSG] : char |      |        |
+ |        |- - - - - - ->| [master_serial] : int  |- - ->|        |
+ |        |    REG       | [epid]          : short|      |        |        |---------------|
+ |        |   group      | [victim_id]     : short|      |        | serial | REC:          |     ----------
+ |        |              | [recov_time]    : int  |      |        |------->| [victim_id]:  |---->| Laptop |
+ |        |              |------------------------|      | Master |        | [recov_time]# |     ----------
+ |        |                                              |        |        |---------------|
+ |        |         |-----------------------------|      |        |
+ |        |         | [CONF_REP_RECOV_MSG] : char |      |        |
+ |        |         | [master_serial]      : int  |<- - -|        |
+ |        |< - - - -| [epid]               : short|      ----------
+ ----------         | [victim_id]          : short|
+                    |-----------------------------|
+</pre>
+
+* `[master_serial]` and `[epid]` are the master serial number, and epidemic number as usual.
+* `[victim_id]` is the friendly id of the victim who has recovered. (0..99).
+* `[recov_time]` is the time of recovery, in milliseconds since the master received the epidemic parameters. Calculated by `(uBit.systemTime() - my_time0) + master_time0`.
 
 ### Reset the epidemic
 
@@ -209,13 +303,19 @@ start another epidemic. The master broadcasts this to the micro:bits, and the mi
 reseting, and returning to the _UNREGISTERED_ radio group. They start broadcasting their willingness to be part of the next
 epidemic game.
 
-<pre>                                                                                       repeat message once
-                                                                                      | - - - - - - < - - - - - - - - - -|
- ----------              |-----|     ----------  radio   |-----------------------|    |               radio  |-----------------------|
- | Laptop |   serial     | 5#  |     | master |  bcast   | [RESET_MSG] : char    |    |   ----------  bcast  | [RESET_MSG] : char    |
- |        |------------->|     |---->|        |- - - - ->| [master_serial] : int |- - - ->| minion |- - - - >| [master_serial] : int |
- ----------              |-----|     ----------   REG    |-----------------------|        ----------   REG   |-----------------------|
-                                                 group                                                group
+<pre>
+
+ ----------              |-----|     ----------  radio   |-----------------------|
+ | Laptop |   serial     | 5#  |     | master |  bcast   | [RESET_MSG] : char    |        ----------
+ |        |------------->|     |---->|        |- - - - ->| [master_serial] : int |- - - ->|        |
+ ----------              |-----|     ----------   REG    |-----------------------|        |        |
+                                                 group                                    |        |
+                                                  - - - - - - - - - - - - - - - - - - - ->| minion |
+                                                  |     |-----------------------| radio   |        |
+                                                  |     | [RESET_MSG] : char    | bcast   |        |
+                                                   - - -| [master_serial] : int |<-once --|        |
+                                                        |-----------------------|  REG    ----------
+                                                                                  group
 </pre>
 
 * As before, `[master_serial`] is the master's serial number, which identifies the epidemic; but this time, the RESET message will
@@ -225,14 +325,19 @@ be received also by any stragglers from a previous epidemic id, and they too wil
 
 Here, the laptop sends a message to the master, telling it to power-off the micro:bits. The master broadcasts this to the micro:bits, and the micro:bits re-broadcast the message.
 
+<pre>
 
-<pre>                                                                                       repeat message once
-                                                                                      | - - - - - - < - - - - - - - - - -|
- ----------              |-----|     ----------  radio   |-----------------------|    |               radio  |-----------------------|
- | Laptop |   serial     | 6#  |     | master |  bcast   | [POWEROFF_MSG] : char |    |   ----------  bcast  | [RESET_MSG] : char    |
- |        |------------->|     |---->|        |- - - - ->| [master_serial] : int |- - - ->| minion |- - - - >| [master_serial] : int |
- ----------              |-----|     ----------   REG    |-----------------------|        ----------   REG   |-----------------------|
-                                                 group                                                group
+ ----------              |-----|     ----------  radio   |-----------------------|
+ | Laptop |   serial     | 5#  |     | master |  bcast   | [POWEROFF_MSG] : char |        ----------
+ |        |------------->|     |---->|        |- - - - ->| [master_serial] : int |- - - ->|        |
+ ----------              |-----|     ----------   REG    |-----------------------|        |        |
+                                                 group                                    |        |
+                                                  - - - - - - - - - - - - - - - - - - - ->| minion |
+                                                  |     |-----------------------| radio   |        |
+                                                  |     | [POWEROFF_MSG] : char | bcast   |        |
+                                                   - - -| [master_serial] : int |<-once --|        |
+                                                        |-----------------------|  REG    ----------
+                                                                                  group
 </pre>
 
 * As before, `[master_serial`] is the master's serial number, which identifies the epidemic; but this time, the POWER-OFF message will
