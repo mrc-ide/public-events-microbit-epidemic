@@ -185,8 +185,8 @@ are ignored. Therefore, the last three flags are combined into one byte; `[bcomb
 ### Seeding the epidemic
 
 An infection is seeded from the laptop, which sends via serial to the master a message containing the victim id, and an indication 
-of how the victim should make their contacts. The master then broadcasts this on the radio (REGISTERED group), and the susceptible
-victim (who by definition is also listening on the REGISTERD group) hears the message, matches
+of how the victim should make their contacts. The master then broadcasts this on the radio (_REGISTERED_ group), and the susceptible
+victim (who by definition is also listening on the _REGISTERED_ group) hears the message, matches
 their id with the id in the message, and acts accordingly.
 
 <pre>
@@ -331,7 +331,7 @@ Here, the laptop sends a message to the master, telling it to power-off the micr
 <pre>
 
  ----------              |-----|     ----------  radio   |-----------------------|
- | Laptop |   serial     | 5#  |     | master |  bcast   | [POWEROFF_MSG] : char |        ----------
+ | Laptop |   serial     | 6#  |     | master |  bcast   | [POWEROFF_MSG] : char |        ----------
  |        |------------->|     |---->|        |- - - - ->| [master_serial] : int |- - - ->|        |
  ----------              |-----|     ----------   REG    |-----------------------|        |        |
                                                  group                                    |        |
