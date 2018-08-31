@@ -1,6 +1,7 @@
 *.bak
 build
-source
+source/*.h
+source/*.cpp
 yotta_modules
 yotta_targets
 0246_kl26z_microbit_0x8000.hex
