@@ -141,21 +141,21 @@ or seeded.
 
 <pre>
  ----------  radio   |---------------------|  radio   ----------       |------------------|        ----------
- | Minion |  bcast   | [REG_MSG]   : char  |  bcast   |        |       | REG:[serial_no]: | serial | Laptop |
+ |        |  bcast   | [REG_MSG]   : char  |  bcast   |        |       | REG:[serial_no]: | serial | Laptop |
  |        |   on     | [serial_no] : int   |   on     |        |       | [build_no]#      |        |        |
  |        |- - - - ->| [build_no]  : char  |- - - - ->| master |------>|                  |------->|        |
  |        |  UNREG   |                     |  UNREG   |        |       |------------------|        |        |
  |        |  group   |---------------------|  group   |        |                                   |        |
- |        |                                           |        |       |------------------|        |        |
- |        |<- |    |-----------------------|          |        |<------| 2[serial_no],    |<-------|        |
- ----------        | [REG_ACK_MSG] : char  |<- - - - -|        |       | [friendly_id],#  |        ----------
-              |    | [serial_no]   : int   |          ----------       |------------------|
-                   | [friendly_id] : short |
-              |    | [master_ser]  : int   |
-                   | [master_time0]: int   |
-              |    | [epid]        : short |
-              - - -| [R0]          : float |
-                   | [rtype]       : char  |
+ | Minion |                                           |        |       |------------------|        |        |
+ |        |        |-----------------------|          |        |<------| 2[serial_no],    |<-------|        |
+ |        |        | [REG_ACK_MSG] : char  |<- - - - -|        |       | [friendly_id],#  |        ----------
+ |        |        | [serial_no]   : int   |          ----------       |------------------|
+ |        |        | [friendly_id] : short |
+ |        |        | [master_ser]  : int   |
+ |        |<- - - -| [master_time0]: int   |
+ |        |        | [epid]        : short |
+ |        |        | [R0]          : float |
+ ----------        | [rtype]       : char  |
                    | [poimin]      : char  |
                    | [poimax]      : char  |
                    | [rpower]      : char  |
@@ -173,7 +173,7 @@ a warning if the minion's software version is out of date.
 the master's serial number, and the epidemic id.
 * `[master_time0]` is the master micro:bit's time, measured in milliseconds since the master received the parameters from the laptop.
 On receiving this message, the minion also notes their current system time, hence future timestamps can be reported as elapsed epidemic time 
-by calculating `(uBit.systemTime() - my_time0) + master_time0`.
+by calculating `uBit.systemTime() - my_time0) + master_time0`.
 
 * `[epid]`, `[R0]`, `[rtype]`, `[poimin]`, `[poimax]`, `[rpower]`, and `[exposure]` are the parameters the master previously received - see above.
 * The message size so far is 27 bytes. Anecdotally we discovered 28-bytes is the maximum radio message size; above this, and the last bytes
@@ -294,7 +294,7 @@ to the laptop for updating the CSV file, and the Slideshow visualisations.
 
 * `[master_serial]` and `[epid]` are the master serial number, and epidemic number as usual.
 * `[victim_id]` is the friendly id of the victim who has recovered. (0..99).
-* `[recov_time]` is the time of recovery, in milliseconds since the master received the epidemic parameters. Calculated by `(uBit.systemTime() - my_time0) + master_time0`.
+* `[recov_time]` is the time of recovery, in milliseconds since the master received the epidemic parameters. Calculated by `uBit.systemTime() - my_time0) + master_time0`.
 
 ### Reset the epidemic
 
