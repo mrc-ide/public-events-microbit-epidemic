@@ -91,3 +91,13 @@ laptop and disconnect from WiFi.
 * `build minion` builds the minion binary.
 * In either case, the resulting binary will be `build\bbc-microbit-glassic-gcc\source\projectname-combined.hex`
 * To deploy that binary it to an attached micro:bit, for example: `deploy E:`
+
+## Compiling Java code
+
+* Assuming that you've installed a Java JDK from somewhere like [here](http://www.oracle.com/technetwork/java/javase/downloads/index.html), 
+and you have `javac.exe` and `jar.exe` in your path, (perhaps by adding `C:\Program Files\Java\jdk1.8.0_182\bin` in Control Panel, System,
+Advanced System Settings, Environment Variables, Path, and re-opening a command-window...)
+* ... then each of the Java folders within [src/java-projects](../src/java-projects) has a `compile.bat` which you run to compile the code. 
+* For the [make-stickers](../src/java-projects/make-stickers) and [multi-copy](../src/java-projects/multi-copy), the result is an executable JAR
+file. For the [Slideshow](../src/java-projects/sliedshow), I haven't yet worked out how to make a working JAR file for a JAVAFx application
+that wants to read arbitrary external files. So the result for that case is a bunch of class files.
