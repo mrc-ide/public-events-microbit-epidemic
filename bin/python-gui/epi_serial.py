@@ -262,6 +262,12 @@ class EpiSerial:
             f.write("  <game>" + str(self.gui_link.cb_paramset.get()) + "</game>\n")
             f.write("</meta>")
 
+        # Also check that a stub .csv exists; Slideshow wants to load a CSV file.
+
+        fn = self.OUTPUT_PATH + self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
+        if (not os.path.isfile(fn)):
+            with open(fn, "w") as f:
+                f.write("Event,TimeH,Mins,Infectedby,Seeding,Recency,Category,ID,NoContacts\n")
 
     # Send the parameters to the micro:bit master.
     def send_params(self):
@@ -282,8 +288,12 @@ class EpiSerial:
         self.current_epi_t0 = time.time()
 
         # Also write a meta file for the viewer.
+        # It won't have all the hosts yet, but it's better
+        # if slideshow has something to show before seeding,
+        # especially on Saviour game.
 
-
+        self.write_xml_params()
+        
 
 
     # Send seeding information to master, who forwards it by radio to minion.

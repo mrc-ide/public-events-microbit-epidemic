@@ -352,7 +352,7 @@ class EpiGui:
         self.l_recov2.grid(column = 1 + self.LEFT, row = 8 + self.TOP, sticky = "E")
 
     def click_seed_epi(self):
-        m_id = self.sv_seedid.get()
+        m_id = int(self.sv_seedid.get())
         if (self.minions[m_id % 10][m_id / 10]['bg']==self.STATUS_SUSCEPTIBLE):
             self.serial_link.seed_epidemic()
             self.sv_seedid.set("")

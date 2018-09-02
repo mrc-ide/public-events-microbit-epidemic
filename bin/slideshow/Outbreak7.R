@@ -13,12 +13,17 @@ col2 <- args[5]
 col3 <- args[6]
 fout <- args[7]
 
-#outbreakdatafilename <- "../data/498461975_325.csv"
-#screen.width <- 1366
-#screen.height <- 768
-#col1 <- "#000000"
-#col2 <- "#000000"
-#col3 <- "#707070"
+# For debugging
+# outbreakdatafilename <- "../../../data/498461975_330.csv"
+# screen.width <- 1366
+# screen.height <- 768
+# col1 <- "#000000"
+# col2 <- "#000000"
+# col3 <- "#707070"
+# fout <- "staticnetworkplot.png"
+# End
+
+base_text = 1.25*(screen.width/1024)
 
 
 #############################
@@ -51,7 +56,7 @@ for (recovery in recoveries) {
   }
 }
 
-data <- all_data
+data <- all_data[all_data$Event=='I',]
 
 ties <- length(na.omit(data$Infectedby))
 ties <- max(1,ties)
@@ -125,7 +130,7 @@ if (n_AB > 0) {
   recencytext.size <- rep(recencytextsizes[1], n_AB)
   recencytext.size[which(sorted[,3] == "Recent")] <- recencytextsizes[2]
 
-  png(file=args[7], width = screen.width, height = screen.height)
+  png(file = fout, width = screen.width, height = screen.height)
 
   lay.mat <- rbind( c(1,1), c(2,3))
   layout(lay.mat, heights=c(1,0.1))
@@ -146,7 +151,7 @@ if (n_AB > 0) {
     vertex.sides = seeding.shape,
     displaylabels = TRUE,
     boxed.labels = FALSE,
-    label.cex = 1.00 * label.scaling * recencytext.size,
+    label.cex = base_text * label.scaling * recencytext.size,
     edge.lwd = 0.005, edge.col = "black",
     label = network.vertex.names(AB_net),
     label.col = "darkgreen",
@@ -154,3 +159,4 @@ if (n_AB > 0) {
     mode="fruchtermanreingold", layout.par = layout.FR)
   dev.off()
 }
+
