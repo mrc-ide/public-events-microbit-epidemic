@@ -5,7 +5,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.RenderingHints;
-import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -121,7 +120,7 @@ public class MicroEpiSlideshow extends Application {
 
   Element configs_xml;
   Element model_xml;
-  String current_script = "script_Basic_Epidemic.txt";
+  String current_script = "";
   Stage displayStage;
   final StackPane displayStageSP = new StackPane();
   Scene displayScene = null;
@@ -129,6 +128,7 @@ public class MicroEpiSlideshow extends Application {
   
   //String in_file = "C:/Files/Dev/Eclipse/microepi-manager/498461975_289.csv";
   String in_file = null;
+  String xml_file = null;
   String current_params;
   String current_players;
   long current_starttime;
@@ -139,9 +139,10 @@ public class MicroEpiSlideshow extends Application {
     
   LangSupport L = new LangSupport();
 
-  // Below - set the right timezone!
-  
   GregorianCalendar gc = null;
+  TimeZone tz = null;
+  TimeZone GMT = TimeZone.getTimeZone("GMT");
+  
   int left_margin = 100;
   int right_margin = 100;
   int top_margin = 100;
@@ -195,7 +196,7 @@ public class MicroEpiSlideshow extends Application {
     displayStage.setWidth(Integer.parseInt(tf_w.getText()));
     displayStage.setHeight(Integer.parseInt(tf_h.getText()));
   }
-
+  
   void changeTF() {
     unsaved_changes = true;
     b_saveConfig.setDisable(false);
@@ -203,8 +204,17 @@ public class MicroEpiSlideshow extends Application {
     displayStage.setY(Integer.parseInt(tf_y.getText()));
     displayStage.setWidth(Integer.parseInt(tf_w.getText()));
     displayStage.setHeight(Integer.parseInt(tf_h.getText()));
+    
+    screen.width = Integer.parseInt(tf_w.getText());
+    screen.height = Integer.parseInt(tf_h.getText());
+    layer = new BufferedImage(screen.width, screen.height, BufferedImage.TYPE_4BYTE_ABGR);
+    fx_img = new WritableImage(screen.width, screen.height);
+    epiImage.setImage(fx_img);
+    pauseButton.setTranslateX(-50+(screen.width/2));
+    pauseButton.setTranslateY(50-(screen.height/2));
   }
-
+  
+  
   public void createDummyXML() {
     try {
       PrintWriter PW = new PrintWriter(new File("configs.xml"));
@@ -257,6 +267,7 @@ public class MicroEpiSlideshow extends Application {
   
   private void loadScript() {
     script.clear();
+    readModel();
     try {
       BufferedReader br = new BufferedReader(new FileReader(current_script));
       String s = br.readLine();
@@ -268,7 +279,10 @@ public class MicroEpiSlideshow extends Application {
           bits[0]=bits[0].toUpperCase();
           if (bits[0].toUpperCase().equals("RNETGRAPH")) RNetGraph=s.substring(10);          
           else if (bits[0].toUpperCase().equals("RSCRIPT")) RScript=s.substring(8);
-          else if (bits[0].toUpperCase().equals("TIMEZONE")) gc = new GregorianCalendar(TimeZone.getTimeZone(bits[1]));
+          else if (bits[0].toUpperCase().equals("TIMEZONE")) {
+            tz = TimeZone.getTimeZone(bits[1]);
+            gc = new GregorianCalendar(GMT);
+          }
           else if (bits[0].toUpperCase().equals("LANGUAGE")) L.setLanguage(bits[1]);
           else if (bits[0].toUpperCase().equals("SCRIPT")) {
             s=br.readLine();
@@ -327,6 +341,7 @@ public class MicroEpiSlideshow extends Application {
 
     rb_on.setOnAction(new EventHandler<ActionEvent>() {
       public void handle(ActionEvent e) {
+        changeTF();
         jtimer.start();
         showDisplayScreen(false);
       }
@@ -420,18 +435,12 @@ public class MicroEpiSlideshow extends Application {
         fileChooser.setInitialDirectory(new File(dataPath));
         File selectedFile = fileChooser.showOpenDialog(_stage);
         if (selectedFile != null) {
-          String xmlFile = selectedFile.getPath();
-          xmlFile = xmlFile.substring(0, xmlFile.length()-4)+".xml";
+          xml_file = selectedFile.getPath();
+          xml_file = xml_file.substring(0, xml_file.length()-4)+".xml";
 
-          if (new File(xmlFile).exists()) {
+          if (new File(xml_file).exists()) {
             in_file = selectedFile.getPath();
             l_epi.setText(selectedFile.getName());
-            model_xml = Tools.loadDocument(xmlFile);
-            current_params = Tools.getTag(model_xml, "params").getTextContent();
-            current_players = Tools.getTag(model_xml, "players").getTextContent();
-            current_starttime = (long) (1000*Float.parseFloat(Tools.getTag(model_xml, "time").getTextContent()));
-            current_game = Tools.getTag(model_xml, "game").getTextContent();
-            current_script = "script_"+current_game+".txt";
             File f = new File("staticnetworkplot.png");
             if (f.exists()) try {
               f.delete();
@@ -625,15 +634,9 @@ public class MicroEpiSlideshow extends Application {
     primaryStage.setResizable(false);
     primaryStage.show();
     
-    loadScript();
-    
-    //screen = Toolkit.getDefaultToolkit().getScreenSize();
     screen = new Dimension();
-    screen.width = Integer.parseInt(tf_w.getText());
-    screen.height = Integer.parseInt(tf_h.getText());
-    layer = new BufferedImage(screen.width, screen.height, BufferedImage.TYPE_4BYTE_ABGR);
-    fx_img = new WritableImage(screen.width, screen.height);
-    epiImage.setImage(fx_img);
+    changeTF();
+   
     pauseButton.setImage(pauseImg);
     pauseButton.setVisible(false);
     displayStageSP.getChildren().add(epiImage);
@@ -646,9 +649,7 @@ public class MicroEpiSlideshow extends Application {
     
     displayStage.show();
     displayStageSP.getChildren().add(epiMovie);
-    pauseButton.setTranslateX(-50+(screen.width/2));
-    pauseButton.setTranslateY(50-(screen.height/2));
-
+    
     epiImage.setVisible(true);
     epiMovie.setVisible(false);
     DoubleProperty width = epiMovie.fitWidthProperty();
@@ -785,8 +786,8 @@ public class MicroEpiSlideshow extends Application {
         for (int j = 0; j < epi_csv.size(); j++) {
           if (epi_csv.get(j)[COL_EVENT].equals("I")) {
             if (epi_csv.get(j)[COL_INFBY].equals(epi_csv.get(i)[COL_VICTIM])) {
-              time_s = Integer.parseInt(epi_csv.get(i)[COL_TIMEH])*3600;
-              time_s += Float.parseFloat(epi_csv.get(i)[COL_TIMEM])*60;
+              time_s = Integer.parseInt(epi_csv.get(j)[COL_TIMEH])*3600;
+              time_s += Float.parseFloat(epi_csv.get(j)[COL_TIMEM])*60;
               event_time = (start_of_day+(1000*time_s))/1000;
               index = (int) (((event_time - (time1 / 1000)) / 60) / step);
               confirmed_cases[index]++;
@@ -1159,12 +1160,14 @@ public class MicroEpiSlideshow extends Application {
       g2d.drawString("Detection time :", mid - (fmPlain.stringWidth("Detection time :")),y);
       g2d.setFont(bold);
       gc.setTimeInMillis(current_starttime);
+      gc.setTimeZone(tz);
       String s = gc.get(GregorianCalendar.YEAR)+"/"+
                  (1 + gc.get(GregorianCalendar.MONTH))+"/"+
                  gc.get(GregorianCalendar.DAY_OF_MONTH)+" "+
                  gc.get(GregorianCalendar.HOUR_OF_DAY)+":"+
                  gc.get(GregorianCalendar.MINUTE)+"."+
                  gc.get(GregorianCalendar.SECOND);
+      gc.setTimeZone(GMT);
       g2d.drawString(s, mid+40, y);
       y+=100;
       
@@ -1431,112 +1434,129 @@ public class MicroEpiSlideshow extends Application {
     }
   }
    
+  public void readModel() {
+    model_xml = Tools.loadDocument(xml_file);
+    current_params = Tools.getTag(model_xml, "params").getTextContent();
+    current_players = Tools.getTag(model_xml, "players").getTextContent();
+    current_starttime = (long) (1000*Float.parseFloat(Tools.getTag(model_xml, "time").getTextContent()));
+    current_game = Tools.getTag(model_xml, "game").getTextContent();
+    current_script = "script_"+current_game+".txt";
+  }
   
   public void refreshData() {
     epi_csv.clear();
+    int hours_offset = (int) Math.round((tz.getOffset(System.currentTimeMillis())/3600000));
     try {
       BufferedReader br = new BufferedReader(new FileReader(in_file));
       String s = br.readLine(); // Omit header
+      s = br.readLine();
+      String[] bits;
       while (s!=null) {
-        epi_csv.add(s.toUpperCase().split(","));
+        bits = s.toUpperCase().split(",");
+        bits[COL_TIMEH]=String.valueOf(Integer.parseInt(bits[COL_TIMEH])+hours_offset);
+        epi_csv.add(bits);
+        
         s=br.readLine();
       }
       br.close();
+      readModel();
+    
       
-    } catch (Exception ex) {
+    } catch (Exception ex) { ex.printStackTrace(); 
 
     }
+    
+    
   }
   
   public void nextChapter() {
     jtimer.stop();
+    if (current_script_line<script.size()) {
+      String[] bits;
+      String line = script.get(current_script_line).trim();
   
-    String[] bits;
-    String line = script.get(current_script_line).trim();
-  
-    if (line.toUpperCase().startsWith("WAIT")) {
-      bits = line.split("\\s+");
-      if (!pauseButton.isVisible()) {
-        jtimer.setInitialDelay((int)(1000*Float.parseFloat(bits[1])));
-        jtimer.start();
-      }
-    } else if (line.toUpperCase().startsWith("CASESGRAPH") || 
-               line.toUpperCase().startsWith("TREATMENTSGRAPH")) {
-      refreshData();
-      boolean unconfirmed = (line.toUpperCase().indexOf("UNCONFIRMED")>1);
-      boolean cumulative = (line.toUpperCase().indexOf("CUMULATIVE")>1);
-      if (line.toUpperCase().startsWith("CASESGRAPH")) {
-        generateCasesGraph(layer, unconfirmed, cumulative, CASES);
-      } else {
-        generateCasesGraph(layer, unconfirmed, cumulative, TREATMENTS);
-      }
-      jtimer.setInitialDelay(500);
-      jtimer.start();
-      
-    } else if (line.toUpperCase().startsWith("R0GRAPH")) {
-      refreshData();
-      boolean unconfirmed = (line.toUpperCase().indexOf("UNCONFIRMED")>1);
-      generateR0Graph(layer, unconfirmed);      
-      jtimer.setInitialDelay(500);
-      jtimer.start();
-      
-    } else if (line.toUpperCase().equals("GENTIMEGRAPH")) {
-      refreshData();
-      generateGenTimeGraph(layer);
-      jtimer.setInitialDelay(500);
-      jtimer.start();
-      
-    } else if ((line.toUpperCase().startsWith("MOVIE[")) || (line.toUpperCase().startsWith("IMAGE["))) {
-      boolean movie = line.toUpperCase().startsWith("MOVIE[");
-      line=line.substring(6);
-      line=line.substring(0, line.length()-1);
-      bits=line.split(",");
-      String themovie = bits[script_indexes[current_script_line]];
-      script_indexes[current_script_line]++;
-      if (script_indexes[current_script_line]>=bits.length) script_indexes[current_script_line]=0;
-      if (themovie.startsWith("\"")) themovie=themovie.substring(1);
-      if (themovie.endsWith("\"")) themovie=themovie.substring(0, themovie.length()-1);
-      if (movie) playMovie(themovie); 
-      else showImage(themovie,false, null);
-      
-      
-    } else if (line.toUpperCase().startsWith("NETWORKGRAPH")) {
-      refreshData();
-      if ((in_file!=null) && (new File(in_file).exists())) {
+      if (line.toUpperCase().startsWith("WAIT")) {
         bits = line.split("\\s+");
-        String[] labels;
-        if (bits.length==1) {
-          labels = new String[] {"Seed","Infector","Terminal"};
-        } else labels = new String(bits[1]).split(",");
-          
-        File f = new File("staticnetworkplot.png");
-        if (f.length()>0) showImage("staticnetworkplot.png",true, labels);
-        Runtime rt = Runtime.getRuntime();
-        bits = new String[] {RScript,RNetGraph,in_file,String.valueOf(screen.width),String.valueOf(screen.height),div_col1, div_col2, div_col3, "staticnetworkplot.png"};
-        try {
-          rt.exec(bits);
-        } catch (Exception e) { e.printStackTrace(); }
-      }
-      jtimer.setInitialDelay(500);
-      jtimer.start();
-    
-    } else if (line.toUpperCase().startsWith("STATUS")) {
-      refreshData();
-      bits = line.split("\\s+");
-      String[] fields = new String[] {"Susceptible","Infected","Recovered"};
-      if (bits.length>1) fields = bits[1].split(",");
-      showStatusPage(fields);
+        if (!pauseButton.isVisible()) {
+          jtimer.setInitialDelay((int)(1000*Float.parseFloat(bits[1])));
+          jtimer.start();
+        }
+      } else if (line.toUpperCase().startsWith("CASESGRAPH") || 
+                 line.toUpperCase().startsWith("TREATMENTSGRAPH")) {
+        refreshData();
+        boolean unconfirmed = (line.toUpperCase().indexOf("UNCONFIRMED")>1);
+        boolean cumulative = (line.toUpperCase().indexOf("CUMULATIVE")>1);
+        if (line.toUpperCase().startsWith("CASESGRAPH")) {
+          generateCasesGraph(layer, unconfirmed, cumulative, CASES);
+        } else {
+          generateCasesGraph(layer, unconfirmed, cumulative, TREATMENTS);
+        }
+        jtimer.setInitialDelay(500);
+        jtimer.start();
+        
+      } else if (line.toUpperCase().startsWith("R0GRAPH")) {
+        refreshData();
+        boolean unconfirmed = (line.toUpperCase().indexOf("UNCONFIRMED")>1);
+        generateR0Graph(layer, unconfirmed);      
+        jtimer.setInitialDelay(500);
+        jtimer.start();
+       
+      } else if (line.toUpperCase().equals("GENTIMEGRAPH")) {
+        refreshData();
+        generateGenTimeGraph(layer);
+        jtimer.setInitialDelay(500);
+        jtimer.start();
+      
+      } else if ((line.toUpperCase().startsWith("MOVIE[")) || (line.toUpperCase().startsWith("IMAGE["))) {
+        boolean movie = line.toUpperCase().startsWith("MOVIE[");
+        line=line.substring(6);
+        line=line.substring(0, line.length()-1);
+        bits=line.split(",");
+        String themovie = bits[script_indexes[current_script_line]];
+        script_indexes[current_script_line]++;
+        if (script_indexes[current_script_line]>=bits.length) script_indexes[current_script_line]=0;
+        if (themovie.startsWith("\"")) themovie=themovie.substring(1);
+        if (themovie.endsWith("\"")) themovie=themovie.substring(0, themovie.length()-1);
+        if (movie) playMovie(themovie); 
+        else showImage(themovie,false, null);
       
       
-    } else if (line.toUpperCase().startsWith("SPREADERS")) {
-      refreshData();
-      spreaders();
+      } else if (line.toUpperCase().startsWith("NETWORKGRAPH")) {
+        refreshData();
+        if ((in_file!=null) && (new File(in_file).exists())) {
+          bits = line.split("\\s+");
+          String[] labels;
+          if (bits.length==1) {
+            labels = new String[] {"Seed","Infector","Terminal"};
+          } else labels = new String(bits[1]).split(",");
 
-    } else if (line.toUpperCase().startsWith("SURVIVORS")) {
-      refreshData();
-      survivors();
+          File f = new File("staticnetworkplot.png");
+          if (f.length()>0) showImage("staticnetworkplot.png",true, labels);
+          Runtime rt = Runtime.getRuntime();
+          bits = new String[] {RScript,RNetGraph,in_file,String.valueOf(screen.width),String.valueOf(screen.height),div_col1, div_col2, div_col3, "staticnetworkplot.png"};
+          try {
+            rt.exec(bits);
+          } catch (Exception e) { e.printStackTrace(); }
+        }
+        jtimer.setInitialDelay(500);
+        jtimer.start();
+    
+      } else if (line.toUpperCase().startsWith("STATUS")) {
+        refreshData();
+        bits = line.split("\\s+");
+        String[] fields = new String[] {"Susceptible","Infected","Recovered"};
+        if (bits.length>1) fields = bits[1].split(",");
+        showStatusPage(fields);
+
+      } else if (line.toUpperCase().startsWith("SPREADERS")) {
+        refreshData();
+        spreaders();
+
+      } else if (line.toUpperCase().startsWith("SURVIVORS")) {
+        refreshData();
+        survivors();
+      }
     }
-   
     current_script_line++;
     if (current_script_line>=script.size()) current_script_line=0;
     

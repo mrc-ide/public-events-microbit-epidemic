@@ -1,56 +1,11 @@
-# Script file for micro:bit epidemic.
-# First version. July 2018, Wes.
-#
 DataPath:../../data
-
-# Blank lines and # lines ignored. 
-#
-# The language we want is:
-
 Language:EN
 Timezone:GMT+1
-
-# Could be GMT+1 in Summer
-
-# How do I run RScript?
-#######################
-
-#On Windows:
 RScript:C:\Program Files\R\R-3.3.3\bin\RScript.exe
-
-#On Mac: 
-#RScript:Rscript
-
-#And what R script generates staticnetworkplot.png ?
 RNetGraph:Outbreak7.R
-
-# Now the Script section.
-
 Script:
-
-# Special Commands:
-# Wait 10   - pause for a number of seconds
-# CasesGraph - plot incidence over time. 
-#              Optionally, you can add       Cumulative  - for a cumulative graph
-#                               and/or       Unconfirmed - to also show unconfirmed cases (ie, barcode not yet returned on the graph).
-#                                                          unreturned barcodes are either lost, or the owner is already immune.
-# R0Graph    - plot an R0 graph.
-#              Optinally, you can add        Unconfirmed - to also show unconfirmed cases (ie, worst-case R0 if all barcodes cause cases)
-#
-# GenTimeGraph - plot a distribution of generation time. (What % of people make their contact within a certain time)
-#
-#
-# NetworkGraph - Display the latest network graph. (And also launched the update script, which might take a little while as the epidemic
-#                grows, so the network graph may lag one cycle behind the other images.
-#
-# Movie["path_to_movie1.mp4","path_to_movie2.mp4"]   -   Display one of these specified movies on each run through the script.
-#
-# Image["path_to_image1.png","path_to_image2.png"]   -   Similar but with an image.
-#
-
 Image["media/superspreader.png"]
 Wait 10
-
 CasesGraph Cumulative
 Wait 10
 CasesGraph
@@ -59,16 +14,10 @@ R0Graph
 Wait 10
 GenTimeGraph
 Wait 10
-#Movie["media/04Britain.mp4","media/05planes.mp4","media/ebola_inc.mp4","media/malaria.mp4"]
-#Image["media/01Bearman_network.png"]
-#Wait 10
 NetworkGraph
 Wait 15
 Status Susceptible,Infected,Recovered
 Wait 10
 Spreaders
 Wait 10
-
-# And the end of the script. Go back to the start.
-
 Loop

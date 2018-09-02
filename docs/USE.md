@@ -136,24 +136,31 @@ line by line sequentially, and will end with a _LOOP_ command, which restarts th
 understood by the Slideshow interpreter. Commands are case-insensitive, although file names and paths on Mac/Linux platforms will be
 case sensitive.
 
-| Setup/misc commands |
+| Script structure |
+| ---------------- |
+| Setup commands|
+| **SCRIPT:**|
+| Script commands|
+| **LOOP:**|
+
+| Setup commands |
 | ------------------- |
 | **# Comment**         |
-| This is a comment - ignored.
+| This is a comment - ignored at any time.
 | **DataPath:../../data** |
 | Set the default place to find the CSV and XML files. |
 | **Language:EN**|
 | The slideshow allows multi-language support... |
 | **Loop** |
-| Start the script again from the top |
+| Start the script again from the **Script:** command |
 | **RnetGraph:Outbreak7.R** |
 | Sets the R script to call, to create the network image, (called staticnetworkgraph.png). |
 | **RScript:C:/Program Files/R/R-3.5.1/bin/RScript.exe** |
 | Where is RScript.exe? The above is typical (and necessary) for Windows; on Mac/Linux, Rscript:Rscript is fine.|
+| **Script:** |
+| Marks the end of the setup, and the start of the display script.
 | **Timezone:GMT+1** |
-| What timezone to use for interpreting universal timestamps  |
-| **Wait 10** |
-| Pause for a number of seconds |
+| What timezone to use for interpreting universal timestamps |
 
 | Display commands |
 | ---------------- |
@@ -177,6 +184,9 @@ case sensitive.
 | Display a dramatic page about who the last survivor is, or how many are left. |
 | **TreatmentsGraph** (optionally add: **Cumulative** and/or **Unconfirmed**) |
 | As _CasesGraph_ but with labels that work with the _Saviour_ game - see below |
+| **Wait 10** |
+| Pause for a number of seconds |
+
 
 * The Spreaders, Status and Survivors pages were specifically hacked for the micro:bit epidemic,
 and rely on [bin/slideshow/media/template.png](bin/slideshow/media/template.png) as a backdrop. 
