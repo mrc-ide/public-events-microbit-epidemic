@@ -1,2 +1,2 @@
 @echo off
-python epi_manager.py
+start python epi_manager.py

@@ -238,7 +238,7 @@ class EpiSerial:
         for x in range(10):
             for y in range(10):
                 col = self.gui_link.minions[x][y]['bg']
-                if ((col == self.gui_link.STATUS_SUSCEPTIBLE) || (col == self.gui_link.STATUS_INFECTED) || (col == self.gui_link.STATUS_RECOVERED)):
+                if ((col == self.gui_link.STATUS_SUSCEPTIBLE) or (col == self.gui_link.STATUS_INFECTED) or (col == self.gui_link.STATUS_RECOVERED)):
                     if (players != ""):
                         players = players + ","
                     players = players + str((y * 10) + x)

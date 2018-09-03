@@ -1,1 +1,2 @@
-javaw MicroEpiSlideshow
+@echo off
+start javaw MicroEpiSlideshow
