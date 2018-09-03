@@ -176,46 +176,50 @@ class EpiSerial:
                     msg = "{}{},{},#".format(self.MSG_REG, serialno, friendlyid)
                     self.serial_port.write(msg+"\n")
                     self.gui_link.set_minion_status(friendlyid, self.gui_link.STATUS_SUSCEPTIBLE)
+                    self.write_xml_params()
+
 
             elif (data[0:4] == self.MSG_IN_INF):
                 #Incoming is INF:ID:VICTIM:TIME:NCONTACTS
                 bits = data.split(":")
-                self.gui_link.set_minion_status(bits[2], self.gui_link.STATUS_INFECTED)
-                fn = self.OUTPUT_PATH + self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
+                m_id = int(bits[2])
+                if (self.gui_link.minions[m_id % 10][m_id / 10]['bg']==self.gui_link.STATUS_SUSCEPTIBLE):
+                    self.gui_link.set_minion_status(m_id, self.gui_link.STATUS_INFECTED)
+                    fn = self.OUTPUT_PATH + self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
 
-                if (not os.path.isfile(fn)):
-                    with open(fn, "w") as f:
-                        f.write("Event,TimeH,Mins,Infectedby,Seeding,Recency,Category,ID,NoContacts\n")
+                    if (not os.path.isfile(fn)):
+                        with open(fn, "w") as f:
+                            f.write("Event,TimeH,Mins,Infectedby,Seeding,Recency,Category,ID,NoContacts\n")
 
-                with open(fn, "a") as f:
-                    inf_time_epoch = self.current_epi_t0 + (float(bits[3]) / 1000.0)
-                    inf_time = time.gmtime(inf_time_epoch)
-                    mins = inf_time.tm_min + (inf_time.tm_sec/60.0)
-                    seeding = 'N'
-                    if (bits[1] == '32767'):
-                        seeding = 'S'
-                        bits[1] = 'NA'
-                    recency = 'Old'
-                    if (time.time() - inf_time_epoch < self.RECENT_TIME_S):
-                        recency = 'Recent'
+                    with open(fn, "a") as f:
+                        inf_time_epoch = self.current_epi_t0 + (float(bits[3]) / 1000.0)
+                        inf_time = time.gmtime(inf_time_epoch)
+                        mins = inf_time.tm_min + (inf_time.tm_sec/60.0)
+                        seeding = 'N'
+                        if (bits[1] == '32767'):
+                            seeding = 'S'
+                            bits[1] = 'NA'
+                        recency = 'Old'
+                        if (time.time() - inf_time_epoch < self.RECENT_TIME_S):
+                            recency = 'Recent'
 
-                    f.write("I,{},{},{},{},{},{},{},{}\n".format(
-                        inf_time.tm_hour, mins, bits[1], seeding, recency, 0, bits[2], bits[4]))
+                        f.write("I,{},{},{},{},{},{},{},{}\n".format(
+                            inf_time.tm_hour, mins, bits[1], seeding, recency, 0, bits[2], bits[4]))
 
-                print data
+                    print data
 
             elif (data[0:4] == self.MSG_IN_RECOV):
                 bits = data.split(":")
-                self.gui_link.set_minion_status(bits[1], self.gui_link.STATUS_RECOVERED)
-                fn = self.OUTPUT_PATH + self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
-                rec_time_epoch = self.current_epi_t0 + (float(bits[2]) / 1000.0)
-                rec_time = time.gmtime(rec_time_epoch)
-                mins = rec_time.tm_min + (rec_time.tm_sec/60.0)
-                with open(fn, "a") as f:
-                    f.write("R,{},{},NA,NA,NA,NA,{},NA\n".format(
-                        rec_time.tm_hour, mins, bits[1]))
-
-                print data
+                m_id = int(bits[1])
+                if (self.gui_link.minions[m_id % 10][m_id / 10]['bg']==self.gui_link.STATUS_INFECTED):
+                    self.gui_link.set_minion_status(m_id, self.gui_link.STATUS_RECOVERED)
+                    fn = self.OUTPUT_PATH + self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
+                    rec_time_epoch = self.current_epi_t0 + (float(bits[2]) / 1000.0)
+                    rec_time = time.gmtime(rec_time_epoch)
+                    mins = rec_time.tm_min + (rec_time.tm_sec/60.0)
+                    with open(fn, "a") as f:
+                        f.write("R,{},{},NA,NA,NA,NA,{},NA\n".format(rec_time.tm_hour, mins, bits[1]))
+                    print data
 
             else:
                 self.gui_link.sv_software.set(self.gui_link.lang.unrecog_serial)
@@ -235,15 +239,14 @@ class EpiSerial:
     def write_xml_params(self):
         fn = self.OUTPUT_PATH + self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".xml"
         players = ""
-        for x in range(10):
-            for y in range(10):
-                col = self.gui_link.minions[x][y]['bg']
-                if ((col == self.gui_link.STATUS_SUSCEPTIBLE) or (col == self.gui_link.STATUS_INFECTED) or (col == self.gui_link.STATUS_RECOVERED)):
-                    if (players != ""):
-                        players = players + ","
-                    players = players + str((y * 10) + x)
+        for x in range(100):
+            col = self.gui_link.minions[x % 10][x / 10]['bg']
+            if ((col == self.gui_link.STATUS_SUSCEPTIBLE) or (col == self.gui_link.STATUS_INFECTED) or (col == self.gui_link.STATUS_RECOVERED)):
+                if (players != ""):
+                    players = players + ","
+                players = players + str(x)
 
-        msg = (self.gui_link.sv_epidno.get() + "," +
+        par = (self.gui_link.sv_epidno.get() + "," +
                self.gui_link.sv_r0.get() + "," +
                str(self.gui_link.cb_rtype.current()) + "," +
                self.gui_link.cb_poimin.get() + "," +
@@ -257,9 +260,9 @@ class EpiSerial:
         with open(fn, "w") as f:
             f.write("<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>\n")
             f.write("<meta>\n")
-            f.write("  <params>" + msg + "</params>\n")
+            f.write("  <params>" + par + "</params>\n")
             f.write("  <time>" + str(self.current_epi_t0) + "</time>\n")
-            f.write("  <players>" + str(players) + "</players>\n")
+            f.write("  <players>" + players + "</players>\n")
             f.write("  <game>" + str(self.gui_link.cb_paramset.get()) + "</game>\n")
             f.write("</meta>")
 
