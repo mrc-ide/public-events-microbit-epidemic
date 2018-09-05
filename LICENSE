@@ -1,7 +1,5 @@
-#!/usr/bin/python
-'''
-epi_manager.py is part of the micro:bit epidemic project.
-This is the script to run for launching the management GUI.
+micro:bit epidemic
+------------------
 
 The MIT License (MIT)
 
@@ -27,14 +25,3 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
-
-Created on 6 Jun 2018
-
-@author: Wes Hinsley
-'''
-
-from epi_gui import EpiGui
-from epi_serial import EpiSerial
-
-EpiGui(EpiSerial())
-
