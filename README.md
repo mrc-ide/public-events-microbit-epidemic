@@ -23,4 +23,3 @@ Python, the slideshow, sticker printer, and multi-flashing tool
 are in Java, and the network graph is generated in R. Compilation
 details are in here, if you want to change the code, or understand 
 (or suggest improvements) on how I did things.
-

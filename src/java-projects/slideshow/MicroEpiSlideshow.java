@@ -1,38 +1,3 @@
-/*
-MicroEpiSlideshow.java is part of the micro:bit epidemic project.
-It is the main class of the MicroEpiSlideshow code, which reads
-a script, CSV data, ane XML metadata for an epidemic game, and
-displays various graphs, tables, images and movies according to
-the script.
-
-The MIT License (MIT)
-
-Copyright (c) 2018 Wes Hinsley
-MRC Centre for Global Infectious Disease Analysis
-Department of Infectious Disease Epidemiology
-Imperial College London
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the "Software"),
-to deal in the Software without restriction, including without limitation
-the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the
-Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-
-*/
-
-
 import java.awt.BasicStroke;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -908,16 +873,19 @@ public class MicroEpiSlideshow extends Application {
     long largest_gt=0;
     ArrayList<Integer> gts = new ArrayList<Integer>();
     for (int i=0; i<epi_csv.size(); i++) {
-      if (epi_csv.get(i)[COL_EVENT].equals("I")) {
+      if ((epi_csv.get(i)[COL_EVENT].equals("I")) && (!(epi_csv.get(i)[COL_INFBY].equals("NA")))) {
         int time0 = Integer.parseInt(epi_csv.get(i)[COL_TIMEH])*3600;
         time0 += (int) (Float.parseFloat(epi_csv.get(i)[COL_TIMEM])*60.0);
         for (int j=0; j<epi_csv.size(); j++) {
-          if (epi_csv.get(j)[COL_EVENT].equals("I")) {
-            if (epi_csv.get(i)[COL_VICTIM].equals(epi_csv.get(j)[COL_INFBY])) {
+          if ((epi_csv.get(j)[COL_EVENT].equals("I")) && (!(epi_csv.get(j)[COL_INFBY].equals("NA")))) {
+              if (epi_csv.get(i)[COL_VICTIM].equals(epi_csv.get(j)[COL_INFBY])) {
               int time1 = Integer.parseInt(epi_csv.get(j)[COL_TIMEH])*3600;
               time1 += (int) (Float.parseFloat(epi_csv.get(j)[COL_TIMEM])*60.0);
               gts.add(time1-time0);
               largest_gt=Math.max(largest_gt,  time1- time0);
+              if (time1-time0==1) {
+                System.out.println("1");
+              }
             }
           }
         }
@@ -1045,7 +1013,14 @@ public class MicroEpiSlideshow extends Application {
     g.setColor(java.awt.Color.BLACK);
     g.drawLine(left_margin, (bi.getHeight() - bottom_margin) + 5, bi.getWidth() - right_margin, (bi.getHeight() - bottom_margin) + 5);
     g.drawLine(left_margin - 5, bi.getHeight() - bottom_margin, left_margin - 5, top_margin);
+    
     int lgth = effective_r0.size();
+    if (!include_unconfirmed) {
+      while ((lgth>0) && (effective_r0.get(lgth-1)==0)) lgth--;
+    }
+    if (include_unconfirmed) { 
+      while ((lgth>0) && (potential_r0.get(lgth-1)==0)) lgth--;
+    }
     if (lgth==0) lgth=1;
     int step_pix = (int) Math.floor(((bi.getWidth() - left_margin) - right_margin) / lgth);
     fm = g.getFontMetrics();
@@ -1103,7 +1078,7 @@ public class MicroEpiSlideshow extends Application {
     double scale_y = (bi.getHeight() - (bottom_margin + top_margin)) / (max_y - min_y);
 
     if (epi_csv.size() > 0) {
-      for (int i = 0; i < effective_r0.size(); i++) {
+      for (int i = 0; i < lgth; i++) {
         int mid = left_margin + (i * step_pix) + (step_pix / 2);
         g.drawString(String.valueOf(i), mid - (fm.stringWidth(String.valueOf(i)) / 2), 25 + (bi.getHeight() - bottom_margin));
         g.drawLine(left_margin + (i * step_pix), (bi.getHeight() - bottom_margin) + 5, left_margin + (i * step_pix), (bi.getHeight() - bottom_margin) + 8);
