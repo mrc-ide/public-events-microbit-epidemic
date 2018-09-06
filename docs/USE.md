@@ -25,6 +25,7 @@ switch on. The micro:bits will display _U_, meaning they are unattached to an ep
 
 ### Screen 1: Select master
 
+![Selecting the master micro:bit](images/python-gui-1.png)
 * On the first screen, you select which COM port the master is connected to; the manager detects all available 
 options, which must be a master micro:bit of a software version it likes.
 
@@ -33,7 +34,7 @@ master per epidemic, and one micro:bit manager instance per epidemic. And a good
 An epidemic is defined by the serial number of the master micro:bit, and a user-set epidemic number.
 
 ### Screen 2: Define parameters
-
+![Defing parameters](images/python-gui-2.png)
 * On the next page, the parameters are set for a specific epidemic. The set of parameters can be saved and
 recalled later. Some of them may become more clear when we talk later about the epidemic games we've made so far.
 But briefly:-
@@ -65,6 +66,7 @@ each other. Similar, the incremental epidemic id makes sure that one game is iso
 this prevents issues where for example a player takes their minion out of radio range, and returns during the following game.
 
 ### Screen 3: Seed the epidemic
+![Seed Epidemic](images/python-gui-3.png)
 
 * Seeding causes a susceptible player to suddenly become infected. Choose the victim by clicking on a green 
 square in the grid, or click the _Random_ button to pick a random susceptible. 
@@ -79,6 +81,10 @@ from the parameters of the epidemic.
 
 * But note that as soon as the first seed is made, the players in the game are fixed, and no new micro:bits
 can added themselves. They'll have to wait for the next game.
+
+![Selecting the master micro:bit](images/python-gui-4.png)
+
+* Infected minions will now turn red, and recovered minions will be blue.
 
 ### Ending the epidemic
 
