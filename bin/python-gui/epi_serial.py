@@ -212,8 +212,11 @@ class EpiSerial:
                 #Incoming is INF:ID:VICTIM:TIME:NCONTACTS
                 bits = data.split(":")
                 m_id = int(bits[2])
-                if (self.gui_link.minions[m_id % 10][m_id / 10]['bg']==self.gui_link.STATUS_SUSCEPTIBLE):
-                    self.gui_link.set_minion_status(m_id, self.gui_link.STATUS_INFECTED)
+                
+                # Check whether inf was already reported. If it was, then no need to
+                # do anything here. If not:
+                
+                if (self.gui_link.inf_reported[m_id] == 0):
                     fn = self.OUTPUT_PATH + self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
 
                     if (not os.path.isfile(fn)):
@@ -225,30 +228,46 @@ class EpiSerial:
                         inf_time = time.gmtime(inf_time_epoch)
                         mins = inf_time.tm_min + (inf_time.tm_sec/60.0)
                         seeding = 'N'
+                        
                         if (bits[1] == '32767'):
                             seeding = 'S'
                             bits[1] = 'NA'
+                        
                         recency = 'Old'
                         if (time.time() - inf_time_epoch < self.RECENT_TIME_S):
                             recency = 'Recent'
 
                         f.write("I,{},{},{},{},{},{},{},{}\n".format(
                             inf_time.tm_hour, mins, bits[1], seeding, recency, 0, bits[2], bits[4]))
-
-                    print data
+                    
+                    # Check whether recovery was already reported. If it was, then minion
+                    # icon should remain blue; otherwise, it's a new infection, so red.
+                    if (self.gui_link.rec_reported[m_id]==0):
+                        self.gui_link.set_minion_status(m_id, self.gui_link.STATUS_INFECTED)
+                        
+                    self.gui_link.inf_reported[m_id] = 1
 
             elif (data[0:4] == self.MSG_IN_RECOV):
                 bits = data.split(":")
                 m_id = int(bits[1])
-                if (self.gui_link.minions[m_id % 10][m_id / 10]['bg']==self.gui_link.STATUS_INFECTED):
+                
+                # Check whether recovery was already reported. If it was, then no need to
+                # do anything here. Otherwise...
+                
+                if (self.gui_link.rec_reported[m_id] == 0):
                     self.gui_link.set_minion_status(m_id, self.gui_link.STATUS_RECOVERED)
                     fn = self.OUTPUT_PATH + self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".csv"
+                    if (not os.path.isfile(fn)):
+                        with open(fn, "w") as f:
+                            f.write("Event,TimeH,Mins,Infectedby,Seeding,Recency,Category,ID,NoContacts\n")
+
                     rec_time_epoch = self.current_epi_t0 + (float(bits[2]) / 1000.0)
                     rec_time = time.gmtime(rec_time_epoch)
                     mins = rec_time.tm_min + (rec_time.tm_sec/60.0)
                     with open(fn, "a") as f:
                         f.write("R,{},{},NA,NA,NA,NA,{},NA\n".format(rec_time.tm_hour, mins, bits[1]))
-                    print data
+                    
+                    self.gui_link.rec_reported[m_id] = 1
 
             else:
                 self.gui_link.sv_software.set(self.gui_link.lang.unrecog_serial)

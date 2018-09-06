@@ -485,6 +485,9 @@ class EpiGui:
         self.b_sendParams.grid(column = 5, row = 18, columnspan = 5)
         for i in range(100):
             self.set_minion_status(i, '#f0f0f0')
+            self.inf_reported[i] = 0
+            self.rec_reported[i] = 0
+                        
         self.serial_link.refresh_microbit_comports()
 
     # Create the GUI.
@@ -501,7 +504,7 @@ class EpiGui:
         # GUI elements present on all pages.
 
         self.minions =  [[0 for x in xrange(10)] for y in xrange(10)]
-
+        
         for x in range(10):
             for y in range(10):
                 n=((y * 10) + x)
@@ -509,6 +512,9 @@ class EpiGui:
                 self.minions[x][y] = Button(self.window, text = n,
                     command = lambda n1 = n: self.click_minion(n1))
                 self.minions[x][y].grid(column = x, row = y)
+                
+        self.inf_reported = [0 for x in range(100)]
+        self.rec_reported = [0 for x in range(100)]
 
         self.b_setMaster = Button(self.window, text = self.lang.set_master_mb, command = self.click_set_master)
         self.b_sendParams = Button(self.window, text = self.lang.send_params, command = self.click_send_params)
