@@ -952,9 +952,6 @@ public class MicroEpiSlideshow extends Application {
               time1 += (int) (Float.parseFloat(epi_csv.get(j)[COL_TIMEM])*60.0);
               gts.add(time1-time0);
               largest_gt=Math.max(largest_gt,  time1- time0);
-              if (time1-time0==1) {
-                System.out.println("1");
-              }
             }
           }
         }
@@ -1558,7 +1555,6 @@ public class MicroEpiSlideshow extends Application {
   
   public void alertPage() {
     String s = "media/outbreak"+alert_img+".png"; 
-    System.out.println("AP "+s);
     showImage(s,false, null);
     alert_img = (byte) (3 - alert_img);
     jtimer.stop();
