@@ -1,3 +1,37 @@
+/*
+MircoEpiSlideshow.java is part of the micro:bit epidemic project.
+It is the main class of the MicroEpiSlideshow code, which reads
+a script, CSV data, ane XML metadata for an epidemic game, and
+displays various graphs, tables, images and movies according to
+the script.
+
+The MIT License (MIT)
+
+Copyright (c) 2018 Wes Hinsley
+MRC Centre for Global Infectious Disease Analysis
+Department of Infectious Disease Epidemiology
+Imperial College London
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+*/
+
 import java.awt.BasicStroke;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -11,6 +45,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -41,6 +76,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Label;
@@ -78,13 +114,12 @@ import javafx.stage.WindowEvent;
  
 // lang.txt is also needed, and script.txt, which is the default
 // script for basic epidemics, or if no matching script_gametype.txt
-// is found. See the script files for examples.
+// is found. See the script files and documentation for examples.
 
 public class MicroEpiSlideshow extends Application {
   /* GUI for screen control */
   
-  final String dataPath = "C:/Files/Dev/public-events-microbit-epidemic/data/";
-  //final String dataPath = "../data";
+  final String dataPath = "../data";
   public int no_events = 0;
   boolean unsaved_changes = false;
  
@@ -99,7 +134,9 @@ public class MicroEpiSlideshow extends Application {
   final Label l_size = new Label("Size (w,h)");
   final Label l_epi = new Label("None set yet");
   final Button b_epi = new Button("Set Datafile");
-
+  final CheckBox cb_title = new CheckBox("Show Title Screen");
+  final CheckBox cb_alert = new CheckBox("Show Epidemic Alert");
+  
   final GridPane grid = new GridPane();
   final TextField tf_x = new TextField();
   final TextField tf_y = new TextField();
@@ -109,6 +146,9 @@ public class MicroEpiSlideshow extends Application {
   final HBox hb_location = new HBox();
   final HBox hb_size = new HBox();
   final HBox hb_data = new HBox();
+  final HBox hb_title = new HBox();
+  final HBox hb_alert = new HBox();
+  byte alert_img=1;
 
   final ToggleGroup tg_display = new ToggleGroup();
   final Button b_detect = new Button("Detect Fullscreen");
@@ -125,8 +165,6 @@ public class MicroEpiSlideshow extends Application {
   final StackPane displayStageSP = new StackPane();
   Scene displayScene = null;
 
-  
-  //String in_file = "C:/Files/Dev/Eclipse/microepi-manager/498461975_289.csv";
   String in_file = null;
   String xml_file = null;
   String current_params;
@@ -162,6 +200,11 @@ public class MicroEpiSlideshow extends Application {
   String RNetGraph="";
   String div_col1="#000000", div_col2="#000000", div_col3 = "#707070";
   ArrayList<String> script = new ArrayList<String>();
+  ArrayList<String> welcome_script = new ArrayList<String>(Arrays.asList(new String[] {
+    "Image[\"media/welcome.png\"]","Wait 30"}));
+  ArrayList<String> alert_script = new ArrayList<String>(Arrays.asList(new String[] {
+     "Image[\"media/outbreak1.png\"]","Wait 2","Image[\"media/outbreak1.png\"]","Wait 2"}));
+  
   int[] script_indexes;
   int current_script_line;
   
@@ -291,12 +334,8 @@ public class MicroEpiSlideshow extends Application {
               s=s.trim();
               if (s.toUpperCase().equals("LOOP")) done=true;
               else {
-                if (!s.toUpperCase().equals("LOOP")) {
-                  if (!s.startsWith("#")) {
-                    if (s.length()>0) {
-                      script.add(s);
-                    }
-                  }
+                if (!s.startsWith("#")) {
+                  if (s.length()>0) script.add(s);
                 }
               }
               s=br.readLine();
@@ -423,6 +462,11 @@ public class MicroEpiSlideshow extends Application {
     hb_data.getChildren().add(b_epi);
     grid.add(hb_data,  0,  gridy);
     grid.add(l_epi, 1, gridy++);
+
+    hb_title.getChildren().add(cb_title);
+    grid.add(hb_title,0, gridy++);
+    hb_alert.getChildren().add(cb_alert);
+    grid.add(hb_alert, 0, gridy++);
     
     final Stage _stage = primaryStage;
     b_epi.setOnAction(new EventHandler<ActionEvent>() {
@@ -451,7 +495,7 @@ public class MicroEpiSlideshow extends Application {
             } catch (Exception ex) {}
             
             loadScript();
-            refreshData();  
+            refreshData();
           } else {
             Alert alert = new Alert(AlertType.ERROR);
             alert.setTitle("Error");
@@ -464,6 +508,31 @@ public class MicroEpiSlideshow extends Application {
 
       }
     });
+    
+    cb_title.setOnAction(new EventHandler<ActionEvent>() {
+      @Override
+      public void handle(ActionEvent e) {
+        if (cb_title.isSelected()) {
+          cb_alert.setSelected(false);
+        } 
+        jtimer.stop();
+        jtimer.setInitialDelay(100);
+        jtimer.start();
+      }
+    });
+      
+    cb_alert.setOnAction(new EventHandler<ActionEvent>() {
+      @Override
+      public void handle(ActionEvent e) {
+        if (cb_alert.isSelected()) {
+          cb_title.setSelected(false);
+        }
+        jtimer.stop();
+        jtimer.setInitialDelay(100);
+        jtimer.start();
+      }
+    });
+    
     
     primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
       public void handle(WindowEvent we) {
@@ -1479,97 +1548,119 @@ public class MicroEpiSlideshow extends Application {
     
   }
   
-  public void nextChapter() {
+  public void titlePage() {
     jtimer.stop();
-    if (current_script_line<script.size()) {
-      String[] bits;
-      String line = script.get(current_script_line).trim();
+    showImage("media/welcome.png",false, null);
+    jtimer.stop();
+    jtimer.setInitialDelay(2000);
+    jtimer.start();
+  }
   
-      if (line.toUpperCase().startsWith("WAIT")) {
-        bits = line.split("\\s+");
-        if (!pauseButton.isVisible()) {
-          jtimer.setInitialDelay((int)(1000*Float.parseFloat(bits[1])));
-          jtimer.start();
-        }
-      } else if (line.toUpperCase().startsWith("CASESGRAPH") || 
-                 line.toUpperCase().startsWith("TREATMENTSGRAPH")) {
-        refreshData();
-        boolean unconfirmed = (line.toUpperCase().indexOf("UNCONFIRMED")>1);
-        boolean cumulative = (line.toUpperCase().indexOf("CUMULATIVE")>1);
-        if (line.toUpperCase().startsWith("CASESGRAPH")) {
-          generateCasesGraph(layer, unconfirmed, cumulative, CASES);
-        } else {
-          generateCasesGraph(layer, unconfirmed, cumulative, TREATMENTS);
-        }
-        jtimer.setInitialDelay(500);
-        jtimer.start();
-        
-      } else if (line.toUpperCase().startsWith("R0GRAPH")) {
-        refreshData();
-        boolean unconfirmed = (line.toUpperCase().indexOf("UNCONFIRMED")>1);
-        generateR0Graph(layer, unconfirmed);      
-        jtimer.setInitialDelay(500);
-        jtimer.start();
-       
-      } else if (line.toUpperCase().equals("GENTIMEGRAPH")) {
-        refreshData();
-        generateGenTimeGraph(layer);
-        jtimer.setInitialDelay(500);
-        jtimer.start();
-      
-      } else if ((line.toUpperCase().startsWith("MOVIE[")) || (line.toUpperCase().startsWith("IMAGE["))) {
-        boolean movie = line.toUpperCase().startsWith("MOVIE[");
-        line=line.substring(6);
-        line=line.substring(0, line.length()-1);
-        bits=line.split(",");
-        String themovie = bits[script_indexes[current_script_line]];
-        script_indexes[current_script_line]++;
-        if (script_indexes[current_script_line]>=bits.length) script_indexes[current_script_line]=0;
-        if (themovie.startsWith("\"")) themovie=themovie.substring(1);
-        if (themovie.endsWith("\"")) themovie=themovie.substring(0, themovie.length()-1);
-        if (movie) playMovie(themovie); 
-        else showImage(themovie,false, null);
-      
-      
-      } else if (line.toUpperCase().startsWith("NETWORKGRAPH")) {
-        refreshData();
-        if ((in_file!=null) && (new File(in_file).exists())) {
+  public void alertPage() {
+    String s = "media/outbreak"+alert_img+".png"; 
+    System.out.println("AP "+s);
+    showImage(s,false, null);
+    alert_img = (byte) (3 - alert_img);
+    jtimer.stop();
+    jtimer.setInitialDelay(2000);
+    jtimer.start();
+  }
+  public void nextChapter() {
+    if (cb_title.isSelected()) {
+      titlePage();
+    } else if (cb_alert.isSelected()) {
+      alertPage();
+    } else {
+      jtimer.stop();
+      if (current_script_line<script.size()) {
+        String[] bits;
+        String line = script.get(current_script_line).trim();
+  
+        if (line.toUpperCase().startsWith("WAIT")) {
           bits = line.split("\\s+");
-          String[] labels;
-          if (bits.length==1) {
-            labels = new String[] {"Seed","Infector","Terminal"};
-          } else labels = new String(bits[1]).split(",");
+          if (!pauseButton.isVisible()) {
+            jtimer.setInitialDelay((int)(1000*Float.parseFloat(bits[1])));
+            jtimer.start();
+          }
+        } else if (line.toUpperCase().startsWith("CASESGRAPH") || 
+                   line.toUpperCase().startsWith("TREATMENTSGRAPH")) {
+          refreshData();
+          boolean unconfirmed = (line.toUpperCase().indexOf("UNCONFIRMED")>1);
+          boolean cumulative = (line.toUpperCase().indexOf("CUMULATIVE")>1);
+          if (line.toUpperCase().startsWith("CASESGRAPH")) {
+            generateCasesGraph(layer, unconfirmed, cumulative, CASES);
+          } else {
+            generateCasesGraph(layer, unconfirmed, cumulative, TREATMENTS);
+          }
+          jtimer.setInitialDelay(500);
+          jtimer.start();
+        
+        } else if (line.toUpperCase().startsWith("R0GRAPH")) {
+          refreshData();
+          boolean unconfirmed = (line.toUpperCase().indexOf("UNCONFIRMED")>1);
+          generateR0Graph(layer, unconfirmed);      
+          jtimer.setInitialDelay(500);
+          jtimer.start();
+       
+        } else if (line.toUpperCase().equals("GENTIMEGRAPH")) {
+          refreshData();
+          generateGenTimeGraph(layer);
+          jtimer.setInitialDelay(500);
+          jtimer.start();
+      
+        } else if ((line.toUpperCase().startsWith("MOVIE[")) || (line.toUpperCase().startsWith("IMAGE["))) {
+          boolean movie = line.toUpperCase().startsWith("MOVIE[");
+          line=line.substring(6);
+          line=line.substring(0, line.length()-1);
+          bits=line.split(",");
+          String themovie = bits[script_indexes[current_script_line]];
+          script_indexes[current_script_line]++;
+          if (script_indexes[current_script_line]>=bits.length) script_indexes[current_script_line]=0;
+          if (themovie.startsWith("\"")) themovie=themovie.substring(1);
+          if (themovie.endsWith("\"")) themovie=themovie.substring(0, themovie.length()-1);
+          if (movie) playMovie(themovie); 
+          else showImage(themovie,false, null);
+      
+      
+        } else if (line.toUpperCase().startsWith("NETWORKGRAPH")) {
+          refreshData();
+          if ((in_file!=null) && (new File(in_file).exists())) {
+            bits = line.split("\\s+");
+            String[] labels;
+            if (bits.length==1) {
+              labels = new String[] {"Seed","Infector","Terminal"};
+            } else labels = new String(bits[1]).split(",");
 
-          File f = new File("staticnetworkplot.png");
-          if (f.length()>0) showImage("staticnetworkplot.png",true, labels);
-          Runtime rt = Runtime.getRuntime();
-          bits = new String[] {RScript,RNetGraph,in_file,String.valueOf(screen.width),String.valueOf(screen.height),div_col1, div_col2, div_col3, "staticnetworkplot.png"};
-          try {
-            rt.exec(bits);
-          } catch (Exception e) { e.printStackTrace(); }
+            File f = new File("staticnetworkplot.png");
+            if (f.length()>0) showImage("staticnetworkplot.png",true, labels);
+            Runtime rt = Runtime.getRuntime();
+            bits = new String[] {RScript,RNetGraph,in_file,String.valueOf(screen.width),String.valueOf(screen.height),div_col1, div_col2, div_col3, "staticnetworkplot.png"};
+            try {
+              rt.exec(bits);
+            } catch (Exception e) { e.printStackTrace(); }
+          }
+          jtimer.setInitialDelay(500);
+          jtimer.start();
+    
+        } else if (line.toUpperCase().startsWith("STATUS")) {
+          refreshData();
+          bits = line.split("\\s+");
+          String[] fields = new String[] {"Susceptible","Infected","Recovered"};
+          if (bits.length>1) fields = bits[1].split(",");
+          showStatusPage(fields);
+
+        } else if (line.toUpperCase().startsWith("SPREADERS")) {
+          refreshData();
+          spreaders();
+
+        } else if (line.toUpperCase().startsWith("SURVIVORS")) {
+          refreshData();
+          survivors();
         }
-        jtimer.setInitialDelay(500);
-        jtimer.start();
-    
-      } else if (line.toUpperCase().startsWith("STATUS")) {
-        refreshData();
-        bits = line.split("\\s+");
-        String[] fields = new String[] {"Susceptible","Infected","Recovered"};
-        if (bits.length>1) fields = bits[1].split(",");
-        showStatusPage(fields);
-
-      } else if (line.toUpperCase().startsWith("SPREADERS")) {
-        refreshData();
-        spreaders();
-
-      } else if (line.toUpperCase().startsWith("SURVIVORS")) {
-        refreshData();
-        survivors();
       }
+      current_script_line++;
+      if (current_script_line>=script.size()) current_script_line=0;
     }
-    current_script_line++;
-    if (current_script_line>=script.size()) current_script_line=0;
-    
   }
  
   public static void main(String[] args) {
