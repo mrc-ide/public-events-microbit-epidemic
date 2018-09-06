@@ -108,8 +108,8 @@ mainly.
 ### Transport
 
 * Finally, carrying 101 micro:bits around is not entirely straightforward. 
-We got a couple of 500x350x120mm, with foam inside, and by removing most
-of the foam, we could all the micro:bits in like this:
+We got a couple of 500x350x120mm aluminium cases with foam inside, and by removing most
+of the foam, we could fit all the micro:bits in like this:
 
 ![Case of micro:bits](images/kit-fc.jpg)
 
