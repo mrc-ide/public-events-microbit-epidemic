@@ -96,6 +96,9 @@ and also stuck the power cable to the top (the removable part)
 of the battery case to attempt to keep it tidy. It took 6 tubes,
 and quite a lot of time.
 
+![Final micro:bit](images/kit-final.png)
+
+
 ### A laptop
 
 * To run the epidemic, we used a not particularly
