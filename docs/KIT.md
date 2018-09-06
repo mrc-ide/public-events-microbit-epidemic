@@ -57,6 +57,10 @@ build quality and design is not perfect.
   the weight of batteries they hold is significant; we
   are a bit concerned these cases might fall open more often as
   they age. Perhaps look out for a better option.
+
+  * In the meantime, when attaching the lanyard, clip it to not
+  only the wallmount hole, but also through the loop of battery
+  cable, then the batteries won't fall out very far.
   
 ### _100 wall-mount cases for micro:bit_. 
 
