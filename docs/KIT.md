@@ -6,6 +6,8 @@ this hardware on the way.
 
 ### 101 micro:bits
 
+![The micro:bit 10-pack](images/kit-mb.png)
+
 * We ordered ten [packs of ten](http://cpc.farnell.com/bbc-micro-bit/mb224-us/bbc-micro-bit-club-fcc-10-pack/dp/ED00316?rpsku=rel2:ED00036&isexcsku=false)
 from Farnell (CPC), which included non-famous-brand AAA batteries (quite useful),
 battery holders (not so useful, as not switched), and MicroUSB
@@ -30,6 +32,8 @@ not think the force used was excessively aggressive; hence the
 cables are probably quite weak.
 
 ### _100 Switched Battery holders_
+
+![Switched battery holder](images/kit-sbh.png)
 
 * We wanted to be able to
 switch the micro:bits on and off without disconnecting the 
@@ -56,6 +60,8 @@ build quality and design is not perfect.
   
 ### _100 wall-mount cases for micro:bit_. 
 
+![Wall-mount case for micro:bit](images/kit-wm.png)
+
 * We used [these](http://cpc.farnell.com/kitronik/5605/mi-pro-mountable-case/dp/ED00030). 
 These protect the micro:bits nicely, and have screw holes on each side that will fit a
 standard lanyard clip.
@@ -75,13 +81,13 @@ to a laptop serial port.
 ### Lanyards and stickers
 
 * We needed 100 lanyards with two clips, and no safety break.
-See the artwork folder for the pattern we went for! We used
-the IC approved provider, [www.carddispenseruk.com](www.carddispenseruk.com)
+See the [artwork](../artwork) folder for the [pattern](../artwork/microbit-epi-lanyard.png) we went for.
+We used our Imperial College approved provider, [www.carddispenseruk.com](www.carddispenseruk.com)
 
 * We also wanted to stick something on the battery case to 
 indicate the id of each minion; we used Niceday 2.5 x 1.5" 
 stickers.
-  
+
 ### Superglue
 
 * We [superglued](https://www.amazon.co.uk/Loctite-Triple-Instant-Adhesive-Bonding/dp/B01BUA92PM/ref=sr_1_7?ie=UTF8&qid=1530712161&sr=8-7&keywords=super+glue+triple) 
@@ -92,9 +98,19 @@ and quite a lot of time.
 
 ### A laptop
 
-* Lastly to run the epidemic, we used a not particularly
+* To run the epidemic, we used a not particularly
 impressive laptop, which happens to be running Windows 7,
 so the documentation here will describe that. But there is
 no reason why Mac or Linux machines shouldn't work just
 as well, since we are using python and the gcc toolchain 
 mainly.
+
+### Transport
+
+* Finally, carrying 101 micro:bits around is not entirely straightforward. 
+We got a couple of 500x350x120mm, with foam inside, and by removing most
+of the foam, we could all the micro:bits in like this:
+
+![Case of micro:bits](images/kit-fc.jpg)
+
+* And then in the other case, we stuffed lanyards, batteries, and a few spare parts.

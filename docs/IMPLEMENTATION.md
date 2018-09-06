@@ -190,10 +190,10 @@ victim (who by definition is also listening on the _REGISTERED_ group) hears the
 their id with the id in the message, and acts accordingly.
 
 <pre>
- ----------              |------------|     ----------  radio  |----------------------------|         ----------
- | Laptop |   serial     | 4[id],     |     | master |  bcast  | [SEED_MINION_MSG] : char   |         | minion |
- |        |------------->| [forcer],# |---->|        |- - - - >| [master_serial]   : int    |- - - - >|        |
- ----------              |------------|     ----------   on    | [epid]            : short  |         ----------
+ ----------              |------------|     ----------  radio  |----------------------------|        ----------
+ | Laptop |   serial     | 4[id],     |     | master |  bcast  | [SEED_MINION_MSG] : char   |        | minion |
+ |        |------------->| [forcer],# |---->|        |- - - - >| [master_serial]   : int    |- - - ->|        |
+ ----------              |------------|     ----------   on    | [epid]            : short  |        ----------
                                                          REG   | [id]              : short  |
                                                         group  | [n_contacts]      : char   |
                                                                |----------------------------|
