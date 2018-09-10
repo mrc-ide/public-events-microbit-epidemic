@@ -1,0 +1,23 @@
+DataPath:../../data
+Language:EN
+Timezone:GMT+1
+RScript:C:\Program Files\R\R-3.3.3\bin\RScript.exe
+RNetGraph:Outbreak7.R
+Script:
+Image["media/superspreader.png"]
+Wait 10
+CasesGraph Cumulative
+Wait 10
+CasesGraph
+Wait 10
+R0Graph
+Wait 10
+GenTimeGraph
+Wait 10
+NetworkGraph
+Wait 15
+Status Susceptible,Infected,Recovered
+Wait 10
+Spreaders
+Wait 10
+Loop

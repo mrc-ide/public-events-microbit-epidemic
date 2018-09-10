@@ -1,0 +1,17 @@
+DataPath:../../data
+Language:EN
+Timezone:GMT+1
+RScript:C:\Program Files\R\R-3.3.3\bin\RScript.exe
+RNetGraph:Outbreak7.R
+Script:
+image["media/saviour.png"]
+Wait 10
+TreatmentsGraph Cumulative
+Wait 10
+TreatmentsGraph
+Wait 10
+NetworkGraph Doctor,Infected,Treated
+Wait 15
+Status Infected,Doctors,Treated
+Wait 10
+Loop

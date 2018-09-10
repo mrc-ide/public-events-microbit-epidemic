@@ -1,0 +1,12 @@
+{
+  "name": "microbit-epidemic",
+  "version": "0.0.1",
+  "bin": "./source",
+  "private": true,
+  "description": "Proximity Epidemic on Micro:Bit",
+  "author": "Wes Hinsley",
+  "license": "MIT",
+  "dependencies": {
+    "microbit": "lancaster-university/microbit"
+  }
+}
