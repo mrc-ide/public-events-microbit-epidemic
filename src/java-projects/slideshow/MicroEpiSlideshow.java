@@ -119,7 +119,7 @@ import javafx.stage.WindowEvent;
 public class MicroEpiSlideshow extends Application {
   /* GUI for screen control */
   
-  final String dataPath = "../data";
+  final String dataPath = "../../data";
   public int no_events = 0;
   boolean unsaved_changes = false;
  
@@ -476,7 +476,9 @@ public class MicroEpiSlideshow extends Application {
         fileChooser.setTitle("Choose CSV File");
         fileChooser.getExtensionFilters().addAll(
             new ExtensionFilter("CSV Files", "*.csv"));
-        fileChooser.setInitialDirectory(new File(dataPath));
+        if (new File(dataPath).exists()) {
+          fileChooser.setInitialDirectory(new File(dataPath));
+        }
         File selectedFile = fileChooser.showOpenDialog(_stage);
         if (selectedFile != null) {
           xml_file = selectedFile.getPath();
