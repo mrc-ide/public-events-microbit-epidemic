@@ -119,7 +119,7 @@ import javafx.stage.WindowEvent;
 public class MicroEpiSlideshow extends Application {
   /* GUI for screen control */
   
-  final String dataPath = "../data";
+  final String dataPath = "../../data";
   public int no_events = 0;
   boolean unsaved_changes = false;
  
@@ -133,7 +133,13 @@ public class MicroEpiSlideshow extends Application {
   final Label l_location = new Label("Location (x,y)");
   final Label l_size = new Label("Size (w,h)");
   final Label l_epi = new Label("None set yet");
+  final Label l_audio = new Label("None set yet");
+  String current_audio_file = "";
+  String last_audio_file = "";
+  MediaPlayer audioPlayer;
   final Button b_epi = new Button("Set Datafile");
+  final Button b_audio = new Button("Choose Audio");
+  final Button b_play = new Button(">");
   final CheckBox cb_title = new CheckBox("Show Title Screen");
   final CheckBox cb_alert = new CheckBox("Show Epidemic Alert");
   
@@ -146,6 +152,7 @@ public class MicroEpiSlideshow extends Application {
   final HBox hb_location = new HBox();
   final HBox hb_size = new HBox();
   final HBox hb_data = new HBox();
+  final HBox hb_audio = new HBox();
   final HBox hb_title = new HBox();
   final HBox hb_alert = new HBox();
   byte alert_img=1;
@@ -193,7 +200,7 @@ public class MicroEpiSlideshow extends Application {
   ImageView pauseButton = new ImageView();
   ImageView epiImage = new ImageView();
   MediaView epiMovie = new MediaView();
-  MediaPlayer epiPlayer;  
+  MediaPlayer epiPlayer;
   WritableImage fx_img;
   Dimension screen;
   String RScript="";
@@ -359,6 +366,7 @@ public class MicroEpiSlideshow extends Application {
   
   
   public void start(Stage primaryStage) throws Exception {
+    primaryStage.getIcons().add(new Image("file:media/app_icon.png"));
     
     /* Control GUI */
     int gridy = 0;
@@ -462,7 +470,14 @@ public class MicroEpiSlideshow extends Application {
     hb_data.getChildren().add(b_epi);
     grid.add(hb_data,  0,  gridy);
     grid.add(l_epi, 1, gridy++);
-
+    
+    hb_audio.getChildren().add(b_audio);
+    hb_audio.getChildren().add(b_play);
+    grid.add(hb_audio, 0, gridy);
+    grid.add(l_audio,  1,  gridy++);
+    b_play.setDisable(true);
+    b_play.setMinWidth(30);
+    
     hb_title.getChildren().add(cb_title);
     grid.add(hb_title,0, gridy++);
     hb_alert.getChildren().add(cb_alert);
@@ -476,7 +491,9 @@ public class MicroEpiSlideshow extends Application {
         fileChooser.setTitle("Choose CSV File");
         fileChooser.getExtensionFilters().addAll(
             new ExtensionFilter("CSV Files", "*.csv"));
-        fileChooser.setInitialDirectory(new File(dataPath));
+        if (new File(dataPath).exists()) {
+          fileChooser.setInitialDirectory(new File(dataPath));
+        }
         File selectedFile = fileChooser.showOpenDialog(_stage);
         if (selectedFile != null) {
           xml_file = selectedFile.getPath();
@@ -508,6 +525,69 @@ public class MicroEpiSlideshow extends Application {
 
       }
     });
+    
+    b_audio.setOnAction(new EventHandler<ActionEvent>() {
+      @Override
+      public void handle(ActionEvent e) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Choose Audio File");
+        ExtensionFilter fileExtensions = new ExtensionFilter(
+            "Audio Files", "*.wav", "*.mp3");
+
+        fileChooser.getExtensionFilters().add(fileExtensions);
+        
+        if (new File(last_audio_file).exists()) {
+          fileChooser.setInitialDirectory(new File(new File(last_audio_file).getParent()));
+        }
+        
+        File selectedFile = fileChooser.showOpenDialog(_stage);
+        if (selectedFile!=null) {
+          l_audio.setText(selectedFile.getName());
+          current_audio_file = selectedFile.getPath();
+          last_audio_file = current_audio_file;
+          b_play.setDisable(false);
+        } else {
+          l_audio.setText("None set yet");
+          current_audio_file="";
+          b_play.setDisable(true);
+        }
+      }
+    });
+    
+    b_play.setOnAction(new EventHandler<ActionEvent>() {
+      @Override
+      public void handle(ActionEvent e) {
+        File f = new File(current_audio_file);
+        if ((current_audio_file.length()>0) && (f.exists())) {
+          try {
+            Media sound = new Media(new File(f.getPath()).toURI().toString());
+            audioPlayer = new MediaPlayer(sound);
+            audioPlayer.setOnEndOfMedia(new Runnable() { 
+             @Override
+             public void run() {
+                b_play.setDisable(false);
+                audioPlayer.stop();
+                
+              }
+            });
+            
+            b_play.setDisable(true);
+            audioPlayer.play();
+            
+          } catch (Exception ex) {
+            l_audio.setText("Error playing sound");
+            b_play.setDisable(true);
+            ex.printStackTrace();
+          }
+          
+        } else {
+          l_audio.setText("None set yet");
+          current_audio_file="";
+          b_play.setDisable(true);
+        }
+      }
+    });
+
     
     cb_title.setOnAction(new EventHandler<ActionEvent>() {
       @Override
@@ -647,7 +727,6 @@ public class MicroEpiSlideshow extends Application {
     tf_h.setOnAction(unsaveAndResizeEvent);
 
     displayStage = new Stage(StageStyle.UNDECORATED);
-    displayStage.getIcons().add(new Image("file:resources/sbscreen_icon.png"));
     displayStage.setAlwaysOnTop(true);
     
     displayScene = new Scene(displayStageSP, displayStage.getWidth(), displayStage.getHeight(), Color.BLACK);
