@@ -2,6 +2,9 @@
 
 Documentation is split into these parts:-
 
+* [Introduction](docs/INTRO.md) - a brief overview
+of what this project is about.
+
 * [Hardware Guide](docs/KIT.md) - regarding
 the hardware, assembly, and 
 any particular experiences with it.
