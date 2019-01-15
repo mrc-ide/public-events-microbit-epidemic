@@ -91,11 +91,10 @@ bool buttonsOk(char param) {
 }
 
 void ledStatus() {
-  for (int i=0; i<4; i++) for (int j=0; j<5; j++)
-    uBit.display.image.setPixelValue(i,j,0);
-  
   if (screen_on) {
-    if (current_state == STATE_SUSCEPTIBLE) {
+    for (int i=0; i<4; i++) for (int j=0; j<5; j++)
+      uBit.display.image.setPixelValue(i,j,0);
+  if (current_state == STATE_SUSCEPTIBLE) {
       if (param_icons == ICONS_SIR) {
         for (int i=0; i<3; i++) for (int j=0; j<5; j+=2)
           uBit.display.image.setPixelValue(i,j,255);
@@ -130,6 +129,7 @@ void ledStatus() {
       }
     }
   } else {
+    uBit.display.clear();
     uBit.display.image.setPixelValue(0,0,32);
   }
 }
@@ -525,7 +525,8 @@ void onData(MicroBitEvent) {
 void broadcastInfection() {
   if (buttonsOk(param_btrans)) {
     uBit.sleep(uBit.random(200));
-    uBit.display.image.setPixelValue(4,1,255-uBit.display.image.getPixelValue(4,1));
+    if (screen_on)
+      uBit.display.image.setPixelValue(4,1,255-uBit.display.image.getPixelValue(4,1));
     PacketBuffer omsg(INF_BCAST_MSG_SIZE);
     uint8_t *obuf = omsg.getBytes();
     obuf[MSG_TYPE] = INF_BCAST_MSG;
@@ -542,7 +543,8 @@ void broadcastInfection() {
 // loop when in the MINION_STAGE_REGISTRY stage.
 
 void broadcastRegister() {
-  uBit.display.image.setPixelValue(4,0,255-uBit.display.image.getPixelValue(4,0));
+  if (screen_on)
+    uBit.display.image.setPixelValue(4,0,255-uBit.display.image.getPixelValue(4,0));
   PacketBuffer omsg(REG_MSG_SIZE);
   uint8_t *obuf = omsg.getBytes();
   obuf[MSG_TYPE] = REG_MSG;
