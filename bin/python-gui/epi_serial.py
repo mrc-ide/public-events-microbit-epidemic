@@ -44,7 +44,6 @@ except:
 try:
     import serial.tools.list_ports
 except ImportError, e:
-    import pip
     pipmain(['install', 'pySerial'])
     import serial.tools.list_ports
 
@@ -68,6 +67,8 @@ class EpiSerial:
     MSG_SEED_EPI = '4'
     MSG_RESET_EPI = '5#'
     MSG_POWER_OFF = '6#'
+    MSG_SCREEN_ON = '7#'
+    MSG_SCREEN_OFF = '8#'
 
     # Output Path is relative to bin/python-gui
     OUTPUT_PATH = '../../data/'
