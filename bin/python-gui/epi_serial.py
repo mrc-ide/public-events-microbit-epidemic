@@ -35,12 +35,17 @@ Created on 6 Jun 2018
 
 from threading import Thread
 import time
+import pip
+try:
+    from pip import main as pipmain
+except:
+    from pip._internal import main as pipmain
 
 try:
     import serial.tools.list_ports
 except ImportError, e:
     import pip
-    pip.main(['install', 'pySerial'])
+    pipmain(['install', 'pySerial'])
     import serial.tools.list_ports
 
 import re
