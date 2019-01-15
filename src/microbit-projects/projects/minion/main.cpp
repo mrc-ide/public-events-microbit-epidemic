@@ -80,6 +80,7 @@ unsigned char param_icons;
 
 unsigned short* exposure_tracker;
 char current_state;
+bool screen_on = true;
 
 bool buttonsOk(char param) {
   bool go = (param==NO_BUTTONS);
@@ -91,41 +92,45 @@ bool buttonsOk(char param) {
 
 void ledStatus() {
   for (int i=0; i<4; i++) for (int j=0; j<5; j++)
-      uBit.display.image.setPixelValue(i,j,0);
+    uBit.display.image.setPixelValue(i,j,0);
+  
+  if (screen_on) {
+    if (current_state == STATE_SUSCEPTIBLE) {
+      if (param_icons == ICONS_SIR) {
+        for (int i=0; i<3; i++) for (int j=0; j<5; j+=2)
+          uBit.display.image.setPixelValue(i,j,255);
+        uBit.display.image.setPixelValue(0,1,255);
+        uBit.display.image.setPixelValue(2,3,255);
+      } else if (param_icons == ICONS_IxR) {
+        for (int i=0; i<3; i++) for (int j=0; j<5; j+=4)
+          uBit.display.image.setPixelValue(i,j,255);
+        for (int j=1; j<=3; j++) uBit.display.image.setPixelValue(1,j,255);
+      }
 
-  if (current_state == STATE_SUSCEPTIBLE) {
-    if (param_icons == ICONS_SIR) {
-      for (int i=0; i<3; i++) for (int j=0; j<5; j+=2)
-        uBit.display.image.setPixelValue(i,j,255);
-      uBit.display.image.setPixelValue(0,1,255);
-      uBit.display.image.setPixelValue(2,3,255);
-    } else if (param_icons == ICONS_IxR) {
-      for (int i=0; i<3; i++) for (int j=0; j<5; j+=4)
-        uBit.display.image.setPixelValue(i,j,255);
-      for (int j=1; j<=3; j++) uBit.display.image.setPixelValue(1,j,255);
-    }
+    } else if (current_state == STATE_INFECTIOUS) {
+      if ((param_icons == ICONS_SIR) || (param_icons == ICONS_oIo)) {
+        for (int i=0; i<3; i++) for (int j=0; j<5; j+=4)
+          uBit.display.image.setPixelValue(i,j,255);
+        for (int j=1; j<=3; j++) uBit.display.image.setPixelValue(1,j,255);
+      } else if (param_icons == ICONS_IxR) {
+        for (int i=0; i<=2; i++) {
+          uBit.display.image.setPixelValue(1,i,255);
+          uBit.display.image.setPixelValue(i,1,255);
+        }
+      }
 
-  } else if (current_state == STATE_INFECTIOUS) {
-    if ((param_icons == ICONS_SIR) || (param_icons == ICONS_oIo)) {
-      for (int i=0; i<3; i++) for (int j=0; j<5; j+=4)
-        uBit.display.image.setPixelValue(i,j,255);
-      for (int j=1; j<=3; j++) uBit.display.image.setPixelValue(1,j,255);
-    } else if (param_icons == ICONS_IxR) {
-      for (int i=0; i<=2; i++) {
-        uBit.display.image.setPixelValue(1,i,255);
-        uBit.display.image.setPixelValue(i,1,255);
+    } else if (current_state == STATE_RECOVERED) {
+      if ((param_icons == ICONS_SIR) || (param_icons == ICONS_IxR)) {
+        for (int j=0; j<5; j++) uBit.display.image.setPixelValue(0,j,255);
+        uBit.display.image.setPixelValue(1,0,255);
+        uBit.display.image.setPixelValue(2,1,255);
+        uBit.display.image.setPixelValue(1,2,255);
+        uBit.display.image.setPixelValue(2,3,255);
+        uBit.display.image.setPixelValue(2,4,255);
       }
     }
-
-  } else if (current_state == STATE_RECOVERED) {
-    if ((param_icons == ICONS_SIR) || (param_icons == ICONS_IxR)) {
-      for (int j=0; j<5; j++) uBit.display.image.setPixelValue(0,j,255);
-      uBit.display.image.setPixelValue(1,0,255);
-      uBit.display.image.setPixelValue(2,1,255);
-      uBit.display.image.setPixelValue(1,2,255);
-      uBit.display.image.setPixelValue(2,3,255);
-      uBit.display.image.setPixelValue(2,4,255);
-    }
+  } else {
+    uBit.display.image.setPixelValue(0,0,32);
   }
 }
 
@@ -315,6 +320,38 @@ void onData(MicroBitEvent) {
         uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
         uBit.radio.datagram.send(omsg);
         current_stage = MINION_STAGE_POWER_OFF;
+      END_CHECK_RIGHT_SERIAL
+
+    } else if (ibuf[MSG_TYPE] == SCREEN_ON_MSG) {
+      CHECK_RIGHT_SERIAL(SCREEN_ON_MASTER_SERIAL)
+        // Re-broadcast screen-on once, and set screen status.
+        if (ibuf[SCREEN_ON_REPEAT]==0) {
+          PacketBuffer omsg(POWER_OFF_MSG_SIZE);
+          uint8_t *obuf = omsg.getBytes();
+          obuf[MSG_TYPE] = SCREEN_OFF_MSG;
+          obuf[SCREEN_ON_REPEAT]=1;
+          memcpy(&obuf[SCREEN_OFF_MASTER_SERIAL], &master_serial, SIZE_INT);
+          uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
+          uBit.radio.datagram.send(omsg);
+        }
+        screen_on = true;
+        ledStatus();
+      END_CHECK_RIGHT_SERIAL
+     
+    } else if (ibuf[MSG_TYPE] == SCREEN_OFF_MSG) {
+      CHECK_RIGHT_SERIAL(SCREEN_OFF_MASTER_SERIAL)
+        // Re-broadcast screen-off once, and set screen status.
+        if (ibuf[SCREEN_OFF_REPEAT]==0) {
+          PacketBuffer omsg(SCREEN_OFF_MSG_SIZE);
+          uint8_t *obuf = omsg.getBytes();
+          obuf[MSG_TYPE] = SCREEN_OFF_MSG;
+          obuf[SCREEN_OFF_REPEAT]=1;
+          memcpy(&obuf[SCREEN_OFF_MASTER_SERIAL], &master_serial, SIZE_INT);
+          uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
+          uBit.radio.datagram.send(omsg);
+        }
+        screen_on = false;
+        ledStatus();
       END_CHECK_RIGHT_SERIAL
 
     // Here, a susceptible minion receives a message to seed an infection.

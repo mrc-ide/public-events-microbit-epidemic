@@ -79,6 +79,8 @@ DEALINGS IN THE SOFTWARE.
 #define SER_SEED_MSG '4'
 #define SER_RESET_MSG '5'
 #define SER_POWER_OFF_MSG '6'
+#define SER_SCREEN_ON_MSG '7'
+#define SER_SCREEN_OFF_MSG '8'
 
 // Messages over radio
 
@@ -164,6 +166,16 @@ DEALINGS IN THE SOFTWARE.
   #define CONF_REP_RECOV_EPI_ID 5
   #define CONF_REP_RECOV_VICTIM_ID 7
   #define CONF_REP_RECOV_MSG_SIZE 9
+
+#define SCREEN_ON_MSG 16
+  #define SCREEN_ON_MASTER_SERIAL 1
+  #define SCREEN_ON_REPEAT 5
+  #define SCREEN_ON_MSG_SIZE 6
+
+#define SCREEN_OFF_MSG 17
+  #define SCREEN_OFF_MASTER_SERIAL 1
+  #define SCREEN_OFF_REPEAT 5
+  #define SCREEN_OFF_MSG_SIZE 6
 
 #define SIZE_FLOAT 4
 #define SIZE_INT 4

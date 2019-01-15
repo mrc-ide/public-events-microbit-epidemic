@@ -366,6 +366,24 @@ void receiveSerial(MicroBitEvent) {
         uBit.radio.setGroup(REGISTERED_GROUP);
         uBit.radio.datagram.send(buf);
         current_stage = MASTER_STAGE_POWER_OFF;
+
+      } else if (ser_buffer[0] == SER_SCREEN_ON_MSG) {
+        PacketBuffer buf(SCREEN_ON_MSG_SIZE);
+        uint8_t *ibuf = buf.getBytes();
+        ibuf[MSG_TYPE] = SCREEN_ON_MSG;
+        memcpy(&ibuf[SCREEN_ON_MASTER_SERIAL], &serial_no, SIZE_INT);
+        ibuf[SCREEN_ON_REPEAT]=0;
+        uBit.radio.setGroup(REGISTERED_GROUP);
+        uBit.radio.datagram.send(buf);
+
+      } else if (ser_buffer[0] == SER_SCREEN_OFF_MSG) {
+        PacketBuffer buf(SCREEN_OFF_MSG_SIZE);
+        uint8_t *ibuf = buf.getBytes();
+        ibuf[MSG_TYPE] = SCREEN_OFF_MSG;
+        memcpy(&ibuf[SCREEN_ON_MASTER_SERIAL], &serial_no, SIZE_INT);
+        ibuf[SCREEN_OFF_REPEAT]=0;
+        uBit.radio.setGroup(REGISTERED_GROUP);
+        uBit.radio.datagram.send(buf);
       }
     }
 
