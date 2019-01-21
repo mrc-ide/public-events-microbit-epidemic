@@ -365,6 +365,8 @@ class EpiGui:
 
         self.l_epidno.grid(column = self.LEFT, row = 0, sticky = "E")
         self.l_epidconst.grid(column = self.LEFT + 1, row = 0, sticky = "W")
+        self.b_screen_off.grid(column = self.LEFT, row=17 + self.TOP)
+        self.b_screen_on.grid(column = self.LEFT+1, row=17 + self.TOP)
         
         self.l_seedid.grid(column = self.LEFT, row = self.TOP, sticky = "E")
         self.l_seedid2.grid(column = 1 + self.LEFT, row = self.TOP, sticky = "W")
@@ -399,7 +401,8 @@ class EpiGui:
 
             self.grid_forget_all([self.l_seedid, self.l_seedid2, self.b_rndseed, self.l_forcer, self.tb_forcer,
                 self.l_ncons, self.cb_forcer, self.b_seedEpidemic, self.b_resetEpidemic, self.l_epidconst, self.l_epidno, 
-                self.l_susc, self.l_susc2, self.l_inf, self.l_inf2, self.l_recov, self.l_recov2])
+                self.l_susc, self.l_susc2, self.l_inf, self.l_inf2, self.l_recov, self.l_recov2, self.b_screen_off,
+                self.b_screen_on])
 
             if (confirm == 'RESET'):
                 self.serial_link.reset_epidemic()
@@ -493,6 +496,11 @@ class EpiGui:
                         
         self.serial_link.refresh_microbit_comports()
 
+    def click_screens_off(self):
+        self.serial_link.screens_off()
+        
+    def click_screens_on(self):
+        self.serial_link.screens_on()
     # Create the GUI.
 
     def __init__(self, serial_link):
@@ -634,6 +642,10 @@ class EpiGui:
 
         self.cb_forcer['values'] = range(1,100)
         self.cb_forcer.current(3)
+        
+        self.b_screen_off = Button(self.window, text = "Screens OFF", command = self.click_screens_off)
+        self.b_screen_on = Button(self.window, text = "Screens ON", command = self.click_screens_on)
+        
 
         # Load the previously-saved configurations
 

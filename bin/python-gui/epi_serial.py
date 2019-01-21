@@ -367,6 +367,12 @@ class EpiSerial:
     def reset_epidemic(self):
         self.serial_port.write(self.MSG_RESET_EPI+"\n")
 
+    def screens_on(self):
+        self.serial_port.write(self.MSG_SCREEN_ON+"\n")
+
+    def screens_off(self):
+        self.serial_port.write(self.MSG_SCREEN_OFF+"\n")
+        
     def poweroff_minions(self):
         self.serial_port.write(self.MSG_POWER_OFF+"\n")
 
