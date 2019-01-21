@@ -398,7 +398,7 @@ class EpiGui:
         if (confirm == 'RESET') or (confirm == 'POWEROFF'):
 
             self.grid_forget_all([self.l_seedid, self.l_seedid2, self.b_rndseed, self.l_forcer, self.tb_forcer,
-                self.l_ncons, self.cb_forcer, self.b_seedEpidemic, self.b_resetEpidemic,
+                self.l_ncons, self.cb_forcer, self.b_seedEpidemic, self.b_resetEpidemic, self.l_epidconst, self.l_epidno, 
                 self.l_susc, self.l_susc2, self.l_inf, self.l_inf2, self.l_recov, self.l_recov2])
 
             if (confirm == 'RESET'):
