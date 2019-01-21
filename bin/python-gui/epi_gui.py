@@ -5,7 +5,7 @@ an epidemic.
 
 The MIT License (MIT)
 
-Copyright (c) 2018 Wes Hinsley
+Copyright (c) 2019 Wes Hinsley
 MRC Centre for Global Infectious Disease Analysis
 Department of Infectious Disease Epidemiology
 Imperial College London
@@ -52,7 +52,7 @@ except ImportError:
 
 class EpiGui:
 
-    REQ_MASTER_VERSION = 'Epi Master 1.13'
+    REQ_MASTER_VERSION = 'Epi Master 1.14'
 
     CURRENT_EPI_ID = -1
 
@@ -363,6 +363,9 @@ class EpiGui:
                 self.l_exposure, self.cb_exposure, self.l_brec, self.cb_brec,
                 self.l_btrans, self.cb_btrans, self.l_icons, self.cb_icons])
 
+        self.l_epidno.grid(column = self.LEFT, row = 0, sticky = "E")
+        self.l_epidconst.grid(column = self.LEFT + 1, row = 0, sticky = "W")
+        
         self.l_seedid.grid(column = self.LEFT, row = self.TOP, sticky = "E")
         self.l_seedid2.grid(column = 1 + self.LEFT, row = self.TOP, sticky = "W")
         self.b_rndseed.grid(column = 2 + self.LEFT, row = self.TOP, sticky = "W")
@@ -556,6 +559,7 @@ class EpiGui:
         self.l_epidno = Label(self.window, text = self.lang.epi_id)
         self.sv_epidno = StringVar()
         self.e_epidno = Entry(self.window, textvariable = self.sv_epidno)
+        self.l_epidconst = Label(self.window, textvariable = self.sv_epidno, font=('Arial', 12, 'bold'))
 
         self.l_paramset = Label(self.window, text = self.lang.saved_params)
         self.cb_paramset = Combobox(self.window, state = 'readonly')

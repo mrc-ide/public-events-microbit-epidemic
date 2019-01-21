@@ -5,7 +5,7 @@ the master micro:bit via the serial port.
 
 The MIT License (MIT)
 
-Copyright (c) 2018 Wes Hinsley
+Copyright (c) 2019 Wes Hinsley
 MRC Centre for Global Infectious Disease Analysis
 Department of Infectious Disease Epidemiology
 Imperial College London
@@ -77,7 +77,7 @@ class EpiSerial:
     MICROBIT_VID = 3368
 
     input_buffer = ""
-    latest_minion_buildno = '13'
+    latest_minion_buildno = '14'
 
     current_epi_t0 = 0
 
