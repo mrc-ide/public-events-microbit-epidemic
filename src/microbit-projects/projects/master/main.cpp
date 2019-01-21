@@ -6,7 +6,7 @@ via the bluetooth radio.
 
 The MIT License (MIT)
 
-Copyright (c) 2018 Wes Hinsley
+Copyright (c) 2019 Wes Hinsley
 MRC Centre for Global Infectious Disease Analysis
 Department of Infectious Disease Epidemiology
 Imperial College London
@@ -44,7 +44,7 @@ ManagedString END_SERIAL("#\n");
 ManagedString NEWLINE("\n");
 ManagedString REG("REG");
 ManagedString COLON(":");
-ManagedString VERSION_INFO("VER:Epi Master 1.13:");
+ManagedString VERSION_INFO("VER:Epi Master 1.14:");
 ManagedString RESTART_INFO("VER:Push reset button and rescan:");
 ManagedString INF_MSG("INF:");
 ManagedString RECOV_MSG("REC:");

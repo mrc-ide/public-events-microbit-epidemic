@@ -5,7 +5,7 @@ minion micro:bits, which are the agents of the epidemic.
 
 The MIT License (MIT)
 
-Copyright (c) 2018 Wes Hinsley
+Copyright (c) 2019 Wes Hinsley
 MRC Centre for Global Infectious Disease Analysis
 Department of Infectious Disease Epidemiology
 Imperial College London
@@ -36,8 +36,8 @@ DEALINGS IN THE SOFTWARE.
 
 MicroBit uBit;
 
-ManagedString VERSION_INFO("VER:Epi Minion 1.13:");
-#define MINION_BUILD_NO 13
+ManagedString VERSION_INFO("VER:Epi Minion 1.14:");
+#define MINION_BUILD_NO 14
 ManagedString NEWLINE("\n");
 ManagedString END_SERIAL("#\n");
 

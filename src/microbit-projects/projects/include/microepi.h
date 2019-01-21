@@ -6,7 +6,7 @@ need to be consistent between the two.
 
 The MIT License (MIT)
 
-Copyright (c) 2018 Wes Hinsley
+Copyright (c) 2019 Wes Hinsley
 MRC Centre for Global Infectious Disease Analysis
 Department of Infectious Disease Epidemiology
 Imperial College London
