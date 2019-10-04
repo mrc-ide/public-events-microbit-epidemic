@@ -2,51 +2,56 @@
 
 Here, we describe how to create an environment on windows, 
 for compiling our code into binaries to copy to the micro:bit.
-In due course, we'll try this on other platforms, which will
-probably be quite similar on the whole.
+In due course, I'll try this on other platforms, and perhaps
+make a docker container which will make life easier.
 
 ## Compiling for micro:bit
 
 ### Compiler Tools on Windows
 
-I wanted to do offline compilation of C code to Microbit, on Windows. So,
-I used these [Instructions](https://lancaster-university.github.io/microbit-docs/offline-toolchains/) which
-pointed me to [here](http://docs.yottabuild.org/#installing-on-windows).
+Here's how I do offline compilation of C code to Microbit, on Windows.
+All of the below is based upon the manual instructions 
+[here](http://docs.yottabuild.org/#manual-windows-installation); the
+automatic installer didn't work for me - yotta.exe never came into
+existence. But the below worked ok.
 
-* The "simple" installer didn't work for me - `yt` and `yotta` 
-didn't seem to exist, even though the `Run Yotta` shortcut 
-seemed to be present. So, I followed the [manual](http://docs.yottabuild.org/#manual-windows-installation)
-instructions and got it working:-
+* Install the latest Python 2.7. The build tool is written in python, and 
+support for Python 3 is stated as _experimental_. I installed 
+[Python 2.7.15 64-bit](https://www.python.org/ftp/python/2.7.15/python-2.7.15.msi). I 
+let it install to `C:\Python27`.
 
-* Install latest Python 2.7, 64-bit version. 
-[Here](https://www.python.org/ftp/python/2.7.14/python-2.7.14.amd64.msi). I installed into 
-C:\Python27. I didn't get the option in the installer to add 
-this to the path, so... Control Panel, System, Advanced System 
-Settings, Environment Variables, find Path in the System 
-variables, prefix with `C:\Python27;C:\Python27\Scripts;`
+* There was no "Add to Path" option in the python installer strangely. So, 
+add `C:\Python27` and `C:\Python27\Scripts` to the system path in Control Panel, 
+System, Advanced system settings, Environment Variables, Path.
 
-* Upgrade pip, because... why not? New command window, 
-`python -m pip install --upgrade pip`
+* New Command window, and run `Python` to check you get 2.7.15. (Multiple
+python versions and packages on the same machine is a specific kind of nightmare).
 
-* Install CMake. I went for 
-[this](https://cmake.org/files/v3.11/cmake-3.11.1-win64-x64.msi). It let me add cmake to the path for
-all users. I put it in `C:\CMake`
+* `quit()` python, and upgrade pip with `python -m pip install --upgrade pip`
+
+* Install the latest 64-bit CMake, currently 
+[here](https://github.com/Kitware/CMake/releases/download/v3.13.2/cmake-3.13.2-win64-x64.msi).
+It has an option to add to the system path, but this didn't work, so I manually added
+`C:/CMake/bin` to the system path, as earlier.
 
 * Install [Ninja](https://github.com/ninja-build/ninja/releases)
 - I took the latest version, 1.8.2. It's a single executable 
-file, so I cheated a bit, and put it in my Python scripts 
-folder, which is already in the path. Yes, I know it's not a 
-python script.
+file, so I cheated a bit, and put it in `C:/Python27/Scripts` 
+which is already in the path, since its only one python-related file.
 
 * Install the gcc cross-compiler (gcc-arm-none-eabi). The 
-Yotta notes talk about an old version 4.9; I'm trying out the 
-latest from [Here](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads),
-which seems to be 7-2017-q4-major. I've installed in 
-`C:\gnu_arm` - keeping directory names simple is probably wisdom.
-And this one also has an option to automatically add 
-`C:\gnu_arm\bin` to my path, so I let it.
+Yotta notes talk about an old version 4.9. I've found 2017-q4 works, 2018-q4 doesn't 
+(e.g. arm-none-eabi-objcopy: microbit-samples.hex 64-bit address 0x4b4fa300018000 out of range for Intel Hex file)
+Hence, I am using [Here](https://developer.arm.com/-/media/Files/downloads/gnu-rm/7-2017q4/gcc-arm-none-eabi-7-2017-q4-major-win32.exe?revision=732bae94-c929-403d-9520-0b2bccd81ad7?product=GNU%20Arm%20Embedded%20Toolchain,32-bit,,Windows,7-2017-q4-major).
+I installed in `C:\gnu_arm`, and added `C:\gnu_arm\bin` to the system path.
 
-* Open a new command prompt, and `pip install -U yotta`.
+* Open a new command prompt, and `pip install yotta`.
+
+* There are currently (Jan 2019) some package incompatibilities, so we need to hack the following:-
+```
+python -m pip install pyopenssl==17.5.0
+python -m pip install cryptography==2.1.4
+```
 
 * Close/open a new command prompt, and test that `yotta` 
 now does something. The executable for Yotta seems to have been 
@@ -54,12 +59,12 @@ added in C:\Python27\scripts.
 
 * Download SRecord from 
 [Here](http://srecord.sourceforge.net/download.html) - 
-and I cheated again, and just dropped the three executables 
+and again, I just dropped the three executables 
 in the install zip in `C:\Python27\Scripts`.
 
 ### Test the Compiler
 
-You don't have to do this part to compile our code; it's just
+You don't have to do this part to comppython ile our code; it's just
 the process I went through first time to learn how to compile
 anything. If you don't want to do this, then skip down to 
 the epidemic section below.
