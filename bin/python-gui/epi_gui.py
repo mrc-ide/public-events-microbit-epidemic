@@ -52,7 +52,7 @@ except ImportError:
 
 class EpiGui:
 
-    REQ_MASTER_VERSION = 'Epi Master 1.14'
+    REQ_MASTER_VERSION = 'Epi Master 1.15'
 
     CURRENT_EPI_ID = -1
 

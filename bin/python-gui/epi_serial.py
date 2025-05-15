@@ -102,6 +102,7 @@ class EpiSerial:
                         for i in range(len(self.serials)):
                             s = "{},{}\n".format(self.serials[i]['serial'],self.serials[i]['id'])
                             f.write(s)
+                    break
 
         return result
 
