@@ -44,7 +44,7 @@ ManagedString END_SERIAL("#\n");
 ManagedString NEWLINE("\n");
 ManagedString REG("REG");
 ManagedString COLON(":");
-ManagedString VERSION_INFO("VER:Epi Master 1.14:");
+ManagedString VERSION_INFO("VER:Epi Master 1.15:");
 ManagedString RESTART_INFO("VER:Push reset button and rescan:");
 ManagedString INF_MSG("INF:");
 ManagedString RECOV_MSG("REC:");
@@ -230,7 +230,7 @@ void receiveSerial(MicroBitEvent) {
 
       if (ser_buffer[0] == SER_VER_MSG) {
         ManagedString SERIAL_NO(serial_no);
-        ManagedString MB_VERSION(uBit.systemVersion());
+        ManagedString MB_VERSION(MB_GET_VERSION);
         sendSerial(VERSION_INFO + SERIAL_NO + COLON + MB_VERSION + END_SERIAL);
 
 
@@ -269,7 +269,7 @@ void receiveSerial(MicroBitEvent) {
 
       if (ser_buffer[0] == SER_VER_MSG) {
         ManagedString SERIAL_NO(serial_no);
-        ManagedString MB_VERSION(uBit.systemVersion());
+        ManagedString MB_VERSION(MB_GET_VERSION);
         sendSerial(RESTART_INFO + SERIAL_NO + COLON + MB_VERSION + END_SERIAL);
 
        // This is the reply message to registration, which gives the serial number
@@ -278,8 +278,8 @@ void receiveSerial(MicroBitEvent) {
        } else if (ser_buffer[0] == SER_REG_MSG) {
         int start = 1;
         int param_no = 0;
-        int minion_serial_no;
-        unsigned short friendly_id;
+        int minion_serial_no = -1;
+        unsigned short friendly_id = 999;
         for (int i = 1; i<ser_length; i++) {
           if (ser_buffer[i] == ',') {
             const char* bitp = &ser_buffer[start];
@@ -380,7 +380,7 @@ void receiveSerial(MicroBitEvent) {
         PacketBuffer buf(SCREEN_OFF_MSG_SIZE);
         uint8_t *ibuf = buf.getBytes();
         ibuf[MSG_TYPE] = SCREEN_OFF_MSG;
-        memcpy(&ibuf[SCREEN_ON_MASTER_SERIAL], &serial_no, SIZE_INT);
+        memcpy(&ibuf[SCREEN_OFF_MASTER_SERIAL], &serial_no, SIZE_INT);
         ibuf[SCREEN_OFF_REPEAT]=0;
         uBit.radio.setGroup(REGISTERED_GROUP);
         uBit.radio.datagram.send(buf);
@@ -402,7 +402,7 @@ int main() {
   uBit.display.setBrightness(64);
   uBit.serial.setRxBufferSize(32);
   uBit.serial.setTxBufferSize(32);
-  uBit.serial.baud(115200);
+  MB_SET_SERIAL_BAUD(115200);
   uBit.messageBus.listen(MICROBIT_ID_SERIAL,  MICROBIT_SERIAL_EVT_DELIM_MATCH, receiveSerial);
   uBit.serial.eventOn(NEWLINE);
 

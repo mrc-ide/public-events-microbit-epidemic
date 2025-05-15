@@ -36,8 +36,8 @@ DEALINGS IN THE SOFTWARE.
 
 MicroBit uBit;
 
-ManagedString VERSION_INFO("VER:Epi Minion 1.14:");
-#define MINION_BUILD_NO 14
+ManagedString VERSION_INFO("VER:Epi Minion 1.15:");
+#define MINION_BUILD_NO 15
 ManagedString NEWLINE("\n");
 ManagedString END_SERIAL("#\n");
 
@@ -326,11 +326,11 @@ void onData(MicroBitEvent) {
       CHECK_RIGHT_SERIAL(SCREEN_ON_MASTER_SERIAL)
         // Re-broadcast screen-on once, and set screen status.
         if (ibuf[SCREEN_ON_REPEAT]==0) {
-          PacketBuffer omsg(POWER_OFF_MSG_SIZE);
+          PacketBuffer omsg(SCREEN_ON_MSG_SIZE);
           uint8_t *obuf = omsg.getBytes();
-          obuf[MSG_TYPE] = SCREEN_OFF_MSG;
+          obuf[MSG_TYPE] = SCREEN_ON_MSG;
           obuf[SCREEN_ON_REPEAT]=1;
-          memcpy(&obuf[SCREEN_OFF_MASTER_SERIAL], &master_serial, SIZE_INT);
+          memcpy(&obuf[SCREEN_ON_MASTER_SERIAL], &master_serial, SIZE_INT);
           uBit.radio.setTransmitPower(MAX_TRANSMIT_POWER);
           uBit.radio.datagram.send(omsg);
         }
@@ -575,7 +575,7 @@ void receiveSerial(MicroBitEvent) {
   if (msg.charAt(0) == SER_VER_MSG) {
     ManagedString SERIAL_NO(serial_no);
     ManagedString COLON(":");
-    ManagedString MB_VERSION(uBit.systemVersion());
+    ManagedString MB_VERSION(MB_GET_VERSION);
     sendSerial(VERSION_INFO + SERIAL_NO + COLON + MB_VERSION + END_SERIAL);
   }
 }
@@ -584,7 +584,7 @@ int main() {
   uBit.init();
   uBit.serial.setRxBufferSize(32);
   uBit.serial.setTxBufferSize(32);
-  uBit.serial.baud(115200);
+  MB_SET_SERIAL_BAUD(115200);
   uBit.messageBus.listen(MICROBIT_ID_SERIAL, MICROBIT_SERIAL_EVT_DELIM_MATCH, receiveSerial, MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY);
   uBit.serial.eventOn(NEWLINE);
   uBit.messageBus.listen(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, onData, MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY);

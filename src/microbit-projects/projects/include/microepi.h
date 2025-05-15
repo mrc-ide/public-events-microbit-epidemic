@@ -186,4 +186,16 @@ DEALINGS IN THE SOFTWARE.
 #define ALREADY_CONTACTED 32766
 #define SEED_CONTACT_ID 32767
 
+// Some compatibility between Microbit v1 and v2
+
+#define MICROBIT_V2
+
+#ifdef MICROBIT_V2
+  #define MB_GET_VERSION uBit.getVersion()
+  #define MB_SET_SERIAL_BAUD uBit.serial.setBaud
+#else
+  #define MB_GET_VERSION uBit.systemVersion()
+  #define MB_SET_SERIAL_BAUD uBit.serial.baud
+#endif
+
 #endif
