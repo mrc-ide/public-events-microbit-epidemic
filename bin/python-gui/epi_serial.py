@@ -43,7 +43,7 @@ except:
 
 try:
     import serial.tools.list_ports
-except ImportError, e:
+except ImportError:
     pipmain(['install', 'pySerial'])
     import serial.tools.list_ports
 
@@ -180,7 +180,7 @@ class EpiSerial:
 
         try:
             self.serial_port = serial.Serial(port, 115200, timeout=1, xonxoff=True)
-            self.serial_port.write(self.MSG_IDENTIFY_YOURSELF+"\n")
+            self.serial_port.write((self.MSG_IDENTIFY_YOURSELF+"\n").encode())
 
         except SerialException:
             self.gui_link.sv_software.set(self.gui_link.lang.serial_error)
@@ -191,7 +191,7 @@ class EpiSerial:
         if (len(data)>4):
 
             if (data[0:4] == self.MSG_IN_DEBUG):
-                print data
+                print(data)
 
             if (data[0:4] == self.MSG_IN_VERSION):
                 self.gui_link.sv_software.set(data.split(":")[1])
@@ -203,14 +203,14 @@ class EpiSerial:
                 buildno = data.split(":")[2]
                 friendlyid = self.get_friendly_id(serialno)
                 if (buildno != self.latest_minion_buildno):
-                    print self.gui_link.lang.mb_ood.format(serialno,
-                        friendlyid, buildno, self.latest_minion_buildno)
+                    print(self.gui_link.lang.mb_ood.format(serialno,
+                          friendlyid, buildno, self.latest_minion_buildno))
 
                 if (friendlyid == '-1'):
-                    print self.gui_link.lang.serial_lookup_err.format(serialno)
+                    print(self.gui_link.lang.serial_lookup_err.format(serialno))
                 else:
                     msg = "{}{},{},#".format(self.MSG_REG, serialno, friendlyid)
-                    self.serial_port.write(msg+"\n")
+                    self.serial_port.write((msg+"\n").encode())
                     self.gui_link.set_minion_status(friendlyid, self.gui_link.STATUS_SUSCEPTIBLE)
                     self.write_xml_params()
 
@@ -295,7 +295,7 @@ class EpiSerial:
         fn = self.OUTPUT_PATH + self.gui_link.sv_serialno.get() + "_" + self.gui_link.sv_epidno.get() + ".xml"
         players = ""
         for x in range(100):
-            col = self.gui_link.minions[x % 10][x / 10]['bg']
+            col = self.gui_link.minions[x % 10][x // 10]['bg']
             if ((col == self.gui_link.STATUS_SUSCEPTIBLE) or (col == self.gui_link.STATUS_INFECTED) or (col == self.gui_link.STATUS_RECOVERED)):
                 if (players != ""):
                     players = players + ","
@@ -343,7 +343,7 @@ class EpiSerial:
                str(self.gui_link.cb_brec.current()) + "," +
                str(self.gui_link.cb_icons.current()) + ",#")
 
-        self.serial_port.write(msg+"\n")
+        self.serial_port.write((msg+"\n").encode())
         self.current_epi_t0 = time.time()
 
         # Also write a meta file for the viewer.
@@ -362,20 +362,20 @@ class EpiSerial:
             forcer = 1 + self.gui_link.cb_forcer.current()
 
         msg = self.MSG_SEED_EPI + self.gui_link.sv_seedid.get() + "," + str(forcer) + ",#"
-        self.serial_port.write(msg+"\n")
+        self.serial_port.write((msg+"\n").encode())
         self.write_xml_params()
 
     def reset_epidemic(self):
-        self.serial_port.write(self.MSG_RESET_EPI+"\n")
+        self.serial_port.write((self.MSG_RESET_EPI+"\n").encode())
 
     def screens_on(self):
-        self.serial_port.write(self.MSG_SCREEN_ON+"\n")
+        self.serial_port.write((self.MSG_SCREEN_ON+"\n").encode())
 
     def screens_off(self):
-        self.serial_port.write(self.MSG_SCREEN_OFF+"\n")
+        self.serial_port.write((self.MSG_SCREEN_OFF+"\n").encode())
         
     def poweroff_minions(self):
-        self.serial_port.write(self.MSG_POWER_OFF+"\n")
+        self.serial_port.write((self.MSG_POWER_OFF+"\n").encode())
 
     # Initialise serial port listener thread
 

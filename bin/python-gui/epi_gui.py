@@ -33,13 +33,15 @@ Created on 6 Jun 2018
 @author: Wes Hinsley
 '''
 
-from Tkinter import Button, Label, Tk, PhotoImage, Entry, StringVar, IntVar, Checkbutton, END
-import tkMessageBox, tkSimpleDialog
 import os
-import tkFont
 import random
 from epi_lang import EpiLang
-from ttk import Combobox
+
+from tkinter import Button, Label, Tk, PhotoImage, Entry, StringVar, IntVar, Checkbutton, END
+from tkinter import messagebox as tkMessageBox
+from tkinter import simpledialog as tkSimpleDialog
+from tkinter import font as tkFont
+from tkinter.ttk import Combobox
 
 try:
     # For Python 2
@@ -341,7 +343,7 @@ class EpiGui:
         sid = self.sv_seedid.get()
         if (len(sid)>0):
             sid = int(sid)
-            if (self.minions[sid % 10][sid / 10]['bg'] == self.STATUS_SUSCEPTIBLE):
+            if (self.minions[sid % 10][sid // 10]['bg'] == self.STATUS_SUSCEPTIBLE):
                 self.b_seedEpidemic['state'] = 'active'
 
 
@@ -387,7 +389,7 @@ class EpiGui:
 
     def click_seed_epi(self):
         m_id = int(self.sv_seedid.get())
-        if (self.minions[m_id % 10][m_id / 10]['bg']==self.STATUS_SUSCEPTIBLE):
+        if (self.minions[m_id % 10][m_id // 10]['bg']==self.STATUS_SUSCEPTIBLE):
             self.serial_link.seed_epidemic()
             self.sv_seedid.set("")
         else:
@@ -416,7 +418,7 @@ class EpiGui:
     def click_minion(self, m_id):
         m_id = int(m_id)
         if (self.serial_link.serial_port != 0):
-            if (self.minions[m_id % 10][m_id / 10]['bg']==self.STATUS_SUSCEPTIBLE):
+            if (self.minions[m_id % 10][m_id // 10]['bg']==self.STATUS_SUSCEPTIBLE):
                 self.sv_seedid.set(m_id)
             else:
                 self.sv_seedid.set('')
@@ -425,13 +427,13 @@ class EpiGui:
     def click_random_minion(self):
         candidates = 0
         for m_id in range(0, 99):
-            if (self.minions[m_id % 10][m_id / 10]['bg']==self.STATUS_SUSCEPTIBLE):
+            if (self.minions[m_id % 10][m_id // 10]['bg']==self.STATUS_SUSCEPTIBLE):
                 candidates = candidates + 1
 
         if (candidates>0):
             r = random.randint(1,candidates)
             for m_id in range(0, 99):
-                if (self.minions[m_id % 10][m_id / 10]['bg']==self.STATUS_SUSCEPTIBLE):
+                if (self.minions[m_id % 10][m_id // 10]['bg']==self.STATUS_SUSCEPTIBLE):
                     r = r - 1
                     if (r == 0):
                         self.sv_seedid.set(m_id)
@@ -440,8 +442,8 @@ class EpiGui:
 
     def set_minion_status(self, minion_id, status):
         m_id = int(minion_id)
-        if (self.minions[m_id % 10][m_id / 10]['bg'] != status):
-            self.minions[m_id % 10][m_id / 10]['bg'] = status
+        if (self.minions[m_id % 10][m_id // 10]['bg'] != status):
+            self.minions[m_id % 10][m_id // 10]['bg'] = status
             if (status == self.STATUS_SUSCEPTIBLE):
                 self.sv_susc.set(str(int(self.sv_susc.get())+1))
             elif (status == self.STATUS_INFECTED):
@@ -514,7 +516,7 @@ class EpiGui:
 
         # GUI elements present on all pages.
 
-        self.minions =  [[0 for x in xrange(10)] for y in xrange(10)]
+        self.minions = [[0 for x in range(10)] for y in range(10)]
         
         for x in range(10):
             for y in range(10):
@@ -597,10 +599,10 @@ class EpiGui:
         self.cb_icons = Combobox(self.window, state = 'readonly')
 
         self.cb_rtype['values'] = [self.lang.constant, self.lang.poisson]
-        self.cb_rpower['values'] = range(0, 8)
+        self.cb_rpower['values'] = list(range(0, 8))
         self.cb_exposure['values'] = [1, 5, 10, 20, 30, 40, 50, 60, 90, 120, 150, 180, 210, 240, 270, 300, 360, 420, 480, 540, 600]
-        self.cb_poimin['values'] = range(0, 99)
-        self.cb_poimax['values'] = range(1, 100)
+        self.cb_poimin['values'] = list(range(0, 99))
+        self.cb_poimax['values'] = list(range(1, 100))
         self.cb_btrans['values'] = ['Auto','A','B','A+B']
         self.cb_brec['values'] = ['Auto','A','B','A+B']
         self.cb_icons['values'] = ['SIR', 'I+R', '-I-']
@@ -640,7 +642,7 @@ class EpiGui:
         self.sv_recov = StringVar()
         self.l_recov2 = Label(self.window, textvariable = self.sv_recov)
 
-        self.cb_forcer['values'] = range(1,100)
+        self.cb_forcer['values'] = list(range(1,100))
         self.cb_forcer.current(3)
         
         self.b_screen_off = Button(self.window, text = "Screens OFF", command = self.click_screens_off)
