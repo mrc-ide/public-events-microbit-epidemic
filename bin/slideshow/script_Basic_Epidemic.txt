@@ -1,7 +1,7 @@
 DataPath:../../data
 Language:EN
 Timezone:GMT+1
-RScript:C:\Program Files\R\R-3.3.3\bin\RScript.exe
+RScript:RScript.exe
 RNetGraph:Outbreak7.R
 Script:
 Image["media/basic_epi.png"]
